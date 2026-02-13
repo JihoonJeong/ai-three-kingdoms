@@ -1,0 +1,18 @@
+{
+  "name": "ai-three-kingdoms",
+  "version": "0.1.0",
+  "description": "AI 삼국지 — AI 책사와 함께하는 전략 게임",
+  "type": "module",
+  "main": "dist/core/engine/game-state.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": ["three-kingdoms", "strategy", "mcp", "ai"],
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
