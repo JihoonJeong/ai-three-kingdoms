@@ -4,11 +4,10 @@
 
 import { h, assetUrl } from '../renderer.js';
 import { getCharacterAssetPath } from '../../../core/ui/types.js';
-import { streamChat, checkHealth } from '../services/advisor-api.js';
+import { streamChat, checkHealth, type StreamChatOptions } from '../services/advisor-api.js';
 import { checkConfig } from '../services/config-api.js';
 import {
   buildBriefingUserMessage,
-  buildActionCommentMessage,
   buildBattleAdviceMessage,
 } from '../../../core/advisor/prompts.js';
 import {
@@ -43,7 +42,7 @@ export class AdvisorScreen {
   private aiEnabled = true;
   private modelName: string | null = null;
   private settingsClickCb: (() => void) | null = null;
-  private executeActionCb: ((action: GameAction) => void) | null = null;
+  private executeActionCb: ((action: GameAction) => boolean) | null = null;
 
   private abortController: AbortController | null = null;
   private longResponsePromptShown = false;
@@ -52,6 +51,9 @@ export class AdvisorScreen {
   private hasReceivedVisibleToken = false;
   private recommendations: ActionRecommendation[] = [];
   private executedIndices: Set<number> = new Set();
+  private pendingActions: Array<{ description: string; success: boolean }> = [];
+  private thinkMode = false;  // 신중한 답변 모드 (thinking)
+  private thinkToggleEl: HTMLElement | null = null;
 
   /** AI 활성화 상태 설정 */
   setAiEnabled(enabled: boolean): void {
@@ -68,8 +70,8 @@ export class AdvisorScreen {
     this.settingsClickCb = cb;
   }
 
-  /** 추천 행동 실행 콜백 */
-  onExecuteAction(cb: (action: GameAction) => void): void {
+  /** 추천 행동 실행 콜백 (성공 시 true 반환) */
+  onExecuteAction(cb: (action: GameAction) => boolean): void {
     this.executeActionCb = cb;
   }
 
@@ -158,6 +160,22 @@ export class AdvisorScreen {
       }
     });
 
+    // thinking 모드 토글
+    this.thinkToggleEl = h('button', {
+      className: `advisor-think-toggle${this.thinkMode ? ' active' : ''}`,
+      title: this.thinkMode ? '신중한 답변 (느림)' : '빠른 응답',
+    }) as HTMLElement;
+    this.thinkToggleEl.innerHTML = this.thinkMode ? '🧠' : '⚡';
+    this.thinkToggleEl.addEventListener('click', () => {
+      this.thinkMode = !this.thinkMode;
+      if (this.thinkToggleEl) {
+        this.thinkToggleEl.innerHTML = this.thinkMode ? '🧠' : '⚡';
+        this.thinkToggleEl.className = `advisor-think-toggle${this.thinkMode ? ' active' : ''}`;
+        this.thinkToggleEl.title = this.thinkMode ? '신중한 답변 (느림)' : '빠른 응답';
+      }
+    });
+
+    inputArea.appendChild(this.thinkToggleEl);
     inputArea.appendChild(this.inputEl);
     inputArea.appendChild(this.sendBtn);
     screen.appendChild(inputArea);
@@ -189,7 +207,7 @@ export class AdvisorScreen {
     this.updateRecommendButtons();
   }
 
-  /** 턴 시작 시 자동 브리핑 */
+  /** 턴 시작 시 자동 브리핑 (지난 턴 행동 결과 포함) */
   async requestTurnBriefing(state: GameState): Promise<void> {
     if (!this.aiEnabled) return;
     this.currentState = state;
@@ -197,17 +215,20 @@ export class AdvisorScreen {
     this.recommendations = [];
     this.executedIndices.clear();
     this.renderRecommendPanel();
-    const userMsg = buildBriefingUserMessage(state.turn);
+
+    // 지난 턴 행동 결과를 브리핑에 포함
+    const prevActions = this.pendingActions.length > 0 ? [...this.pendingActions] : undefined;
+    this.pendingActions = [];
+
+    const userMsg = buildBriefingUserMessage(state.turn, 'ko', prevActions);
     this.addSystemMessage(`── 턴 ${state.turn} 시작 ──`);
     await this.sendMessage(userMsg, true);
   }
 
-  /** 행동 실행 후 코멘트 */
-  async notifyAction(description: string, success: boolean, state: GameState): Promise<void> {
-    if (!this.aiEnabled) return;
+  /** 행동 실행 결과를 큐에 저장 (다음 브리핑에서 일괄 코멘트) */
+  queueActionResult(description: string, success: boolean, state: GameState): void {
     this.currentState = state;
-    const userMsg = buildActionCommentMessage(description, success);
-    await this.sendMessage(userMsg, true);
+    this.pendingActions.push({ description, success });
   }
 
   /** 전투 시작 시 조언 */
@@ -260,10 +281,13 @@ export class AdvisorScreen {
   }
 
   /** AI 응답에서 서사 부분만 추출 (---ACTIONS--- 이후 제거) */
-  private extractNarrative(text: string): { narrative: string } {
+  private extractNarrative(text: string): { narrative: string; hasActions: boolean } {
     const match = SEPARATOR_REGEX.exec(text);
-    if (!match) return { narrative: text.trim() };
-    return { narrative: text.slice(0, match.index).trim() };
+    if (match) return { narrative: text.slice(0, match.index).trim(), hasActions: true };
+    // Fallback: **액션**: 또는 인라인 **action|params** 패턴 감지
+    const hasFallback = /\*{0,2}액션\*{0,2}\s*[:：]/.test(text)
+      || /\*\*[a-z_]+\|[^*]+\*\*/.test(text);
+    return { narrative: text.trim(), hasActions: hasFallback };
   }
 
   /** AI 응답에서 추천을 파싱하여 패널 갱신 */
@@ -273,22 +297,30 @@ export class AdvisorScreen {
     const ctx = this.buildRecommendationContext();
     const { recommendations } = parseRecommendations(fullText, ctx);
 
-    // DEBUG: AI 응답 파싱 결과 확인
-    console.log('[advisor] fullText:', fullText);
-    console.log('[advisor] parsed recommendations:', recommendations);
-
     if (recommendations.length > 0) {
       this.recommendations = recommendations;
       this.executedIndices.clear();
       this.renderRecommendPanel();
+    } else if (this.recommendations.length > 0) {
+      // 이전 추천 유지 — 로딩 상태 제거
+      this.renderRecommendPanel();
+    } else {
+      // 추천 없음 — 패널 숨김 (로딩 상태 포함)
+      if (this.recommendPanel) {
+        this.recommendPanel.innerHTML = '';
+        this.recommendPanel.style.display = 'none';
+      }
     }
-    // recommendations가 비어있으면 이전 추천 유지
   }
 
   /** GameState에서 RecommendationContext 생성 */
   private buildRecommendationContext(): RecommendationContext {
     const state = this.currentState!;
     const playerFaction = '유비';
+
+    // 정찰/진군 가능 지역: 모든 도시 ID + 전투장
+    const allLocations = state.cities.map(c => c.id);
+    if (!allLocations.includes('chibi')) allLocations.push('chibi');
 
     return {
       playerCities: state.cities
@@ -300,6 +332,7 @@ export class AdvisorScreen {
       factions: state.factions
         .filter(f => f.id !== playerFaction)
         .map(f => f.id),
+      allLocations,
     };
   }
 
@@ -358,6 +391,8 @@ export class AdvisorScreen {
     this.startThinkingTimer();
     let fullText = '';
 
+    let actionsDetected = false;
+
     await streamChat(messagesToSend, this.currentState, {
       onToken: (token) => {
         fullText += token;
@@ -369,9 +404,15 @@ export class AdvisorScreen {
         }
 
         // 스트리밍 중에는 ---ACTIONS--- 이전까지만 표시
-        const { narrative } = this.extractNarrative(fullText);
+        const { narrative, hasActions } = this.extractNarrative(fullText);
         this.updateBubbleContent(narrative, true);
         this.scrollToBottom();
+
+        // ---ACTIONS--- 감지 → 추천 패널 로딩 표시
+        if (hasActions && !actionsDetected) {
+          actionsDetected = true;
+          this.showRecommendLoading();
+        }
 
         // 300자 초과 시 "충분합니다" 프롬프트 표시 (서사 기준)
         if (!this.longResponsePromptShown && narrative.length > LONG_RESPONSE_THRESHOLD) {
@@ -410,7 +451,7 @@ export class AdvisorScreen {
         this.longResponsePromptShown = false;
         this.updateSendButton();
       },
-    }, this.abortController.signal);
+    }, this.abortController.signal, 'ko', { think: this.thinkMode });
 
     // abort로 종료된 경우 (onComplete 안 불림)
     if (this.isStreaming) {
@@ -419,6 +460,20 @@ export class AdvisorScreen {
   }
 
   // ─── 추천 패널 ──────────────────────────────────────────
+
+  /** 스트리밍 중 ---ACTIONS--- 감지 시 로딩 상태 표시 */
+  private showRecommendLoading(): void {
+    if (!this.recommendPanel) return;
+    this.recommendPanel.innerHTML = '';
+    this.recommendPanel.style.display = '';
+
+    const title = h('div', { className: 'advisor-recommend-title' }, '제갈량의 추천');
+    this.recommendPanel.appendChild(title);
+
+    const loading = h('div', { className: 'advisor-recommend-loading' });
+    loading.innerHTML = '<span class="advisor-thinking-dots"><span></span><span></span><span></span></span> <span>추천 행동 분석 중…</span>';
+    this.recommendPanel.appendChild(loading);
+  }
 
   private renderRecommendPanel(): void {
     if (!this.recommendPanel) return;
@@ -475,9 +530,11 @@ export class AdvisorScreen {
         } else {
           btn.textContent = '실행';
           btn.addEventListener('click', () => {
-            if (rec.action) {
-              this.executedIndices.add(idx);
-              this.executeActionCb?.(rec.action);
+            if (rec.action && this.executeActionCb) {
+              const success = this.executeActionCb(rec.action);
+              if (success) {
+                this.executedIndices.add(idx);
+              }
               this.renderRecommendPanel();
             }
           });

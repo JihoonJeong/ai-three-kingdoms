@@ -13,6 +13,12 @@ import {
   type ModelInfo,
   type PullProgressEvent,
 } from '../services/config-api.js';
+
+/** 추론(thinking) 모델 필터링 — 게임 UX에 부적합 (너무 느림) */
+const THINKING_MODEL_RE = /deep|reason|think|reflect/i;
+function filterUsableModels(models: ModelInfo[]): ModelInfo[] {
+  return models.filter(m => !THINKING_MODEL_RE.test(m.id));
+}
 import type { GameLanguage } from '../../../core/data/types.js';
 
 type Step = 'welcome' | 'select' | 'configure';
@@ -118,10 +124,12 @@ export class SetupScreen {
     try {
       const result = await detectOllama();
       this.ollamaAvailable = result.available;
-      this.ollamaModels = result.models;
+      this.ollamaModels = filterUsableModels(result.models);
+      const excluded = result.models.length - this.ollamaModels.length;
 
-      if (result.available && result.models.length > 0) {
-        statusEl.textContent = `Ollama 감지됨 (${result.models.length}개 모델)`;
+      if (result.available && this.ollamaModels.length > 0) {
+        const suffix = excluded > 0 ? ` (추론 모델 ${excluded}개 제외)` : '';
+        statusEl.textContent = `Ollama 감지됨 (${this.ollamaModels.length}개 모델)${suffix}`;
         statusEl.style.color = 'var(--color-success)';
       } else if (result.available) {
         statusEl.textContent = 'Ollama 실행 중 (설치된 모델 없음)';
@@ -152,8 +160,14 @@ export class SetupScreen {
         }
       });
       actions.appendChild(ollamaBtn);
+
+      // 추가 모델 설치 버튼
+      const addModelBtn = h('button', { className: 'setup-btn setup-btn-secondary' }, '추천 모델 추가 설치');
+      addModelBtn.style.width = '100%';
+      addModelBtn.addEventListener('click', () => this.showModelDownload());
+      actions.appendChild(addModelBtn);
     } else if (this.ollamaAvailable && this.ollamaModels.length === 0) {
-      // Case 2: Ollama 있는데 모델 없음 → 모델 다운로드 안내
+      // Case 2: Ollama 있는데 사용 가능 모델 없음 → 모델 다운로드 안내
       const downloadBtn = h('button', { className: 'setup-btn setup-btn-primary' }, '추천 모델 다운로드');
       downloadBtn.style.width = '100%';
       downloadBtn.addEventListener('click', () => this.showModelDownload());
@@ -246,15 +260,27 @@ export class SetupScreen {
 
     const list = h('div', { className: 'setup-model-list' });
 
+    // 이미 설치된 모델 ID 목록 (thinking 모델 포함, 원본 기준)
+    const installedIds = new Set(this.ollamaModels.map(m => m.id));
+
     for (const model of RECOMMENDED_MODELS_BY_LANG[this.language]) {
-      const card = h('div', { className: 'setup-model-card' });
+      const alreadyInstalled = installedIds.has(model.id);
+      const card = h('div', { className: `setup-model-card${alreadyInstalled ? ' downloaded' : ''}` });
 
       const info = h('div', { className: 'setup-model-info' });
       info.appendChild(h('div', { className: 'setup-model-name' }, `${model.name} (${model.size})`));
       info.appendChild(h('div', { className: 'setup-model-desc' }, model.desc));
       card.appendChild(info);
 
-      const downloadBtn = h('button', { className: 'setup-btn setup-btn-primary setup-download-btn' }, '다운로드');
+      if (alreadyInstalled) {
+        // 이미 설치됨 → 설치 완료 표시
+        const badge = h('div', { className: 'setup-model-installed' }, '설치됨');
+        card.appendChild(badge);
+      }
+
+      const downloadBtn = h('button', { className: 'setup-btn setup-btn-primary setup-download-btn' },
+        alreadyInstalled ? '재설치' : '다운로드');
+      if (alreadyInstalled) downloadBtn.style.display = 'none';
       card.appendChild(downloadBtn);
 
       // 진행률 영역 (초기 숨김)
@@ -328,9 +354,9 @@ export class SetupScreen {
           card.classList.add('downloaded');
           const useBtn = h('button', { className: 'setup-btn setup-btn-primary setup-download-btn' }, '이 모델 사용');
           useBtn.addEventListener('click', async () => {
-            // Ollama 모델 재감지
+            // Ollama 모델 재감지 (추론 모델 제외)
             const detect = await detectOllama();
-            this.ollamaModels = detect.models;
+            this.ollamaModels = filterUsableModels(detect.models);
             const ollamaInfo = this.providers.find(p => p.id === 'ollama');
             if (ollamaInfo) {
               this.selectedProvider = { ...ollamaInfo, defaultModels: this.ollamaModels };

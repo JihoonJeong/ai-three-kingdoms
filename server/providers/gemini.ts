@@ -2,7 +2,7 @@
 // Google Gemini 제공자
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-import type { AIProvider, ProviderConfig, ProviderInfo, TestResult } from './types.js';
+import type { AIProvider, ChatOptions, ProviderConfig, ProviderInfo, TestResult } from './types.js';
 import { sseToken, sseDone, sseError, inferExpression } from './stream-utils.js';
 
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
@@ -52,8 +52,10 @@ export const geminiProvider: AIProvider = {
     systemPrompt: string,
     messages: Array<{ role: string; content: string }>,
     config: ProviderConfig,
+    chatOptions?: ChatOptions,
   ): ReadableStream<Uint8Array> {
     const model = config.model || info.defaultModels[0].id;
+    const useThinking = chatOptions?.think ?? false;
 
     return new ReadableStream({
       async start(controller) {
@@ -67,13 +69,23 @@ export const geminiProvider: AIProvider = {
 
           const url = `${BASE_URL}/models/${model}:streamGenerateContent?alt=sse&key=${config.apiKey}`;
 
+          // Gemini 2.5+ thinking 모드: thinkingBudget 설정
+          const generationConfig: Record<string, unknown> = {
+            maxOutputTokens: useThinking ? 8000 : 1024,
+          };
+          if (useThinking) {
+            generationConfig.thinkingConfig = { thinkingBudget: 4096 };
+          } else {
+            generationConfig.thinkingConfig = { thinkingBudget: 0 };
+          }
+
           const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               systemInstruction: { parts: [{ text: systemPrompt }] },
               contents: geminiContents,
-              generationConfig: { maxOutputTokens: 1024 },
+              generationConfig,
             }),
           });
 

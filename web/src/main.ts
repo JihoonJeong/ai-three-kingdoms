@@ -40,6 +40,14 @@ async function boot(): Promise<void> {
       // 미설정 → 설정 마법사 표시
       aiEnabled = await showSetupWizard();
     }
+
+    // 마법사에서 모델을 변경했을 수 있으므로 최신 설정 반영
+    if (aiEnabled) {
+      try {
+        const updated = await checkConfig();
+        if (updated.model) modelName = updated.model;
+      } catch { /* ignore */ }
+    }
   } catch {
     // 서버 연결 실패 → AI 없이 시작
     aiEnabled = false;
@@ -48,6 +56,9 @@ async function boot(): Promise<void> {
   startGame(aiEnabled, modelName);
 }
 
+/** 추론(thinking) 모델 감지 — 게임에 부적합 (너무 느림) */
+const THINKING_MODEL_RE = /deep|reason|think|reflect/i;
+
 /** 기존 설정 발견 시: 연결 테스트 → 사용 여부 확인 */
 async function confirmExistingConfig(config: {
   provider: string | null;
@@ -55,6 +66,11 @@ async function confirmExistingConfig(config: {
   source: string;
 }): Promise<boolean> {
   if (!config.provider || !config.model) return false;
+
+  // thinking 모델이면 마법사로 안내 (게임에 부적합)
+  if (THINKING_MODEL_RE.test(config.model)) {
+    return showSetupWizard();
+  }
 
   // 연결 테스트
   const test = await testConnection({
@@ -207,18 +223,25 @@ function startGame(aiEnabled: boolean, modelName?: string | null): void {
 
   // ─── Action Execution ──────────────────────────────────
   function executeAction(action: GameAction): void {
-    const result = controller.executeAction(action);
-    showToast(result.description, result.success);
-    logScreen.addEntry(controller.getState().turn, result.description, 'action');
+    try {
+      const result = controller.executeAction(action);
+      console.log('[executeAction]', action.action, result.success, result.description);
+      showToast(result.description, result.success);
+      logScreen.addEntry(controller.getState().turn, result.description, 'action');
 
-    if (result.battleTriggered) {
-      startBattle(result.battleTriggered);
+      if (result.battleTriggered) {
+        startBattle(result.battleTriggered);
+      }
+
+      // 행동 결과를 큐에 저장 (다음 턴 브리핑에서 일괄 코멘트)
+      advisorScreen.queueActionResult(result.description, result.success, controller.getState());
+
+      updateUI();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '알 수 없는 오류';
+      console.error('[executeAction] 오류:', err);
+      showToast(`행동 실행 오류: ${msg}`, false);
     }
-
-    // 책사에게 행동 결과 알림
-    advisorScreen.notifyAction(result.description, result.success, controller.getState());
-
-    updateUI();
   }
 
   // Wire action callbacks
@@ -234,7 +257,9 @@ function startGame(aiEnabled: boolean, modelName?: string | null): void {
 
   // 책사 추천 행동 실행
   advisorScreen.onExecuteAction((action) => {
+    const before = controller.getState().actionsRemaining;
     executeAction(action);
+    return controller.getState().actionsRemaining < before;
   });
 
   // ─── Turn End ──────────────────────────────────────────

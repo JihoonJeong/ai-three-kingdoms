@@ -2,7 +2,7 @@
 // OpenAI 제공자
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-import type { AIProvider, ProviderConfig, ProviderInfo, TestResult } from './types.js';
+import type { AIProvider, ChatOptions, ProviderConfig, ProviderInfo, TestResult } from './types.js';
 import { sseToken, sseDone, sseError, inferExpression } from './stream-utils.js';
 
 const BASE_URL = 'https://api.openai.com/v1';
@@ -54,8 +54,12 @@ export const openaiProvider: AIProvider = {
     systemPrompt: string,
     messages: Array<{ role: string; content: string }>,
     config: ProviderConfig,
+    chatOptions?: ChatOptions,
   ): ReadableStream<Uint8Array> {
     const model = config.model || info.defaultModels[0].id;
+    const useThinking = chatOptions?.think ?? false;
+    // o-시리즈 추론 모델 감지 (o1, o3, o4-mini 등)
+    const isReasoningModel = /^o[134]/.test(model);
 
     return new ReadableStream({
       async start(controller) {
@@ -66,18 +70,27 @@ export const openaiProvider: AIProvider = {
             ...messages,
           ];
 
+          const body: Record<string, unknown> = {
+            model,
+            messages: openaiMessages,
+            stream: true,
+          };
+
+          if (isReasoningModel) {
+            // 추론 모델: reasoning_effort로 강도 조절
+            body.reasoning_effort = useThinking ? 'high' : 'low';
+            body.max_completion_tokens = useThinking ? 8000 : 2048;
+          } else {
+            body.max_tokens = 1024;
+          }
+
           const res = await fetch(`${BASE_URL}/chat/completions`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${config.apiKey}`,
             },
-            body: JSON.stringify({
-              model,
-              messages: openaiMessages,
-              max_tokens: 1024,
-              stream: true,
-            }),
+            body: JSON.stringify(body),
           });
 
           if (!res.ok || !res.body) {

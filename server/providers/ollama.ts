@@ -2,7 +2,7 @@
 // Ollama (로컬) 제공자
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-import type { AIProvider, ModelInfo, ProviderConfig, ProviderInfo, TestResult } from './types.js';
+import type { AIProvider, ChatOptions, ModelInfo, ProviderConfig, ProviderInfo, TestResult } from './types.js';
 import { sseToken, sseDone, sseError, inferExpression, stripThinking, ThinkingFilter } from './stream-utils.js';
 
 const DEFAULT_BASE_URL = 'http://localhost:11434';
@@ -111,9 +111,11 @@ export const ollamaProvider: AIProvider = {
     systemPrompt: string,
     messages: Array<{ role: string; content: string }>,
     config: ProviderConfig,
+    chatOptions?: ChatOptions,
   ): ReadableStream<Uint8Array> {
     const base = baseUrl(config);
     const model = config.model;
+    const useThinking = chatOptions?.think ?? false;
 
     return new ReadableStream({
       async start(controller) {
@@ -132,6 +134,11 @@ export const ollamaProvider: AIProvider = {
               model,
               messages: ollamaMessages,
               stream: true,
+              think: useThinking,
+              options: {
+                num_predict: useThinking ? 4096 : 1024,
+                num_ctx: 4096,
+              },
             }),
           });
 

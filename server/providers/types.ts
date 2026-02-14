@@ -29,6 +29,10 @@ export interface TestResult {
   error?: string;
 }
 
+export interface ChatOptions {
+  think?: boolean;  // thinking 모드 (qwen3 등)
+}
+
 export interface AIProvider {
   readonly info: ProviderInfo;
   testConnection(config: ProviderConfig): Promise<TestResult>;
@@ -36,5 +40,6 @@ export interface AIProvider {
     systemPrompt: string,
     messages: Array<{ role: string; content: string }>,
     config: ProviderConfig,
+    options?: ChatOptions,
   ): ReadableStream<Uint8Array>;
 }

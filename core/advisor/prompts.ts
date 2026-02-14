@@ -33,31 +33,32 @@ const PERSONA = `당신은 제갈량 공명(諸葛亮 孔明)이다. 유비 현�
 4. 게임이 지정한 언어로만 답한다.`;
 
 const ACTION_FORMAT_INSTRUCTION = `
-## 행동 추천 규칙
-모든 응답의 마지막에 반드시 아래 형식으로 추천 행동을 3개 제시하라.
-서사적 조언 텍스트를 먼저 쓰고, 반드시 아래 구분자와 형식을 따르라.
+## 행동 추천 규칙 (반드시 준수)
+
+**중요**: 응답은 반드시 두 부분으로 구성하라:
+1. 전략 분석과 조언 (3~5문장으로 현재 판세, 위협, 기회를 설명)
+2. ---ACTIONS--- 구분자 뒤에 추천 행동 3개
+
+**반드시 아래 예시와 동일한 형식을 사용하라.**
+
+<예시>
+주공, 지금 판세가 심상치 않소이다. 조조가 대군을 이끌고 남하하니, 적벽에서의 결전이 머지않았소. 하구의 식량이 부족하여 장기전을 버티기 어려우니, 먼저 내정을 다지는 것이 급선무요. 손권과의 동맹을 더욱 공고히 하여 조조에 맞설 연합전선을 구축해야 하오. 이번 턴에는 내정과 외교에 힘을 쏟으시길 권하오.
 
 ---ACTIONS---
-1. [액션|파라미터...] 확신도% 한줄 설명
-2. [액션|파라미터...] 확신도% 한줄 설명
-3. [액션|파라미터...] 확신도% 한줄 설명
+1. [develop|hagu|agriculture] 85% 하구 농업 개발
+2. [train|gangha] 75% 강하 병사 훈련
+3. [send_envoy|손권] 90% 손권에게 사신 파견
+</예시>
 
-확신도는 0~100 사이 정수이다. 대화를 통해 전략이 바뀌면 확신도도 바뀔 수 있다.
+**절대 지켜야 할 규칙:**
+- ---ACTIONS--- 구분자를 반드시 포함하라
+- 각 줄: 번호. [액션|파라미터] 퍼센트% 설명
+- 대괄호 [] 안에 액션과 파라미터를 넣어라
+- 파라미터는 ID 참조표의 ID만 사용하라
+- 서사 텍스트에 액션을 섞지 말라
 
-사용 가능한 액션 (파라미터는 ID 참조표의 ID를 사용):
-- conscript|도시ID|small/medium/large — 징병
-- develop|도시ID|agriculture/commerce/defense — 개발
-- train|도시ID — 훈련
-- recruit|도시ID|장수ID — 등용
-- assign|장수ID|도시ID — 장수 배치
-- send_envoy|세력명 — 사신 파견
-- gift|세력명 — 선물
-- threaten|세력명 — 위협
-- scout|지역ID — 정찰
-- fortify|도시ID — 방어 강화
-- march|출발도시ID|도착지ID|small/medium/main — 진군
-- ambush|지역ID|장수ID — 매복
-- pass — 행동 안 함 (이번 턴은 지켜보자)`;
+사용 가능한 액션:
+conscript|도시ID|small/medium/large, develop|도시ID|agriculture/commerce/defense, train|도시ID, recruit|도시ID|장수ID, assign|장수ID|도시ID, send_envoy|세력명, gift|세력명, threaten|세력명, scout|지역ID, fortify|도시ID, march|출발도시ID|도착지ID|small/medium/main, ambush|지역ID|장수ID, pass`;
 
 function formatCityView(city: AdvisorView['ourCities'][0]): string {
   const gens = city.stationedGenerals.map(g => `${g.name}(${g.role})`).join(', ');
@@ -183,19 +184,38 @@ export function buildActionReference(
     .filter(f => f.id !== playerFaction)
     .map(f => f.id);
 
+  // 정찰/진군 가능 지역: 모든 도시 + 전투장
+  const allLocations = state.cities.map(c => `${c.id}=${c.name}`).join(', ');
+
   return `\n## 행동 ID 참조표
 아군 도시: ${cityList}
 아군 장수: ${generalList}
 외교 대상: ${otherFactions.join(', ')}
-전투장: chibi=적벽`;
+정찰/진군 가능 지역: ${allLocations}, chibi=적벽
+**주의**: scout|지역ID (장수ID 아님!), march|출발도시ID|도착지ID|규모`;
 }
 
 /**
  * 턴 시작 시 자동 브리핑 요청 메시지
+ * @param prevActions 지난 턴에 실행한 행동 목록 (설명 + 성공 여부)
  */
-export function buildBriefingUserMessage(turn: number, language: GameLanguage = 'ko'): string {
+export function buildBriefingUserMessage(
+  turn: number,
+  language: GameLanguage = 'ko',
+  prevActions?: Array<{ description: string; success: boolean }>,
+): string {
   const langName = LANGUAGE_NAMES[language];
-  return `주공이 턴 ${turn}을 시작합니다. 현재 상황을 분석하고 이번 턴에 무엇을 해야 할지 조언해 주시오. (${langName}(으)로 답하시오)`;
+  let msg = '';
+
+  if (prevActions && prevActions.length > 0) {
+    const actionList = prevActions
+      .map(a => `- ${a.description} (${a.success ? '성공' : '실패'})`)
+      .join('\n');
+    msg += `[지난 턴 행동 결과]\n${actionList}\n\n`;
+  }
+
+  msg += `주공이 턴 ${turn}을 시작합니다. 현재 상황을 분석하고 이번 턴에 무엇을 해야 할지 조언해 주시오. (${langName}(으)로 답하시오)`;
+  return msg;
 }
 
 /**

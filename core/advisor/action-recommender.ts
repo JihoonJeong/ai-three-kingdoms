@@ -19,6 +19,7 @@ export interface RecommendationContext {
   playerCities: Array<{ id: string; name: string }>;
   playerGenerals: Array<{ id: string; name: string; location: string }>;
   factions: string[];  // 외교 대상 세력
+  allLocations?: string[];  // 정찰/진군 가능 지역 ID (도시 + 전투장)
 }
 
 export interface ParseResult {
@@ -83,7 +84,14 @@ export function parseRecommendations(
   const sepMatch = SEPARATOR_REGEX.exec(text);
 
   if (!sepMatch) {
-    return { narrative: text.trim(), recommendations: [] };
+    // Fallback 1: **액션**: 형태
+    const fallbackRecs = parseFallbackFormat(text, context);
+    if (fallbackRecs.length > 0) {
+      return { narrative: text.trim(), recommendations: fallbackRecs };
+    }
+    // Fallback 2: 서사에 **action|params** 인라인 임베딩
+    const inlineRecs = parseInlineFormat(text, context);
+    return { narrative: text.trim(), recommendations: inlineRecs };
   }
 
   const narrative = text.slice(0, sepMatch.index).trim();
@@ -239,7 +247,7 @@ function parseAction(
     }
 
     case 'scout': {
-      const target = parts[1]?.trim();
+      const target = resolveLocation(parts[1], ctx);
       if (!target) return undefined;
       return { type: 'military', action: 'scout', params: { target } };
     }
@@ -275,6 +283,24 @@ function resolveCity(input: string | undefined, ctx: RecommendationContext): str
   return byName?.id;
 }
 
+/** 지역 ID 또는 이름 → 지역 ID (도시 + 전투장) */
+function resolveLocation(input: string | undefined, ctx: RecommendationContext): string | undefined {
+  if (!input) return undefined;
+  const s = input.trim();
+  // allLocations 목록이 있으면 직접 매칭
+  if (ctx.allLocations && ctx.allLocations.includes(s)) return s;
+  // 도시 ID/이름으로 매칭
+  const city = resolveCity(s, ctx);
+  if (city) return city;
+  // 알려진 전투장 ID
+  const knownBattlefields = ['chibi'];
+  if (knownBattlefields.includes(s)) return s;
+  // allLocations에 있는 경우 (이름 매칭은 도시만 지원)
+  if (ctx.allLocations) return undefined;
+  // allLocations 미제공 시 fallback: 그대로 반환하지 않고 거부
+  return undefined;
+}
+
 /** 장수 ID 또는 이름 → 장수 ID */
 function resolveGeneral(input: string | undefined, ctx: RecommendationContext): string | undefined {
   if (!input) return undefined;
@@ -290,4 +316,141 @@ function resolveFaction(input: string | undefined, ctx: RecommendationContext): 
   const s = input.trim();
   if (ctx.factions.includes(s)) return s as FactionId;
   return undefined;
+}
+
+// ─── 폴백 파서 (구분자 없는 포맷) ─────────────────────────
+
+/**
+ * SLM이 ---ACTIONS--- 구분자 없이 자체 포맷으로 출력할 때.
+ * "액션" 키워드가 있는 줄에서 N%를 앵커로 action + confidence 추출.
+ *
+ * 지원 포맷:
+ *  - **액션**: develop|hagu|commerce (확신도: 85%)
+ *  - **액션**: develop|hagu|commerce, 확신도 85%
+ *  - 액션: develop|hagu|commerce 85%
+ *  - **액션**: develop|hagu|commerce (85%)
+ */
+const FALLBACK_ACTION_LINE_RE = /\*{0,2}액션\*{0,2}\s*[:：]/;
+const FALLBACK_TITLE_RE = /^\d+\.\s*\*{0,2}(.+?)\*{0,2}\s*[:：]?\s*$/;
+const FALLBACK_DESC_RE = /\*{0,2}설명\*{0,2}\s*[:：]\s*(.+)/;
+
+function parseFallbackFormat(
+  text: string,
+  context: RecommendationContext,
+): ActionRecommendation[] {
+  const recommendations: ActionRecommendation[] = [];
+  const lines = text.split('\n').map(l => l.trim());
+
+  for (let i = 0; i < lines.length && recommendations.length < 3; i++) {
+    if (!FALLBACK_ACTION_LINE_RE.test(lines[i])) continue;
+
+    // **액션**: 접두어 제거
+    const content = lines[i].replace(/^.*?\*{0,2}액션\*{0,2}\s*[:：]\s*/, '');
+
+    // N% 앵커 찾기
+    const confMatch = /(\d+)\s*%/.exec(content);
+    if (!confMatch) continue;
+
+    const confidence = Math.max(0, Math.min(100, parseInt(confMatch[1], 10)));
+
+    // N% 앞 = 액션 (확신도, 괄호, 구분자 제거)
+    let actionStr = content.slice(0, confMatch.index).trim()
+      .replace(/[\(（]\s*확신도\s*[:：]?\s*$/, '')
+      .replace(/\s*확신도\s*[:：]?\s*$/, '')
+      .replace(/[\(（\)）]/g, '')
+      .replace(/\s*[-–—|:：,，]+\s*$/, '')
+      .trim();
+
+    if (!actionStr) continue;
+
+    // 위로 탐색: 번호 제목 (예: "1. **하구의 개발 강화**:")
+    let description = '';
+    for (let j = i - 1; j >= Math.max(0, i - 3); j--) {
+      const titleMatch = FALLBACK_TITLE_RE.exec(lines[j]);
+      if (titleMatch) {
+        description = titleMatch[1].trim();
+        break;
+      }
+    }
+
+    // 제목 없으면 아래로 탐색: **설명**: 라인
+    if (!description) {
+      for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
+        const descMatch = FALLBACK_DESC_RE.exec(lines[j]);
+        if (descMatch) {
+          description = descMatch[1].trim();
+          if (description.length > 40) description = description.slice(0, 37) + '…';
+          break;
+        }
+      }
+    }
+
+    if (!description) description = actionStr;
+
+    const action = parseAction(actionStr, context);
+    if (action === undefined) continue;
+
+    recommendations.push({ action, confidence, description });
+  }
+
+  return recommendations;
+}
+
+// ─── 인라인 파서 (서사에 임베딩된 포맷) ─────────────────────
+
+/**
+ * SLM이 서사 텍스트에 액션을 인라인으로 임베딩할 때:
+ *   1. **제목**: ... **scout|chibi**으로 ... (**확신도: 85%**)
+ *   2. **제목**: ... **develop|hagu|agriculture**으로 ... (확신도: 75%)
+ */
+const INLINE_ACTION_RE = /\*\*([a-z_]+\|[^*]+)\*\*/;
+const INLINE_CONF_RE = /[\(（]\*{0,2}확신도\s*[:：]?\s*(\d+)\s*%\*{0,2}[\)）]/;
+const INLINE_CONF_SIMPLE_RE = /[\(（]\*{0,2}(\d+)\s*%\*{0,2}[\)）]/;
+const INLINE_TITLE_RE = /^\d+\.\s*\*{0,2}(.+?)\*{0,2}\s*[:：]/;
+
+function parseInlineFormat(
+  text: string,
+  context: RecommendationContext,
+): ActionRecommendation[] {
+  const recommendations: ActionRecommendation[] = [];
+  const lines = text.split('\n').map(l => l.trim());
+
+  for (let i = 0; i < lines.length && recommendations.length < 3; i++) {
+    const line = lines[i];
+
+    // **action_type|params** 패턴 찾기
+    const actionMatch = INLINE_ACTION_RE.exec(line);
+    if (!actionMatch) continue;
+
+    const actionStr = actionMatch[1].trim();
+    // action_type이 유효한 액션인지 확인
+    const actionType = actionStr.split('|')[0];
+    const validTypes = [
+      'conscript', 'develop', 'train', 'recruit', 'assign',
+      'send_envoy', 'gift', 'threaten', 'scout', 'fortify',
+      'march', 'ambush', 'pass',
+    ];
+    if (!validTypes.includes(actionType)) continue;
+
+    // confidence 찾기: (**확신도: N%**) 또는 (**N%**)
+    const confMatch = INLINE_CONF_RE.exec(line) || INLINE_CONF_SIMPLE_RE.exec(line);
+    if (!confMatch) continue;
+
+    const confidence = Math.max(0, Math.min(100, parseInt(confMatch[1], 10)));
+
+    // 제목 추출: "1. **제목**:" 패턴
+    let description = '';
+    const titleMatch = INLINE_TITLE_RE.exec(line);
+    if (titleMatch) {
+      description = titleMatch[1].trim();
+    }
+    if (!description) description = actionStr;
+
+    const action = parseAction(actionStr, context);
+    if (action === undefined) continue;
+
+    recommendations.push({ action, confidence, description });
+  }
+
+  return recommendations;
 }

@@ -10,19 +10,24 @@ export async function checkHealth(): Promise<{ hasApiKey: boolean }> {
   return res.json();
 }
 
+export interface StreamChatOptions {
+  think?: boolean;
+}
+
 export async function streamChat(
   messages: ChatMessage[],
   gameState: GameState,
   callbacks: ChatStreamCallbacks,
   signal?: AbortSignal,
   language: GameLanguage = 'ko',
+  options?: StreamChatOptions,
 ): Promise<void> {
   let response: Response;
   try {
     response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, gameState, language }),
+      body: JSON.stringify({ messages, gameState, language, think: options?.think }),
       signal,
     });
   } catch (err) {

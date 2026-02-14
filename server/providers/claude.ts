@@ -3,7 +3,7 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 import Anthropic from '@anthropic-ai/sdk';
-import type { AIProvider, ProviderConfig, ProviderInfo, TestResult } from './types.js';
+import type { AIProvider, ChatOptions, ProviderConfig, ProviderInfo, TestResult } from './types.js';
 import { sseToken, sseDone, sseError, inferExpression } from './stream-utils.js';
 
 const info: ProviderInfo = {
@@ -44,23 +44,32 @@ export const claudeProvider: AIProvider = {
     systemPrompt: string,
     messages: Array<{ role: string; content: string }>,
     config: ProviderConfig,
+    chatOptions?: ChatOptions,
   ): ReadableStream<Uint8Array> {
     const client = createClient(config);
     const model = config.model || info.defaultModels[0].id;
+    const useThinking = chatOptions?.think ?? false;
 
     return new ReadableStream({
       async start(controller) {
         let fullText = '';
         try {
-          const stream = client.messages.stream({
+          // extended thinking 활성화 시 budget + max_tokens 조정
+          const params: Record<string, unknown> = {
             model,
-            max_tokens: 1024,
+            max_tokens: useThinking ? 16000 : 1024,
             system: systemPrompt,
             messages: messages.map(m => ({
               role: m.role as 'user' | 'assistant',
               content: m.content,
             })),
-          });
+          };
+
+          if (useThinking) {
+            params.thinking = { type: 'enabled', budget_tokens: 8000 };
+          }
+
+          const stream = client.messages.stream(params as Parameters<typeof client.messages.stream>[0]);
 
           for await (const event of stream) {
             if (event.type === 'content_block_delta' &&
@@ -69,6 +78,7 @@ export const claudeProvider: AIProvider = {
               fullText += token;
               controller.enqueue(sseToken(token));
             }
+            // thinking 블록은 클라이언트에 전달하지 않음 (내부 사고)
           }
 
           controller.enqueue(sseDone(fullText, inferExpression(fullText)));

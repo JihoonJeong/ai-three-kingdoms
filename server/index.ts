@@ -198,6 +198,7 @@ app.post('/api/chat', async (c) => {
     messages: ChatMessage[];
     gameState: GameState;
     language?: GameLanguage;
+    think?: boolean;
   }>();
 
   // State filter: GameState → AdvisorView
@@ -210,6 +211,7 @@ app.post('/api/chat', async (c) => {
     systemPrompt,
     body.messages.map(m => ({ role: m.role, content: m.content })),
     config,
+    { think: body.think ?? false },
   );
 
   return new Response(stream, {

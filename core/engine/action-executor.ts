@@ -100,17 +100,16 @@ export class ActionExecutor {
         };
     }
 
-    if (result.success) {
-      const remaining = this.stateManager.useAction();
-      result.remainingActions = remaining;
+    // 성공/실패 관계없이 행동 1회 소모
+    const remaining = this.stateManager.useAction();
+    result.remainingActions = remaining;
 
-      // 행동 로그 기록
-      this.stateManager.addActionLog({
-        turn: state.turn,
-        action,
-        result,
-      });
-    }
+    // 행동 로그 기록
+    this.stateManager.addActionLog({
+      turn: state.turn,
+      action,
+      result,
+    });
 
     return result;
   }
