@@ -86,11 +86,16 @@ export class CutsceneScreen {
   }
 
   private advance(): void {
+    const wasTyping = this.cutscene.getState()?.isTyping ?? false;
     const hasNext = this.cutscene.advance();
-    if (hasNext) {
-      this.renderCurrentStep();
-    } else {
+    if (!hasNext) {
       this.finish();
+    } else if (wasTyping && this.textEl) {
+      // 타이핑 중 클릭 → 텍스트 즉시 완성 (재렌더 없음)
+      this.textEl.textContent = this.cutscene.getCurrentText();
+    } else {
+      // 다음 스텝으로 진행
+      this.renderCurrentStep();
     }
   }
 
