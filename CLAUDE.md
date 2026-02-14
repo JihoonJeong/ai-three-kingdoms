@@ -6,7 +6,7 @@ AI 책사(제갈량)와 함께하는 턴제 전략 게임. Claude API를 연동�
 
 ```bash
 npm install
-npm test          # vitest — 186 tests
+npm test          # vitest — 200 tests
 npm run dev       # vite + hono 동시 기동 (concurrently)
 npm run dev:web   # vite만 (프론트엔드)
 npm run dev:server # hono만 (API 서버, port 3001)
@@ -79,6 +79,14 @@ docs/               ← 설계 문서
   - 언어 강제 시스템 (GameLanguage: ko/en/zh/ja, 시스템 프롬프트 3중 강제)
   - 응답 대기 중 경과 시간 표시 ("공명이 생각 중입니다… (N초)")
   - 모델명 배지 (제갈량 초상 아래 현재 AI 모델 표시)
+- [x] Thinking 모드 토글 + 모델 관리 개선
+  - ⚡/🧠 토글: 빠른 응답(기본) / 신중한 답변 전환 (입력창 좌측)
+  - 4개 제공자 모두 지원 (Ollama: think, Claude: extended thinking, OpenAI: reasoning_effort, Gemini: thinkingBudget)
+  - 추론 모델 자동 필터링 (deep/reason/think/reflect → 설정 마법사에서 제외)
+  - 추천 모델 추가 설치 버튼 + 설치 상태 표시
+  - scout 파서 지역 ID 검증 (장수명 등 잘못된 파라미터 거부)
+  - 실패 행동도 턴 행동 횟수 소모
+  - 행동 결과 일괄 코멘트 (다음 턴 브리핑에 포함)
 
 ## 아키텍처 핵심
 
@@ -99,11 +107,18 @@ Claude에게 정확한 숫자를 주지 않는다. 범주형으로 변환:
 
 ### 행동 추천 흐름
 ```
-턴 시작 → 책사 브리핑 (서사 + ---ACTIONS--- 블록)
+턴 시작 → 책사 브리핑 (서사 3~5문장 + ---ACTIONS--- 블록)
   → parseRecommendations() → 추천 패널 3개 카드 표시
   → 채팅 토론 → 추천/confidence 갱신
-  → 원클릭 실행 or 직접 행동 → 턴 종료
+  → 원클릭 실행 or 직접 행동 (실패해도 행동 소모)
+  → 턴 종료 → 다음 브리핑에 행동 결과 일괄 포함
 ```
+
+### Thinking 모드
+- ⚡ 빠른 응답 (기본): thinking 비활성화, 즉시 답변
+- 🧠 신중한 답변: thinking 활성화, 내부 사고 후 답변 (약 2배 소요)
+- Ollama: `think` 파라미터, Claude: extended thinking, OpenAI: `reasoning_effort`, Gemini: `thinkingBudget`
+- 추론 전용 모델 (exaone-deep 등)은 설정 마법사에서 자동 제외
 
 ### 서버 아키텍처
 ```
@@ -112,6 +127,7 @@ Browser (Vite:5173)  →  /api proxy  →  Server (Hono:3001)  →  AI Provider
                      ←── SSE stream ──←  text_delta ────────←  streaming
 ```
 제공자: Claude (Anthropic), OpenAI, Gemini, Ollama (로컬). `server/providers/` 레지스트리 패턴.
+ChatOptions: `{ think?: boolean }` → 각 제공자가 자체 방식으로 thinking 처리.
 
 ## 코드 스타일
 
