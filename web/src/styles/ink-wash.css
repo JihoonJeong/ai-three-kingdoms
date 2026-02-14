@@ -1,0 +1,67 @@
+/* ─── Ink Wash Decorative Effects ────────────────────── */
+
+.ink-divider {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-ink) 20%, var(--color-ink) 80%, transparent);
+  opacity: 0.3;
+  margin: var(--space-md) 0;
+}
+
+.hanji-bg {
+  background-color: var(--color-hanji);
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(200, 185, 160, 0.3) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 50%, rgba(200, 185, 160, 0.2) 0%, transparent 50%);
+}
+
+/* ─── Faction Left Border ───────────────────────────── */
+.faction-liu { border-left: 3px solid var(--color-liu); }
+.faction-cao { border-left: 3px solid var(--color-cao); }
+.faction-sun { border-left: 3px solid var(--color-sun); }
+
+/* ─── Heading with Brush Underline ──────────────────── */
+.heading-brush {
+  position: relative;
+  display: inline-block;
+  padding: var(--space-xs) var(--space-md);
+}
+
+.heading-brush::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  height: 3px;
+  background: var(--color-cinnabar);
+  opacity: 0.6;
+}
+
+/* ─── Seal Stamp ────────────────────────────────────── */
+.seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--color-cinnabar);
+  color: var(--color-cinnabar);
+  font-size: 14px;
+  font-weight: 900;
+  transform: rotate(-5deg);
+}
+
+/* ─── Animations ────────────────────────────────────── */
+.fade-in { animation: fadeIn var(--transition-normal) forwards; }
+.fade-out { animation: fadeOut var(--transition-normal) forwards; }
+.slide-up { animation: slideUp var(--transition-normal) forwards; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideDown {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}

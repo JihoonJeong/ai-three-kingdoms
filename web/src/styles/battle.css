@@ -1,0 +1,219 @@
+/* ─── Battle Screen ─────────────────────────────────── */
+.battle-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.battle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md) var(--space-lg);
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--color-hanji);
+  flex-shrink: 0;
+}
+
+.battle-title { font-size: 20px; font-weight: 700; color: var(--color-gold); }
+
+.battle-info {
+  display: flex;
+  gap: var(--space-lg);
+  font-size: 13px;
+  font-family: var(--font-data);
+}
+
+/* ─── Battle Main Area ──────────────────────────────── */
+.battle-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  align-items: center;
+}
+
+.battle-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.battle-side-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-gold);
+  width: 100%;
+  text-align: center;
+}
+
+.battle-portraits {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.battle-portrait {
+  width: 100px;
+  height: 100px;
+  border: 2px solid var(--color-gold);
+  overflow: hidden;
+}
+
+.battle-portrait img { width: 100%; height: 100%; object-fit: cover; }
+
+.battle-stats { width: 100%; }
+
+.battle-stat-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+  font-size: 12px;
+  color: var(--color-hanji);
+}
+
+.battle-stat-label { width: 40px; text-align: right; flex-shrink: 0; }
+.battle-stat-bar { flex: 1; }
+
+.battle-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  position: relative;
+  min-width: 120px;
+}
+
+.battle-vs {
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--color-cinnabar);
+  text-shadow: 0 0 20px rgba(139, 0, 0, 0.5);
+}
+
+.battle-weather {
+  font-size: 12px;
+  color: var(--color-hanji);
+  text-align: center;
+  opacity: 0.8;
+}
+
+/* ─── Tactic Cards ──────────────────────────────────── */
+.tactic-cards {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.tactic-card {
+  width: 100px;
+  min-width: 100px;
+  background: rgba(245, 240, 232, 0.9);
+  border: 2px solid var(--color-charcoal);
+  padding: var(--space-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  text-align: center;
+}
+
+.tactic-card:hover { border-color: var(--color-gold); transform: translateY(-4px); }
+.tactic-card.selected { border-color: var(--color-gold); box-shadow: 0 0 12px rgba(212, 160, 23, 0.4); }
+
+.tactic-card-img {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto var(--space-xs);
+  overflow: hidden;
+}
+
+.tactic-card-img img { width: 100%; height: 100%; object-fit: contain; }
+
+.tactic-card-name { font-size: 13px; font-weight: 700; color: var(--color-ink); }
+.tactic-card-desc { font-size: 10px; color: var(--color-charcoal); margin-top: 2px; }
+.tactic-card-risk { font-size: 10px; margin-top: 2px; }
+.tactic-card-risk.low { color: var(--color-success); }
+.tactic-card-risk.mid { color: var(--color-warn); }
+.tactic-card-risk.high { color: var(--color-fail); }
+
+/* ─── Battle Footer ─────────────────────────────────── */
+.battle-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) var(--space-lg);
+  background: rgba(0, 0, 0, 0.8);
+  flex-shrink: 0;
+}
+
+.battle-log {
+  flex: 1;
+  max-height: 60px;
+  overflow-y: auto;
+  font-size: 12px;
+  color: var(--color-hanji);
+  opacity: 0.8;
+  margin-right: var(--space-md);
+}
+
+.battle-log-entry { padding: 1px 0; }
+
+/* ─── Battle Effects ────────────────────────────────── */
+.fx-fire {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: url('/battle/fx-fire.webp') center/cover;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 500ms;
+  mix-blend-mode: screen;
+}
+
+.fx-fire.active { opacity: 0.7; animation: fire-flicker 200ms ease-in-out infinite alternate; }
+
+@keyframes fire-flicker { from { opacity: 0.5; } to { opacity: 0.8; } }
+
+.shake { animation: shake 400ms ease-in-out; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* ─── Battle Result Overlay ─────────────────────────── */
+.battle-result {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 10;
+}
+
+.battle-result-text {
+  font-size: 48px;
+  font-weight: 900;
+  text-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+}
+
+.battle-result-win { color: var(--color-gold); }
+.battle-result-lose { color: var(--color-cinnabar); }
