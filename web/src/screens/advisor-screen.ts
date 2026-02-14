@@ -167,6 +167,12 @@ export class AdvisorScreen {
     // 기존 메시지 복원
     this.restoreMessages();
 
+    // 스트리밍 중이면 현재 버블을 새 DOM에 재배치
+    if (this.isStreaming && this.currentBubble && this.messagesEl) {
+      this.messagesEl.appendChild(this.currentBubble);
+      this.scrollToBottom();
+    }
+
     // 추천 패널 복원
     if (this.recommendations.length > 0) {
       this.renderRecommendPanel();
