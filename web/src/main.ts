@@ -28,9 +28,11 @@ const playerFaction = '유비';
 
 async function boot(): Promise<void> {
   let aiEnabled = false;
+  let modelName: string | null = null;
 
   try {
     const config = await checkConfig();
+    modelName = config.model;
     if (config.configured) {
       // 기존 설정 발견 → 연결 테스트 후 확인
       aiEnabled = await confirmExistingConfig(config);
@@ -43,7 +45,7 @@ async function boot(): Promise<void> {
     aiEnabled = false;
   }
 
-  startGame(aiEnabled);
+  startGame(aiEnabled, modelName);
 }
 
 /** 기존 설정 발견 시: 연결 테스트 → 사용 여부 확인 */
@@ -150,7 +152,7 @@ function showSetupWizard(): Promise<boolean> {
   });
 }
 
-function startGame(aiEnabled: boolean): void {
+function startGame(aiEnabled: boolean, modelName?: string | null): void {
   // 앱 영역 초기화 (마법사 제거 후)
   app.innerHTML = '';
 
@@ -168,6 +170,7 @@ function startGame(aiEnabled: boolean): void {
   const advisorScreen = new AdvisorScreen();
 
   advisorScreen.setAiEnabled(aiEnabled);
+  if (modelName) advisorScreen.setModelName(modelName);
 
   const turnSummary = new TurnSummary();
 

@@ -65,6 +65,29 @@
   object-fit: cover;
 }
 
+.advisor-portrait-wrap {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.advisor-model-badge {
+  font-size: 9px;
+  font-family: var(--font-data);
+  color: var(--color-charcoal);
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 5px;
+  border-radius: 4px;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  line-height: 1.3;
+}
+
 .advisor-portrait-fallback {
   width: 100%;
   height: 100%;

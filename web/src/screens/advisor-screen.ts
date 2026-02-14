@@ -5,6 +5,7 @@
 import { h, assetUrl } from '../renderer.js';
 import { getCharacterAssetPath } from '../../../core/ui/types.js';
 import { streamChat, checkHealth } from '../services/advisor-api.js';
+import { checkConfig } from '../services/config-api.js';
 import {
   buildBriefingUserMessage,
   buildActionCommentMessage,
@@ -40,17 +41,26 @@ export class AdvisorScreen {
   private currentExpression: AdvisorExpression = 'default';
   private serverAvailable: boolean | null = null;
   private aiEnabled = true;
+  private modelName: string | null = null;
   private settingsClickCb: (() => void) | null = null;
   private executeActionCb: ((action: GameAction) => void) | null = null;
 
   private abortController: AbortController | null = null;
   private longResponsePromptShown = false;
+  private thinkingTimer: ReturnType<typeof setInterval> | null = null;
+  private thinkingStartTime = 0;
+  private hasReceivedVisibleToken = false;
   private recommendations: ActionRecommendation[] = [];
   private executedIndices: Set<number> = new Set();
 
   /** AI 활성화 상태 설정 */
   setAiEnabled(enabled: boolean): void {
     this.aiEnabled = enabled;
+  }
+
+  /** 모델명 설정 */
+  setModelName(name: string): void {
+    this.modelName = name;
   }
 
   /** 설정 버튼 클릭 콜백 */
@@ -68,6 +78,7 @@ export class AdvisorScreen {
     this.chatHistory = [];
     this.displayMessages = [];
     this.serverAvailable = null;
+    this.modelName = null;
     this.container = null;
     this.messagesEl = null;
     this.recommendPanel = null;
@@ -214,6 +225,7 @@ export class AdvisorScreen {
 
   /** 중단 후 현재까지 받은 텍스트로 마무리 */
   private finalizeCurrentResponse(fullText: string): void {
+    this.stopThinkingTimer();
     if (fullText.trim()) {
       const { narrative } = this.extractNarrative(fullText);
       this.updateBubbleContent(narrative, false);
@@ -286,6 +298,13 @@ export class AdvisorScreen {
     try {
       const health = await checkHealth();
       this.serverAvailable = true;
+
+      // 모델명 가져오기
+      try {
+        const config = await checkConfig();
+        this.modelName = config.model;
+      } catch { /* ignore */ }
+
       if (!health.hasApiKey) {
         this.addSystemMessage('⚠ AI 제공자 미설정 — ⚙ 버튼을 눌러 설정하세요');
       } else {
@@ -321,16 +340,25 @@ export class AdvisorScreen {
 
     this.isStreaming = true;
     this.longResponsePromptShown = false;
+    this.hasReceivedVisibleToken = false;
     this.abortController = new AbortController();
     this.updateSendButton();
 
     // 스트리밍 응답 시작
     this.currentBubble = this.createAssistantBubble();
+    this.startThinkingTimer();
     let fullText = '';
 
     await streamChat(messagesToSend, this.currentState, {
       onToken: (token) => {
         fullText += token;
+
+        // 첫 visible 토큰 수신 → thinking 타이머 종료
+        if (!this.hasReceivedVisibleToken) {
+          this.hasReceivedVisibleToken = true;
+          this.stopThinkingTimer();
+        }
+
         // 스트리밍 중에는 ---ACTIONS--- 이전까지만 표시
         const { narrative } = this.extractNarrative(fullText);
         this.updateBubbleContent(narrative, true);
@@ -343,6 +371,7 @@ export class AdvisorScreen {
         }
       },
       onComplete: (text, expression) => {
+        this.stopThinkingTimer();
         fullText = text;
         this.currentExpression = expression;
         const { narrative } = this.extractNarrative(fullText);
@@ -362,6 +391,7 @@ export class AdvisorScreen {
         this.processRecommendations(fullText);
       },
       onError: (error) => {
+        this.stopThinkingTimer();
         this.removeBubble();
         this.removeLongResponsePrompt();
         this.addErrorMessage(error);
@@ -459,6 +489,33 @@ export class AdvisorScreen {
     this.renderRecommendPanel();
   }
 
+  // ─── Thinking 타이머 ─────────────────────────────────
+
+  private startThinkingTimer(): void {
+    this.thinkingStartTime = Date.now();
+    this.thinkingTimer = setInterval(() => {
+      if (!this.currentBubble || this.hasReceivedVisibleToken) {
+        this.stopThinkingTimer();
+        return;
+      }
+      const elapsed = Math.floor((Date.now() - this.thinkingStartTime) / 1000);
+      const thinkingEl = this.currentBubble.querySelector('.advisor-thinking-inline');
+      if (thinkingEl) {
+        const textEl = thinkingEl.querySelector('.advisor-thinking-text');
+        if (textEl) {
+          textEl.textContent = `공명이 생각 중입니다… (${elapsed}초)`;
+        }
+      }
+    }, 1000);
+  }
+
+  private stopThinkingTimer(): void {
+    if (this.thinkingTimer) {
+      clearInterval(this.thinkingTimer);
+      this.thinkingTimer = null;
+    }
+  }
+
   // ─── 긴 응답 프롬프트 ─────────────────────────────────
 
   private showLongResponsePrompt(): void {
@@ -518,7 +575,8 @@ export class AdvisorScreen {
 
     const wrapper = h('div', { className: 'advisor-msg-assistant' });
 
-    // Portrait
+    // Portrait + 모델 배지
+    const portraitWrap = h('div', { className: 'advisor-portrait-wrap' });
     const portrait = h('div', { className: 'advisor-portrait' });
     const img = h('img') as HTMLImageElement;
     img.src = assetUrl(getCharacterAssetPath('zhugeliang', 'thinking'));
@@ -528,7 +586,12 @@ export class AdvisorScreen {
       portrait.appendChild(h('div', { className: 'advisor-portrait-fallback' }, '亮'));
     };
     portrait.appendChild(img);
-    wrapper.appendChild(portrait);
+    portraitWrap.appendChild(portrait);
+    if (this.modelName) {
+      const badge = h('div', { className: 'advisor-model-badge' }, this.modelName);
+      portraitWrap.appendChild(badge);
+    }
+    wrapper.appendChild(portraitWrap);
 
     // Bubble — 첫 토큰 전까지 "생각 중" 표시
     const bubble = h('div', { className: 'advisor-bubble' });
@@ -606,6 +669,7 @@ export class AdvisorScreen {
         );
       } else {
         const wrapper = h('div', { className: 'advisor-msg-assistant' });
+        const portraitWrap = h('div', { className: 'advisor-portrait-wrap' });
         const portrait = h('div', { className: 'advisor-portrait' });
         const img = h('img') as HTMLImageElement;
         img.src = assetUrl(getCharacterAssetPath('zhugeliang', this.currentExpression));
@@ -615,7 +679,11 @@ export class AdvisorScreen {
           portrait.appendChild(h('div', { className: 'advisor-portrait-fallback' }, '亮'));
         };
         portrait.appendChild(img);
-        wrapper.appendChild(portrait);
+        portraitWrap.appendChild(portrait);
+        if (this.modelName) {
+          portraitWrap.appendChild(h('div', { className: 'advisor-model-badge' }, this.modelName));
+        }
+        wrapper.appendChild(portraitWrap);
 
         const bubble = h('div', { className: 'advisor-bubble' });
         const paragraphs = msg.content.split('\n\n').filter(p => p.trim());

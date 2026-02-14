@@ -3,7 +3,7 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 import type { AIProvider, ModelInfo, ProviderConfig, ProviderInfo, TestResult } from './types.js';
-import { sseToken, sseDone, sseError, inferExpression } from './stream-utils.js';
+import { sseToken, sseDone, sseError, inferExpression, stripThinking, ThinkingFilter } from './stream-utils.js';
 
 const DEFAULT_BASE_URL = 'http://localhost:11434';
 
@@ -98,6 +98,7 @@ export const ollamaProvider: AIProvider = {
     return new ReadableStream({
       async start(controller) {
         let fullText = '';
+        const thinkFilter = new ThinkingFilter();
         try {
           const ollamaMessages = [
             { role: 'system', content: systemPrompt },
@@ -137,9 +138,12 @@ export const ollamaProvider: AIProvider = {
               try {
                 const chunk = JSON.parse(line) as { message?: { content?: string }; done?: boolean };
                 if (chunk.message?.content) {
-                  const token = chunk.message.content;
-                  fullText += token;
-                  controller.enqueue(sseToken(token));
+                  fullText += chunk.message.content;
+                  // <think>...</think> 필터링
+                  const visible = thinkFilter.push(chunk.message.content);
+                  if (visible) {
+                    controller.enqueue(sseToken(visible));
+                  }
                 }
               } catch {
                 // skip malformed lines
@@ -147,7 +151,15 @@ export const ollamaProvider: AIProvider = {
             }
           }
 
-          controller.enqueue(sseDone(fullText, inferExpression(fullText)));
+          // flush 남은 버퍼
+          const remaining = thinkFilter.flush();
+          if (remaining) {
+            controller.enqueue(sseToken(remaining));
+          }
+
+          // fullText에서도 thinking 제거
+          const cleanText = stripThinking(fullText);
+          controller.enqueue(sseDone(cleanText, inferExpression(cleanText)));
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Unknown error';
           controller.enqueue(sseError(message));

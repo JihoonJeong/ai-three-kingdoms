@@ -70,6 +70,24 @@ describe('prompts', () => {
       expect(prompt).toContain('하구');
     });
 
+    it('언어 규칙을 포함한다 (기본 ko)', () => {
+      const state = createRedCliffsScenario('test');
+      const view = filterGameState(state);
+      const prompt = buildSystemPrompt(view);
+
+      expect(prompt).toContain('## 언어 규칙');
+      expect(prompt).toContain('한국어');
+    });
+
+    it('언어 파라미터에 따라 언어 규칙이 바뀐다', () => {
+      const state = createRedCliffsScenario('test');
+      const view = filterGameState(state);
+
+      expect(buildSystemPrompt(view, 'en')).toContain('English');
+      expect(buildSystemPrompt(view, 'zh')).toContain('中文');
+      expect(buildSystemPrompt(view, 'ja')).toContain('日本語');
+    });
+
     it('정확한 숫자를 노출하지 않는다', () => {
       const state = createRedCliffsScenario('test');
       const view = filterGameState(state);

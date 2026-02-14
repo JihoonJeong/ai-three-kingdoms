@@ -6,7 +6,7 @@ AI 책사(제갈량)와 함께하는 턴제 전략 게임. Claude API를 연동�
 
 ```bash
 npm install
-npm test          # vitest — 184 tests
+npm test          # vitest — 186 tests
 npm run dev       # vite + hono 동시 기동 (concurrently)
 npm run dev:web   # vite만 (프론트엔드)
 npm run dev:server # hono만 (API 서버, port 3001)
@@ -74,6 +74,11 @@ docs/               ← 설계 문서
   - 매 턴 3개 행동 추천 (confidence 0-100%) + 원클릭 실행
   - `---ACTIONS---` 구분자 기반 파싱 (SLM 호환, graceful fallback)
   - 대화를 통해 추천/confidence 동적 업데이트
+- [x] Reasoning 모델 지원 + UX 개선
+  - ThinkingFilter: `<think>`/`<thought>` 태그 실시간 스트리밍 필터링
+  - 언어 강제 시스템 (GameLanguage: ko/en/zh/ja, 시스템 프롬프트 3중 강제)
+  - 응답 대기 중 경과 시간 표시 ("공명이 생각 중입니다… (N초)")
+  - 모델명 배지 (제갈량 초상 아래 현재 AI 모델 표시)
 
 ## 아키텍처 핵심
 

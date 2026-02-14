@@ -157,6 +157,10 @@ export function buildSystemPrompt(view: AdvisorView, language: GameLanguage = 'k
     sections.push(ACTION_FORMAT_INSTRUCTION);
   }
 
+  // 언어 리마인더 (맨 끝에 한번 더 강조 — SLM용)
+  const langName = LANGUAGE_NAMES[language];
+  sections.push(`\n[IMPORTANT] 모든 응답을 반드시 ${langName}(으)로 작성하라. ${langName} 외의 언어 사용 금지.`);
+
   return sections.join('\n');
 }
 
@@ -189,8 +193,9 @@ export function buildActionReference(
 /**
  * 턴 시작 시 자동 브리핑 요청 메시지
  */
-export function buildBriefingUserMessage(turn: number): string {
-  return `주공이 턴 ${turn}을 시작합니다. 현재 상황을 분석하고 이번 턴에 무엇을 해야 할지 조언해 주시오.`;
+export function buildBriefingUserMessage(turn: number, language: GameLanguage = 'ko'): string {
+  const langName = LANGUAGE_NAMES[language];
+  return `주공이 턴 ${turn}을 시작합니다. 현재 상황을 분석하고 이번 턴에 무엇을 해야 할지 조언해 주시오. (${langName}(으)로 답하시오)`;
 }
 
 /**
