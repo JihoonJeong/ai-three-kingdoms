@@ -28,7 +28,7 @@ export interface ParseResult {
 
 // ─── 구분자 ────────────────────────────────────────────
 
-const ACTION_SEPARATOR = '---ACTIONS---';
+const SEPARATOR_REGEX = /-{2,}\s*actions\s*-{2,}/i;
 const LINE_REGEX = /^\d+\.\s*\[([^\]]+)\]\s*(\d+)%\s*(.+)$/;
 
 // ─── 메인 파서 ─────────────────────────────────────────
@@ -37,14 +37,14 @@ export function parseRecommendations(
   text: string,
   context: RecommendationContext,
 ): ParseResult {
-  const sepIdx = text.indexOf(ACTION_SEPARATOR);
+  const sepMatch = SEPARATOR_REGEX.exec(text);
 
-  if (sepIdx === -1) {
+  if (!sepMatch) {
     return { narrative: text.trim(), recommendations: [] };
   }
 
-  const narrative = text.slice(0, sepIdx).trim();
-  const actionBlock = text.slice(sepIdx + ACTION_SEPARATOR.length).trim();
+  const narrative = text.slice(0, sepMatch.index).trim();
+  const actionBlock = text.slice(sepMatch.index + sepMatch[0].length).trim();
   const lines = actionBlock.split('\n').map(l => l.trim()).filter(Boolean);
 
   const recommendations: ActionRecommendation[] = [];

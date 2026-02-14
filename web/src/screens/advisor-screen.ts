@@ -21,7 +21,7 @@ import type { ChatMessage, AdvisorExpression } from '../../../core/advisor/types
 
 const MAX_HISTORY = 20;
 const LONG_RESPONSE_THRESHOLD = 300;
-const ACTION_SEPARATOR = '---ACTIONS---';
+const SEPARATOR_REGEX = /-{2,}\s*actions\s*-{2,}/i;
 
 export class AdvisorScreen {
   private container: HTMLElement | null = null;
@@ -255,9 +255,9 @@ export class AdvisorScreen {
 
   /** AI 응답에서 서사 부분만 추출 (---ACTIONS--- 이후 제거) */
   private extractNarrative(text: string): { narrative: string } {
-    const idx = text.indexOf(ACTION_SEPARATOR);
-    if (idx === -1) return { narrative: text.trim() };
-    return { narrative: text.slice(0, idx).trim() };
+    const match = SEPARATOR_REGEX.exec(text);
+    if (!match) return { narrative: text.trim() };
+    return { narrative: text.slice(0, match.index).trim() };
   }
 
   /** AI 응답에서 추천을 파싱하여 패널 갱신 */

@@ -231,6 +231,22 @@ describe('parseRecommendations', () => {
     expect(result.recommendations[0].description).toBe('강하 훈련');
   });
 
+  it('대소문자 변형 구분자도 파싱한다 (---Actions---, --- actions --- 등)', () => {
+    const variants = [
+      '---Actions---',
+      '---actions---',
+      '--- ACTIONS ---',
+      '--Actions--',
+    ];
+
+    for (const sep of variants) {
+      const text = `서사 텍스트\n\n${sep}\n1. [train|gangha] 70% 훈련`;
+      const result = parseRecommendations(text, CTX);
+      expect(result.recommendations).toHaveLength(1);
+      expect(result.narrative).toBe('서사 텍스트');
+    }
+  });
+
   it('develop 액션을 올바르게 파싱한다', () => {
     const text = `...
 
