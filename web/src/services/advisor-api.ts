@@ -14,6 +14,7 @@ export async function streamChat(
   messages: ChatMessage[],
   gameState: GameState,
   callbacks: ChatStreamCallbacks,
+  signal?: AbortSignal,
 ): Promise<void> {
   let response: Response;
   try {
@@ -21,8 +22,10 @@ export async function streamChat(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages, gameState }),
+      signal,
     });
-  } catch {
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') return;
     callbacks.onError('서버 연결 실패 — 서버가 실행 중인지 확인하세요');
     return;
   }
@@ -42,34 +45,43 @@ export async function streamChat(
   const decoder = new TextDecoder();
   let buffer = '';
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n\n');
-    buffer = lines.pop() || '';
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop() || '';
 
-    for (const line of lines) {
-      if (!line.startsWith('data: ')) continue;
-      const json = line.slice(6);
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const json = line.slice(6);
 
-      try {
-        const event = JSON.parse(json) as
-          | { type: 'token'; token: string }
-          | { type: 'done'; fullText: string; expression: AdvisorExpression }
-          | { type: 'error'; error: string };
+        try {
+          const event = JSON.parse(json) as
+            | { type: 'token'; token: string }
+            | { type: 'done'; fullText: string; expression: AdvisorExpression }
+            | { type: 'error'; error: string };
 
-        if (event.type === 'token') {
-          callbacks.onToken(event.token);
-        } else if (event.type === 'done') {
-          callbacks.onComplete(event.fullText, event.expression);
-        } else if (event.type === 'error') {
-          callbacks.onError(event.error);
+          if (event.type === 'token') {
+            callbacks.onToken(event.token);
+          } else if (event.type === 'done') {
+            callbacks.onComplete(event.fullText, event.expression);
+          } else if (event.type === 'error') {
+            callbacks.onError(event.error);
+          }
+        } catch {
+          // skip malformed events
         }
-      } catch {
-        // skip malformed events
       }
     }
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      // 중단됨 — reader 정리
+      await reader.cancel().catch(() => {});
+      return;
+    }
+    throw err;
   }
 }

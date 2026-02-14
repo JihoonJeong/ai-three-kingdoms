@@ -3,6 +3,7 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 import type { AdvisorView } from './types.js';
+import type { GameState } from '../data/types.js';
 
 const PERSONA = `당신은 제갈량 공명(諸葛亮 孔明)이다. 유비 현덕의 군사(軍師)로서,
 적벽대전을 앞둔 전략 게임에서 주공(유비=플레이어)을 보좌한다.
@@ -25,11 +26,37 @@ const PERSONA = `당신은 제갈량 공명(諸葛亮 孔明)이다. 유비 현�
 ## 행동 지침
 1. 상황을 파악한 후, 주공에게 브리핑을 제공하라:
    - 가장 긴급한 위협 또는 기회
-   - 이번 턴 권장 행동 2-3가지
-   - 그 근거 (간결하게)
+   - 이번 턴 권장 행동과 그 근거 (간결하게)
 2. 주공이 질문하면 성실히 답하되, 300자를 넘지 않게 한다.
 3. 정확한 숫자를 모른다. 범주(풍부/충분/부족/위험 등)로만 판단한다.
 4. 한국어로 답한다.`;
+
+const ACTION_FORMAT_INSTRUCTION = `
+## 행동 추천 규칙
+모든 응답의 마지막에 반드시 아래 형식으로 추천 행동을 3개 제시하라.
+서사적 조언 텍스트를 먼저 쓰고, 반드시 아래 구분자와 형식을 따르라.
+
+---ACTIONS---
+1. [액션|파라미터...] 확신도% 한줄 설명
+2. [액션|파라미터...] 확신도% 한줄 설명
+3. [액션|파라미터...] 확신도% 한줄 설명
+
+확신도는 0~100 사이 정수이다. 대화를 통해 전략이 바뀌면 확신도도 바뀔 수 있다.
+
+사용 가능한 액션 (파라미터는 ID 참조표의 ID를 사용):
+- conscript|도시ID|small/medium/large — 징병
+- develop|도시ID|agriculture/commerce/defense — 개발
+- train|도시ID — 훈련
+- recruit|도시ID|장수ID — 등용
+- assign|장수ID|도시ID — 장수 배치
+- send_envoy|세력명 — 사신 파견
+- gift|세력명 — 선물
+- threaten|세력명 — 위협
+- scout|지역ID — 정찰
+- fortify|도시ID — 방어 강화
+- march|출발도시ID|도착지ID|small/medium/main — 진군
+- ambush|지역ID|장수ID — 매복
+- pass — 행동 안 함 (이번 턴은 지켜보자)`;
 
 function formatCityView(city: AdvisorView['ourCities'][0]): string {
   const gens = city.stationedGenerals.map(g => `${g.name}(${g.role})`).join(', ');
@@ -116,7 +143,38 @@ export function buildSystemPrompt(view: AdvisorView): string {
     sections.push(`\n## 배경지식\n${view.contextKnowledge.join('\n\n')}`);
   }
 
+  // 행동 추천 포맷 (남은 행동이 있을 때만)
+  if (view.actionsRemaining > 0) {
+    sections.push(ACTION_FORMAT_INSTRUCTION);
+  }
+
   return sections.join('\n');
+}
+
+/**
+ * GameState에서 도시/장수 ID 참조표를 생성하여
+ * AI가 정확한 ID를 사용할 수 있도록 한다.
+ */
+export function buildActionReference(
+  state: GameState,
+  playerFaction: string = '유비',
+): string {
+  const playerCities = state.cities.filter(c => c.owner === playerFaction);
+  const playerGenerals = state.generals.filter(g => g.faction === playerFaction);
+
+  const cityList = playerCities.map(c => `${c.id}=${c.name}`).join(', ');
+  const generalList = playerGenerals.map(g => `${g.id}=${g.name}`).join(', ');
+
+  // 외교 대상: 적 + 동맹 (자기 자신 제외)
+  const otherFactions = state.factions
+    .filter(f => f.id !== playerFaction)
+    .map(f => f.id);
+
+  return `\n## 행동 ID 참조표
+아군 도시: ${cityList}
+아군 장수: ${generalList}
+외교 대상: ${otherFactions.join(', ')}
+전투장: chibi=적벽`;
 }
 
 /**

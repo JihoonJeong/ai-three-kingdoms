@@ -6,15 +6,18 @@ AI 책사(제갈량)와 함께하는 턴제 전략 게임. Claude API를 연동�
 
 ```bash
 npm install
-npm test          # vitest — 171 tests
+npm test          # vitest — 184 tests
 npm run dev       # vite + hono 동시 기동 (concurrently)
 npm run dev:web   # vite만 (프론트엔드)
 npm run dev:server # hono만 (API 서버, port 3001)
 ```
 
-AI 채팅을 사용하려면:
+AI 설정: 첫 실행 시 브라우저 설정 마법사에서 제공자 선택 (Claude/OpenAI/Gemini/Ollama).
+또는 `.env` 파일로 사전 설정:
 ```bash
-ANTHROPIC_API_KEY=sk-... npm run dev
+AI_PROVIDER=claude
+AI_MODEL=claude-sonnet-4-5-20250929
+ANTHROPIC_API_KEY=sk-...
 ```
 
 ## 프로젝트 구조
@@ -24,7 +27,7 @@ core/               ← 순수 TypeScript 게임 엔진 (브라우저/서버 공
   data/types.ts     ← 모든 타입 정의 (City, General, GameState 등)
   data/scenarios/   ← 시나리오 데이터 (red-cliffs.ts)
   engine/           ← 엔진 모듈 6개 (game-state, turn-manager, action-executor, battle-engine, event-system, victory-judge)
-  advisor/          ← AI 책사 모듈 (types, knowledge, state-filter, prompts, knowledge-selector)
+  advisor/          ← AI 책사 모듈 (types, knowledge, state-filter, prompts, knowledge-selector, action-recommender)
   ui/               ← UI 헬퍼 (strategy-map, battle-view, character-display, event-cutscene)
 
 web/                ← Vite 기반 웹 프론트엔드 (Vanilla TS, 프레임워크 없음)
@@ -32,13 +35,15 @@ web/                ← Vite 기반 웹 프론트엔드 (Vanilla TS, 프레임�
   src/game-controller.ts ← 엔진 6개 모듈 조합
   src/layout.ts     ← 탭 레이아웃 (map/city/general/diplomacy/log/advisor)
   src/renderer.ts   ← DOM 헬퍼 (h(), assetUrl(), createGauge())
-  src/screens/      ← 8개 화면 (map, city, general, diplomacy, log, battle, cutscene, advisor)
-  src/services/     ← API 클라이언트 (advisor-api.ts)
+  src/screens/      ← 9개 화면 (map, city, general, diplomacy, log, battle, cutscene, advisor, setup)
+  src/services/     ← API 클라이언트 (advisor-api.ts, config-api.ts)
   src/components/   ← UI 컴포넌트 (action-menu, turn-summary)
-  src/styles/       ← CSS (main, ink-wash, battle, cutscene, advisor)
+  src/styles/       ← CSS (main, ink-wash, battle, cutscene, advisor, setup)
 
-server/             ← Hono 백엔드 서버 — Claude API 프록시
-  index.ts          ← POST /api/chat (SSE streaming), GET /api/health
+server/             ← Hono 백엔드 서버 — 멀티 AI 제공자 프록시
+  index.ts          ← POST /api/chat, /api/config/*, GET /api/health
+  config.ts         ← .env 파일 기반 설정 관리
+  providers/        ← AI 제공자 (claude, openai, gemini, ollama) + 레지스트리
 
 assets/             ← 이미지 에셋 (Vite publicDir로 서빙, /map/background.webp 형태)
 docs/               ← 설계 문서
@@ -61,6 +66,14 @@ docs/               ← 설계 문서
   - Core Advisor: types, knowledge(8 chunks), state-filter, knowledge-selector, prompts + 29 tests
   - Backend: Hono 서버, POST /api/chat (Claude API streaming), vite proxy
   - Chat UI: advisor 탭, SSE 스트리밍 채팅, 자동 브리핑/행동 코멘트/전투 조언
+- [x] 멀티 AI 제공자 + 설정 마법사
+  - 4개 제공자: Claude, OpenAI, Gemini, Ollama (로컬)
+  - 브라우저 설정 마법사 (연결 테스트, Ollama 설치 안내/모델 다운로드)
+  - .env 파일 또는 환경변수로 사전 설정 가능
+- [x] 책사 행동 추천 시스템
+  - 매 턴 3개 행동 추천 (confidence 0-100%) + 원클릭 실행
+  - `---ACTIONS---` 구분자 기반 파싱 (SLM 호환, graceful fallback)
+  - 대화를 통해 추천/confidence 동적 업데이트
 
 ## 아키텍처 핵심
 
@@ -79,12 +92,21 @@ Claude에게 정확한 숫자를 주지 않는다. 범주형으로 변환:
 ### 게임 루프
 턴 시작 → 행동 3회 → 턴 종료 → 요약 모달 → (컷신) → 책사 탭 자동 전환 + 브리핑 → 다음 턴
 
+### 행동 추천 흐름
+```
+턴 시작 → 책사 브리핑 (서사 + ---ACTIONS--- 블록)
+  → parseRecommendations() → 추천 패널 3개 카드 표시
+  → 채팅 토론 → 추천/confidence 갱신
+  → 원클릭 실행 or 직접 행동 → 턴 종료
+```
+
 ### 서버 아키텍처
 ```
-Browser (Vite:5173)  →  /api proxy  →  Server (Hono:3001)  →  Claude API
+Browser (Vite:5173)  →  /api proxy  →  Server (Hono:3001)  →  AI Provider
   GameState ─────────→  state-filter ──→ AdvisorView ────────→  system prompt
                      ←── SSE stream ──←  text_delta ────────←  streaming
 ```
+제공자: Claude (Anthropic), OpenAI, Gemini, Ollama (로컬). `server/providers/` 레지스트리 패턴.
 
 ## 코드 스타일
 

@@ -1,0 +1,497 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* 설정 마법사                                              */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+.setup-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-hanji);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+.setup-wizard {
+  width: 100%;
+  max-width: 560px;
+  padding: var(--space-xl);
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.setup-wizard h1 {
+  font-size: 28px;
+  color: var(--color-ink);
+  text-align: center;
+  margin-bottom: var(--space-sm);
+}
+
+.setup-wizard .setup-subtitle {
+  text-align: center;
+  color: var(--color-charcoal);
+  font-size: 14px;
+  margin-bottom: var(--space-xl);
+  line-height: 1.6;
+}
+
+/* ─── 단계 표시 ──────────────────────────────────────── */
+
+.setup-steps {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.setup-step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-charcoal);
+  opacity: 0.25;
+  transition: all var(--transition-fast);
+}
+
+.setup-step-dot.active {
+  opacity: 1;
+  background: var(--color-gold);
+  transform: scale(1.3);
+}
+
+.setup-step-dot.done {
+  opacity: 1;
+  background: var(--color-success);
+}
+
+/* ─── Ollama 감지 ────────────────────────────────────── */
+
+.setup-detect {
+  text-align: center;
+  padding: var(--space-lg) 0;
+}
+
+.setup-detect-status {
+  font-size: 14px;
+  color: var(--color-charcoal);
+  margin-bottom: var(--space-lg);
+}
+
+.setup-detect-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-charcoal);
+  border-top-color: var(--color-gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: var(--space-sm);
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── 제공자 카드 ────────────────────────────────────── */
+
+.setup-providers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.setup-provider-card {
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: var(--space-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  background: #fff;
+  text-align: center;
+}
+
+.setup-provider-card:hover {
+  border-color: var(--color-gold);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.setup-provider-card.selected {
+  border-color: var(--color-gold);
+  background: rgba(212, 160, 23, 0.06);
+}
+
+.setup-provider-card.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.setup-provider-card.disabled:hover {
+  border-color: rgba(0, 0, 0, 0.1);
+  transform: none;
+  box-shadow: none;
+}
+
+.setup-provider-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-ink);
+  margin-bottom: var(--space-xs);
+}
+
+.setup-provider-desc {
+  font-size: 12px;
+  color: var(--color-charcoal);
+  line-height: 1.4;
+}
+
+.setup-provider-badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--color-success);
+  color: #fff;
+  margin-top: var(--space-xs);
+}
+
+/* ─── 설정 폼 ────────────────────────────────────────── */
+
+.setup-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.setup-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.setup-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.setup-field input,
+.setup-field select {
+  border: 1px solid var(--color-charcoal);
+  border-radius: 8px;
+  padding: var(--space-sm) var(--space-md);
+  font-family: var(--font-body);
+  font-size: 14px;
+  background: #fff;
+  color: var(--color-ink);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.setup-field input:focus,
+.setup-field select:focus {
+  border-color: var(--color-gold);
+}
+
+.setup-field .setup-hint {
+  font-size: 11px;
+  color: var(--color-charcoal);
+}
+
+/* ─── 버튼 ───────────────────────────────────────────── */
+
+.setup-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+
+.setup-btn {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.setup-btn:hover { opacity: 0.85; }
+.setup-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.setup-btn-primary {
+  background: var(--color-liu);
+  color: #fff;
+}
+
+.setup-btn-secondary {
+  background: transparent;
+  color: var(--color-charcoal);
+  border: 1px solid var(--color-charcoal);
+}
+
+.setup-btn-skip {
+  background: transparent;
+  color: var(--color-charcoal);
+  font-size: 13px;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-top: var(--space-md);
+  text-align: center;
+}
+
+.setup-btn-skip:hover { color: var(--color-ink); }
+
+/* ─── 테스트 결과 ────────────────────────────────────── */
+
+.setup-test-result {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 8px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.setup-test-result.success {
+  background: rgba(64, 145, 108, 0.1);
+  color: var(--color-success);
+}
+
+.setup-test-result.error {
+  background: rgba(208, 0, 0, 0.06);
+  color: var(--color-fail);
+}
+
+/* ─── 설정 버튼 (책사 화면) ──────────────────────────── */
+
+.advisor-settings-btn {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background: var(--color-hanji);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  z-index: 10;
+}
+
+.advisor-settings-btn:hover {
+  border-color: var(--color-gold);
+  background: rgba(212, 160, 23, 0.06);
+}
+
+/* ─── 오프라인 배너 ──────────────────────────────────── */
+
+.advisor-offline-banner {
+  text-align: center;
+  padding: var(--space-lg);
+  color: var(--color-charcoal);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.advisor-offline-banner button {
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--color-liu);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.advisor-offline-banner button:hover { opacity: 0.85; }
+
+/* ─── Ollama 설치 안내 ──────────────────────────────── */
+
+.setup-install-guide {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.setup-install-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-ink);
+  margin-bottom: var(--space-xs);
+}
+
+.setup-install-desc {
+  font-size: 13px;
+  color: var(--color-charcoal);
+  margin-bottom: var(--space-md);
+  line-height: 1.5;
+}
+
+.setup-install-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.setup-install-step {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: flex-start;
+}
+
+.setup-install-num {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-liu);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.setup-install-step-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.setup-install-step-desc {
+  font-size: 13px;
+  color: var(--color-charcoal);
+  line-height: 1.4;
+}
+
+.setup-install-link {
+  color: var(--color-liu);
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.setup-install-link:hover {
+  opacity: 0.8;
+}
+
+.setup-retry-btn {
+  width: 100%;
+  margin-top: var(--space-sm);
+}
+
+/* ─── 모델 다운로드 ─────────────────────────────────── */
+
+.setup-model-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.setup-model-card {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: var(--space-md);
+  background: #fff;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  transition: border-color var(--transition-fast);
+}
+
+.setup-model-card:hover {
+  border-color: var(--color-gold);
+}
+
+.setup-model-card.downloaded {
+  border-color: var(--color-success);
+  background: rgba(64, 145, 108, 0.04);
+}
+
+.setup-model-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.setup-model-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.setup-model-desc {
+  font-size: 12px;
+  color: var(--color-charcoal);
+  margin-top: 2px;
+}
+
+.setup-download-btn {
+  flex-shrink: 0;
+  padding: var(--space-xs) var(--space-md) !important;
+  font-size: 13px !important;
+}
+
+.setup-model-progress {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.setup-progress-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.setup-progress-fill {
+  height: 100%;
+  width: 0;
+  background: var(--color-liu);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.setup-progress-text {
+  font-size: 12px;
+  color: var(--color-charcoal);
+  text-align: center;
+}
+
+.setup-btn-cancel {
+  background: transparent;
+  color: var(--color-charcoal);
+  font-size: 12px;
+  border: 1px solid var(--color-charcoal);
+  border-radius: 12px;
+  padding: 2px var(--space-sm);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: opacity var(--transition-fast);
+}
+
+.setup-btn-cancel:hover {
+  opacity: 0.7;
+}
