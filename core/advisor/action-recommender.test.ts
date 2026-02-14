@@ -297,6 +297,36 @@ describe('parseRecommendations', () => {
     });
   });
 
+  it('대괄호 없는 볼드 포맷을 파싱한다 (**action|param** | N%)', () => {
+    const text = `분석...
+
+---ACTIONS---
+1. **send_envoy|손권** | 85% 손권에게 사신 파견
+2. **develop|강하|농업** | 90% 강하 농업 개발
+3. **train|강하** | 80% 강하 군대 훈련`;
+
+    const result = parseRecommendations(text, CTX);
+    expect(result.recommendations).toHaveLength(3);
+
+    expect(result.recommendations[0].confidence).toBe(85);
+    expect(result.recommendations[0].action).toEqual({
+      type: 'diplomacy', action: 'send_envoy',
+      params: { target: '손권', purpose: '우호 증진' },
+    });
+
+    expect(result.recommendations[1].confidence).toBe(90);
+    expect(result.recommendations[1].action).toEqual({
+      type: 'domestic', action: 'develop',
+      params: { city: 'gangha', focus: 'agriculture' },
+    });
+
+    expect(result.recommendations[2].confidence).toBe(80);
+    expect(result.recommendations[2].action).toEqual({
+      type: 'domestic', action: 'train',
+      params: { city: 'gangha' },
+    });
+  });
+
   it('볼드 확신도 포맷을 파싱한다 (**확신도: N%**)', () => {
     const text = `분석...
 

@@ -29,8 +29,50 @@ export interface ParseResult {
 // ─── 구분자 ────────────────────────────────────────────
 
 const SEPARATOR_REGEX = /-{2,}\s*actions\s*-{2,}/i;
-// 유연한 매칭: **[...]**, **확신도: N%**, 다양한 구분자
-const LINE_REGEX = /^\d+\.\s*\*{0,2}\[([^\]]+)\]\*{0,2}\s*[-–—]?\s*\*{0,2}(?:확신도\s*[:：]?\s*)?(\d+)%\s*\*{0,2}\s*[:：]?\s*(.+)$/;
+
+// ─── 라인 파서 (N% 기준 분할) ────────────────────────────
+
+/**
+ * 추천 줄에서 actionStr, confidence, description 추출.
+ * SLM이 출력하는 다양한 포맷을 `N%` 위치 기준으로 파싱.
+ *
+ * 지원 포맷:
+ *  1. [train|gangha] 75% 설명
+ *  1. **[send_envoy|손권]** - 확신도 80% : 설명
+ *  1. **[send_envoy|손권]**  **확신도: 85%**  설명
+ *  1. **send_envoy|손권** | 85% 설명
+ */
+function parseLine(raw: string): { actionStr: string; confidence: number; description: string } | null {
+  // 번호 접두어 확인
+  if (!/^\d+\./.test(raw)) return null;
+
+  // 마크다운 볼드 제거 + 번호 제거
+  const clean = raw.replace(/\*{1,2}/g, '').replace(/^\d+\.\s*/, '').trim();
+
+  // N% 찾기 (confidence 기준점)
+  const confMatch = /(\d+)\s*%/.exec(clean);
+  if (!confMatch) return null;
+
+  const confidence = Math.max(0, Math.min(100, parseInt(confMatch[1], 10)));
+  if (isNaN(confidence)) return null;
+
+  // N% 앞 = 액션, N% 뒤 = 설명
+  let actionPart = clean.slice(0, confMatch.index).trim();
+  let descPart = clean.slice(confMatch.index + confMatch[0].length).trim();
+
+  // 액션 부분에서 대괄호, "확신도", 후행 구분자 제거
+  actionPart = actionPart
+    .replace(/[\[\]]/g, '')
+    .replace(/\s*확신도\s*[:：]?\s*$/, '')
+    .replace(/\s*[-–—|:：]+\s*$/, '')
+    .trim();
+
+  // 설명 부분에서 앞쪽 구분자 제거
+  descPart = descPart.replace(/^[:：\s]+/, '').trim();
+
+  if (!actionPart || !descPart) return null;
+  return { actionStr: actionPart, confidence, description: descPart };
+}
 
 // ─── 메인 파서 ─────────────────────────────────────────
 
@@ -53,18 +95,17 @@ export function parseRecommendations(
   for (const line of lines) {
     if (recommendations.length >= 3) break;
 
-    const match = LINE_REGEX.exec(line);
-    if (!match) continue;
+    const parsed = parseLine(line);
+    if (!parsed) continue;
 
-    const [, actionStr, confStr, description] = match;
-    const confidence = Math.max(0, Math.min(100, parseInt(confStr, 10)));
-
-    if (isNaN(confidence)) continue;
-
-    const action = parseAction(actionStr.trim(), context);
+    const action = parseAction(parsed.actionStr, context);
     if (action === undefined) continue;  // 파싱 실패 → skip
 
-    recommendations.push({ action, confidence, description: description.trim() });
+    recommendations.push({
+      action,
+      confidence: parsed.confidence,
+      description: parsed.description,
+    });
   }
 
   return { narrative, recommendations };
