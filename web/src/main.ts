@@ -380,8 +380,13 @@ function startGame(aiEnabled: boolean, modelName?: string | null): void {
   // ─── 설정 재진입 (책사 화면에서) ────────────────────────
   advisorScreen.onSettingsClick(() => {
     const setup = new SetupScreen();
-    setup.onComplete(() => {
+    setup.onComplete(async () => {
       advisorScreen.setAiEnabled(true);
+      // 새 설정에서 모델명 갱신
+      try {
+        const newConfig = await checkConfig();
+        if (newConfig.model) advisorScreen.setModelName(newConfig.model);
+      } catch { /* ignore */ }
       const content = layout.getContentArea();
       advisorScreen.resetForNewProvider();
       advisorScreen.render(content, controller.getState());

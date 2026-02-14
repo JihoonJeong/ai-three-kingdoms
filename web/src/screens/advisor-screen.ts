@@ -73,12 +73,11 @@ export class AdvisorScreen {
     this.executeActionCb = cb;
   }
 
-  /** 제공자 변경 시 채팅 초기화 */
+  /** 제공자 변경 시 채팅 초기화 (modelName은 유지 — 호출 전에 setModelName으로 갱신) */
   resetForNewProvider(): void {
     this.chatHistory = [];
     this.displayMessages = [];
     this.serverAvailable = null;
-    this.modelName = null;
     this.container = null;
     this.messagesEl = null;
     this.recommendPanel = null;
