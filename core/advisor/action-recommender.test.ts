@@ -296,4 +296,34 @@ describe('parseRecommendations', () => {
       params: { target: '적벽 지역' },
     });
   });
+
+  it('볼드 확신도 포맷을 파싱한다 (**확신도: N%**)', () => {
+    const text = `분석...
+
+---ACTIONS---
+1. **[send_envoy|손권]**  **확신도: 85%**  손권에게 사신 파견
+2. **[fortify|하구]**  **확신도: 90%** 하구 방어 강화
+3. **[train|강하]**  **확신도: 80%** 강하 군대 훈련`;
+
+    const result = parseRecommendations(text, CTX);
+    expect(result.recommendations).toHaveLength(3);
+
+    expect(result.recommendations[0].confidence).toBe(85);
+    expect(result.recommendations[0].action).toEqual({
+      type: 'diplomacy', action: 'send_envoy',
+      params: { target: '손권', purpose: '우호 증진' },
+    });
+
+    expect(result.recommendations[1].confidence).toBe(90);
+    expect(result.recommendations[1].action).toEqual({
+      type: 'military', action: 'fortify',
+      params: { city: 'hagu' },
+    });
+
+    expect(result.recommendations[2].confidence).toBe(80);
+    expect(result.recommendations[2].action).toEqual({
+      type: 'domestic', action: 'train',
+      params: { city: 'gangha' },
+    });
+  });
 });
