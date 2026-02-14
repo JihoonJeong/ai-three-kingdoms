@@ -10,7 +10,7 @@ import { buildSystemPrompt, buildActionReference } from '../core/advisor/prompts
 import { loadConfig, saveConfig, getConfigSource } from './config.js';
 import { getProvider, getAllProviderInfo } from './providers/registry.js';
 import { detectOllama } from './providers/ollama.js';
-import type { GameState } from '../core/data/types.js';
+import type { GameState, GameLanguage } from '../core/data/types.js';
 import type { ChatMessage } from '../core/advisor/types.js';
 import type { ProviderConfig } from './providers/types.js';
 
@@ -189,11 +189,13 @@ app.post('/api/chat', async (c) => {
   const body = await c.req.json<{
     messages: ChatMessage[];
     gameState: GameState;
+    language?: GameLanguage;
   }>();
 
   // State filter: GameState → AdvisorView
   const advisorView = filterGameState(body.gameState);
-  const systemPrompt = buildSystemPrompt(advisorView) + buildActionReference(body.gameState);
+  const language = body.language ?? 'ko';
+  const systemPrompt = buildSystemPrompt(advisorView, language) + buildActionReference(body.gameState);
 
   // 제공자 스트리밍
   const stream = provider.streamChat(

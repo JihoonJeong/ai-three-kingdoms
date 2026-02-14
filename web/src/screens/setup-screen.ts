@@ -13,15 +13,40 @@ import {
   type ModelInfo,
   type PullProgressEvent,
 } from '../services/config-api.js';
+import type { GameLanguage } from '../../../core/data/types.js';
 
 type Step = 'welcome' | 'select' | 'configure';
 
-/** Ollama에서 한국어 잘 되는 추천 모델 */
-const RECOMMENDED_MODELS: Array<{ id: string; name: string; size: string; desc: string }> = [
-  { id: 'exaone3.5:7.8b', name: 'EXAONE 3.5', size: '7.8B', desc: 'LG AI — 한국어 최강' },
-  { id: 'qwen3:8b', name: 'Qwen 3', size: '8B', desc: 'Alibaba — 최신 세대, 다국어' },
-  { id: 'qwen2.5:7b', name: 'Qwen 2.5', size: '7B', desc: 'Alibaba — 안정적 다국어' },
-];
+interface RecommendedModel {
+  id: string;
+  name: string;
+  size: string;
+  desc: string;
+}
+
+/** 언어별 Ollama 추천 모델 */
+const RECOMMENDED_MODELS_BY_LANG: Record<GameLanguage, RecommendedModel[]> = {
+  ko: [
+    { id: 'exaone3.5:7.8b', name: 'EXAONE 3.5', size: '7.8B', desc: 'LG AI — 한국어 최강' },
+    { id: 'qwen3:8b', name: 'Qwen 3', size: '8B', desc: 'Alibaba — 최신 세대, 한국어 우수' },
+    { id: 'qwen2.5:7b', name: 'Qwen 2.5', size: '7B', desc: 'Alibaba — 안정적 한국어' },
+  ],
+  en: [
+    { id: 'llama3.1:8b', name: 'Llama 3.1', size: '8B', desc: 'Meta — 영어 최강 오픈소스' },
+    { id: 'gemma3:12b', name: 'Gemma 3', size: '12B', desc: 'Google — 고품질 영어' },
+    { id: 'mistral:7b', name: 'Mistral', size: '7B', desc: 'Mistral AI — 빠르고 정확' },
+  ],
+  zh: [
+    { id: 'qwen3:8b', name: 'Qwen 3', size: '8B', desc: 'Alibaba — 中文最强' },
+    { id: 'qwen2.5:7b', name: 'Qwen 2.5', size: '7B', desc: 'Alibaba — 稳定中文' },
+    { id: 'glm4:9b', name: 'GLM-4', size: '9B', desc: 'Zhipu AI — 中文优化' },
+  ],
+  ja: [
+    { id: 'qwen3:8b', name: 'Qwen 3', size: '8B', desc: 'Alibaba — 日本語対応、最新世代' },
+    { id: 'gemma3:12b', name: 'Gemma 3', size: '12B', desc: 'Google — 日本語品質が高い' },
+    { id: 'llama3.1:8b', name: 'Llama 3.1', size: '8B', desc: 'Meta — 多言語対応' },
+  ],
+};
 
 export class SetupScreen {
   private overlay: HTMLElement | null = null;
@@ -30,9 +55,13 @@ export class SetupScreen {
   private selectedProvider: ProviderInfo | null = null;
   private ollamaModels: ModelInfo[] = [];
   private ollamaAvailable = false;
+  private language: GameLanguage = 'ko';
 
   private onCompleteCb: (() => void) | null = null;
   private onSkipCb: (() => void) | null = null;
+
+  /** 게임 언어 설정 — 추천 모델 목록에 반영 */
+  setLanguage(lang: GameLanguage): void { this.language = lang; }
 
   onComplete(cb: () => void): void { this.onCompleteCb = cb; }
   onSkip(cb: () => void): void { this.onSkipCb = cb; }
@@ -217,7 +246,7 @@ export class SetupScreen {
 
     const list = h('div', { className: 'setup-model-list' });
 
-    for (const model of RECOMMENDED_MODELS) {
+    for (const model of RECOMMENDED_MODELS_BY_LANG[this.language]) {
       const card = h('div', { className: 'setup-model-card' });
 
       const info = h('div', { className: 'setup-model-info' });

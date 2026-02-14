@@ -530,10 +530,11 @@ export class AdvisorScreen {
     portrait.appendChild(img);
     wrapper.appendChild(portrait);
 
-    // Bubble
+    // Bubble — 첫 토큰 전까지 "생각 중" 표시
     const bubble = h('div', { className: 'advisor-bubble' });
-    const cursor = h('span', { className: 'advisor-cursor' });
-    bubble.appendChild(cursor);
+    const thinking = h('div', { className: 'advisor-thinking-inline' });
+    thinking.innerHTML = '<span class="advisor-thinking-dots"><span></span><span></span><span></span></span> <span class="advisor-thinking-text">공명이 생각 중입니다…</span>';
+    bubble.appendChild(thinking);
     wrapper.appendChild(bubble);
 
     this.messagesEl.appendChild(wrapper);

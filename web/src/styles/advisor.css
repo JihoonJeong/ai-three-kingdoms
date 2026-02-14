@@ -402,6 +402,21 @@
   cursor: pointer;
 }
 
+/* ─── 로딩 상태 (버블 내 인라인) ─────────────────────── */
+
+.advisor-thinking-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 2px 0;
+}
+
+.advisor-thinking-text {
+  font-size: 13px;
+  color: var(--color-charcoal);
+  font-style: italic;
+}
+
 /* ─── 로딩 상태 ──────────────────────────────────────── */
 
 .advisor-thinking {

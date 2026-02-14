@@ -22,6 +22,15 @@ export function gradeDown(grade: Grade): Grade {
   return idx > 0 ? GRADE_ORDER[idx - 1] : grade;
 }
 
+export type GameLanguage = 'ko' | 'en' | 'zh' | 'ja';
+
+export const LANGUAGE_NAMES: Record<GameLanguage, string> = {
+  ko: '한국어',
+  en: 'English',
+  zh: '中文',
+  ja: '日本語',
+};
+
 export type FactionId = '유비' | '조조' | '손권';
 
 export type PopulationLevel = '대도시' | '중도시' | '소도시';

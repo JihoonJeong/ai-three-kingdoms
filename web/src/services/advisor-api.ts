@@ -2,7 +2,7 @@
 // 책사 API 클라이언트 (SSE Streaming)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-import type { GameState } from '../../../core/data/types.js';
+import type { GameState, GameLanguage } from '../../../core/data/types.js';
 import type { ChatMessage, AdvisorExpression, ChatStreamCallbacks } from '../../../core/advisor/types.js';
 
 export async function checkHealth(): Promise<{ hasApiKey: boolean }> {
@@ -15,13 +15,14 @@ export async function streamChat(
   gameState: GameState,
   callbacks: ChatStreamCallbacks,
   signal?: AbortSignal,
+  language: GameLanguage = 'ko',
 ): Promise<void> {
   let response: Response;
   try {
     response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, gameState }),
+      body: JSON.stringify({ messages, gameState, language }),
       signal,
     });
   } catch (err) {

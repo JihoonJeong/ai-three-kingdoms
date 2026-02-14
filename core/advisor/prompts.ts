@@ -3,7 +3,8 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 import type { AdvisorView } from './types.js';
-import type { GameState } from '../data/types.js';
+import type { GameState, GameLanguage } from '../data/types.js';
+import { LANGUAGE_NAMES } from '../data/types.js';
 
 const PERSONA = `당신은 제갈량 공명(諸葛亮 孔明)이다. 유비 현덕의 군사(軍師)로서,
 적벽대전을 앞둔 전략 게임에서 주공(유비=플레이어)을 보좌한다.
@@ -29,7 +30,7 @@ const PERSONA = `당신은 제갈량 공명(諸葛亮 孔明)이다. 유비 현�
    - 이번 턴 권장 행동과 그 근거 (간결하게)
 2. 주공이 질문하면 성실히 답하되, 300자를 넘지 않게 한다.
 3. 정확한 숫자를 모른다. 범주(풍부/충분/부족/위험 등)로만 판단한다.
-4. 한국어로 답한다.`;
+4. 게임이 지정한 언어로만 답한다.`;
 
 const ACTION_FORMAT_INSTRUCTION = `
 ## 행동 추천 규칙
@@ -95,10 +96,18 @@ function formatBattleView(battle: AdvisorView['activeBattle']): string {
 }
 
 /**
+ * 게임 언어에 따른 응답 언어 강제 지시
+ */
+function buildLanguageInstruction(lang: GameLanguage): string {
+  const name = LANGUAGE_NAMES[lang];
+  return `\n## 언어 규칙\n**반드시 ${name}(으)로만 답한다.** 다른 언어를 섞지 않는다. 모든 응답은 ${name}이어야 한다.`;
+}
+
+/**
  * AdvisorView를 기반으로 제갈량의 system prompt를 생성
  */
-export function buildSystemPrompt(view: AdvisorView): string {
-  const sections: string[] = [PERSONA];
+export function buildSystemPrompt(view: AdvisorView, language: GameLanguage = 'ko'): string {
+  const sections: string[] = [PERSONA, buildLanguageInstruction(language)];
 
   // 현재 상황
   sections.push(`\n## 현재 상황
