@@ -29,7 +29,7 @@ const RECOMMENDED_MODELS_BY_LANG: Record<GameLanguage, RecommendedModel[]> = {
   ko: [
     { id: 'exaone3.5:7.8b', name: 'EXAONE 3.5', size: '7.8B', desc: 'LG AI — 한국어 최강' },
     { id: 'qwen3:8b', name: 'Qwen 3', size: '8B', desc: 'Alibaba — 최신 세대, 한국어 우수' },
-    { id: 'qwen2.5:7b', name: 'Qwen 2.5', size: '7B', desc: 'Alibaba — 안정적 한국어' },
+    { id: 'solar-pro', name: 'Solar Pro', size: '10.7B', desc: 'Upstage — 한국어 특화 (16GB RAM 권장)' },
   ],
   en: [
     { id: 'llama3.1:8b', name: 'Llama 3.1', size: '8B', desc: 'Meta — 영어 최강 오픈소스' },
