@@ -20,7 +20,7 @@ import type { ChatMessage, AdvisorExpression } from '../../../core/advisor/types
 
 const MAX_HISTORY = 20;
 const LONG_RESPONSE_THRESHOLD = 300;
-const SEPARATOR_REGEX = /-{2,}\s*actions\s*-{2,}/i;
+const SEPARATOR_REGEX = /-{2,}\s*actions?\s*-{2,}/i;
 
 export class AdvisorScreen {
   private container: HTMLElement | null = null;
@@ -37,6 +37,7 @@ export class AdvisorScreen {
   private currentState: GameState | null = null;
   private isStreaming = false;
   private currentBubble: HTMLElement | null = null;
+  private currentWrapper: HTMLElement | null = null;
   private currentExpression: AdvisorExpression = 'default';
   private serverAvailable: boolean | null = null;
   private aiEnabled = true;
@@ -185,9 +186,9 @@ export class AdvisorScreen {
     // 기존 메시지 복원
     this.restoreMessages();
 
-    // 스트리밍 중이면 현재 버블을 새 DOM에 재배치
-    if (this.isStreaming && this.currentBubble && this.messagesEl) {
-      this.messagesEl.appendChild(this.currentBubble);
+    // 스트리밍 중이면 현재 wrapper(초상화+버블) 전체를 새 DOM에 재배치
+    if (this.isStreaming && this.currentWrapper && this.messagesEl) {
+      this.messagesEl.appendChild(this.currentWrapper);
       this.scrollToBottom();
     }
 
@@ -267,6 +268,7 @@ export class AdvisorScreen {
     this.removeLongResponsePrompt();
     this.isStreaming = false;
     this.currentBubble = null;
+    this.currentWrapper = null;
     this.longResponsePromptShown = false;
     this.updateSendButton();
     this.scrollToBottom();
@@ -432,6 +434,7 @@ export class AdvisorScreen {
         this.removeLongResponsePrompt();
         this.isStreaming = false;
         this.currentBubble = null;
+        this.currentWrapper = null;
         this.abortController = null;
         this.longResponsePromptShown = false;
         this.updateSendButton();
@@ -447,6 +450,7 @@ export class AdvisorScreen {
         this.addErrorMessage(error);
         this.isStreaming = false;
         this.currentBubble = null;
+        this.currentWrapper = null;
         this.abortController = null;
         this.longResponsePromptShown = false;
         this.updateSendButton();
@@ -667,6 +671,7 @@ export class AdvisorScreen {
     wrapper.appendChild(bubble);
 
     this.messagesEl.appendChild(wrapper);
+    this.currentWrapper = wrapper;
     return bubble;
   }
 
@@ -701,6 +706,7 @@ export class AdvisorScreen {
     const wrapper = this.currentBubble.parentElement;
     if (wrapper) wrapper.remove();
     this.currentBubble = null;
+    this.currentWrapper = null;
   }
 
   private updateSendButton(): void {

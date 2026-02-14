@@ -29,7 +29,7 @@ export interface ParseResult {
 
 // ─── 구분자 ────────────────────────────────────────────
 
-const SEPARATOR_REGEX = /-{2,}\s*actions\s*-{2,}/i;
+const SEPARATOR_REGEX = /-{2,}\s*actions?\s*-{2,}/i;
 
 // ─── 라인 파서 (N% 기준 분할) ────────────────────────────
 

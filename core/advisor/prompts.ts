@@ -52,10 +52,12 @@ const ACTION_FORMAT_INSTRUCTION = `
 
 **절대 지켜야 할 규칙:**
 - ---ACTIONS--- 구분자를 반드시 포함하라
+- 번호는 반드시 1부터 시작하라 (1, 2, 3)
 - 각 줄: 번호. [액션|파라미터] 퍼센트% 설명
 - 대괄호 [] 안에 액션과 파라미터를 넣어라
 - 파라미터는 ID 참조표의 ID만 사용하라
 - 서사 텍스트에 액션을 섞지 말라
+- **아래 목록에 없는 액션을 절대 만들지 말라** (send_recon, prepare, reinforce 등 금지)
 
 사용 가능한 액션:
 conscript|도시ID|small/medium/large, develop|도시ID|agriculture/commerce/defense, train|도시ID, recruit|도시ID|장수ID, assign|장수ID|도시ID, send_envoy|세력명, gift|세력명, threaten|세력명, scout|지역ID, fortify|도시ID, march|출발도시ID|도착지ID|small/medium/main, ambush|지역ID|장수ID, pass`;
