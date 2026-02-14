@@ -88,8 +88,8 @@ export class AdvisorScreen {
   render(container: HTMLElement, state: GameState): void {
     this.currentState = state;
 
-    // 이미 렌더링된 경우 재생성하지 않음 (채팅 히스토리 보존)
-    if (this.container === container && this.messagesEl) {
+    // 이미 렌더링된 DOM이 컨테이너에 살아있으면 재생성하지 않음
+    if (this.container === container && this.messagesEl && container.contains(this.messagesEl)) {
       return;
     }
 
