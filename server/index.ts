@@ -9,7 +9,7 @@ import { filterGameState } from '../core/advisor/state-filter.js';
 import { buildSystemPrompt, buildActionReference } from '../core/advisor/prompts.js';
 import { loadConfig, saveConfig, getConfigSource } from './config.js';
 import { getProvider, getAllProviderInfo } from './providers/registry.js';
-import { detectOllama } from './providers/ollama.js';
+import { detectOllama, unloadOllamaModel } from './providers/ollama.js';
 import type { GameState, GameLanguage } from '../core/data/types.js';
 import type { ChatMessage } from '../core/advisor/types.js';
 import type { ProviderConfig } from './providers/types.js';
@@ -163,6 +163,14 @@ app.post('/api/config/test', async (c) => {
 
 app.post('/api/config/save', async (c) => {
   const body = await c.req.json<ProviderConfig>();
+
+  // 이전 Ollama 모델 언로드 (모델 전환 시 메모리 확보)
+  const prevConfig = loadConfig();
+  if (prevConfig?.provider === 'ollama' && prevConfig.model) {
+    if (prevConfig.model !== body.model || body.provider !== 'ollama') {
+      unloadOllamaModel(prevConfig.model, prevConfig.baseUrl).catch(() => {});
+    }
+  }
 
   try {
     saveConfig(body);

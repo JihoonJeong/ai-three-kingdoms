@@ -588,7 +588,7 @@ export class AdvisorScreen {
     portrait.appendChild(img);
     portraitWrap.appendChild(portrait);
     if (this.modelName) {
-      const badge = h('div', { className: 'advisor-model-badge' }, this.modelName);
+      const badge = h('div', { className: 'advisor-model-badge', title: this.modelName }, this.modelName);
       portraitWrap.appendChild(badge);
     }
     wrapper.appendChild(portraitWrap);
@@ -681,7 +681,7 @@ export class AdvisorScreen {
         portrait.appendChild(img);
         portraitWrap.appendChild(portrait);
         if (this.modelName) {
-          portraitWrap.appendChild(h('div', { className: 'advisor-model-badge' }, this.modelName));
+          portraitWrap.appendChild(h('div', { className: 'advisor-model-badge', title: this.modelName }, this.modelName));
         }
         wrapper.appendChild(portraitWrap);
 

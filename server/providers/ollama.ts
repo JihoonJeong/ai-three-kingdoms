@@ -19,6 +19,26 @@ function baseUrl(config: ProviderConfig): string {
   return config.baseUrl || DEFAULT_BASE_URL;
 }
 
+/** 모델을 메모리에서 언로드한다 (keep_alive: 0) */
+export async function unloadOllamaModel(model: string, url?: string): Promise<void> {
+  const base = url || DEFAULT_BASE_URL;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    await fetch(`${base}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model, keep_alive: 0 }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+  } catch {
+    // 언로드 실패는 무시 (모델이 이미 없을 수 있음)
+  }
+}
+
 export async function detectOllama(url?: string): Promise<{ available: boolean; models: ModelInfo[] }> {
   const base = url || DEFAULT_BASE_URL;
   try {
