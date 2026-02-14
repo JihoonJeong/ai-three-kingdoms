@@ -2,6 +2,7 @@ import './styles/main.css';
 import './styles/ink-wash.css';
 import './styles/battle.css';
 import './styles/cutscene.css';
+import './styles/advisor.css';
 
 import { GameController } from './game-controller.js';
 import { Layout, type TabId } from './layout.js';
@@ -12,8 +13,8 @@ import { DiplomacyScreen } from './screens/diplomacy-screen.js';
 import { LogScreen } from './screens/log-screen.js';
 import { BattleScreen } from './screens/battle-screen.js';
 import { CutsceneScreen } from './screens/cutscene-screen.js';
+import { AdvisorScreen } from './screens/advisor-screen.js';
 import { ActionMenu } from './components/action-menu.js';
-import { AdvisorPanel } from './components/advisor-panel.js';
 import { TurnSummary } from './components/turn-summary.js';
 import type { GameState, GameAction, ActionResult, BattleState, EventResult, GameResult } from '../../core/data/types.js';
 
@@ -32,7 +33,7 @@ const diplomacyScreen = new DiplomacyScreen();
 const logScreen = new LogScreen();
 const battleScreen = new BattleScreen();
 const cutsceneScreen = new CutsceneScreen();
-const advisorPanel = new AdvisorPanel();
+const advisorScreen = new AdvisorScreen();
 
 const turnSummary = new TurnSummary();
 
@@ -52,6 +53,7 @@ function renderCurrentTab(state: GameState): void {
     case 'general':   generalScreen.render(content, state); break;
     case 'diplomacy': diplomacyScreen.render(content, state); break;
     case 'log':       logScreen.render(content, state); break;
+    case 'advisor':   advisorScreen.render(content, state); break;
   }
 }
 
@@ -75,6 +77,9 @@ function executeAction(action: GameAction): void {
   if (result.battleTriggered) {
     startBattle(result.battleTriggered);
   }
+
+  // 책사에게 행동 결과 알림
+  advisorScreen.notifyAction(result.description, result.success, controller.getState());
 
   updateUI();
 }
@@ -119,7 +124,7 @@ actionMenu.onEndTurn(() => {
   turnSummary.show(controller.getState(), result, completedTurn);
 });
 
-// 턴 요약 닫힌 후 → 컷신(있으면) → 어드바이저
+// 턴 요약 닫힌 후 → 컷신(있으면) → 책사 브리핑
 turnSummary.onDismiss(() => {
   // 컷신이 있으면 먼저 표시
   if (pendingCutsceneEvents.length > 0) {
@@ -128,7 +133,10 @@ turnSummary.onDismiss(() => {
   }
 
   if (!cutsceneScreen.isActive()) {
-    advisorPanel.show(layout.getContentArea(), controller.getState());
+    // 책사 탭으로 전환하고 자동 브리핑 요청
+    layout.setActiveTab('advisor');
+    renderCurrentTab(controller.getState());
+    advisorScreen.requestTurnBriefing(controller.getState());
   }
 
   updateUI();
@@ -138,6 +146,9 @@ turnSummary.onDismiss(() => {
 function startBattle(battle: BattleState): void {
   layout.showOverlay();
   battleScreen.render(layout.getOverlayArea(), battle, controller.getState().generals);
+
+  // 책사에게 전투 발생 알림
+  advisorScreen.notifyBattle(battle.location, controller.getState());
 }
 
 battleScreen.onExecuteTactic((tacticId) => {
@@ -168,6 +179,12 @@ function processCutscenes(events: EventResult[]): void {
 
 cutsceneScreen.onCutsceneComplete(() => {
   layout.hideOverlay();
+
+  // 컷신 종료 후 책사 브리핑
+  layout.setActiveTab('advisor');
+  renderCurrentTab(controller.getState());
+  advisorScreen.requestTurnBriefing(controller.getState());
+
   updateUI();
 });
 
@@ -177,6 +194,7 @@ function updateUI(): void {
   layout.updateHeader(state.turn, state.maxTurns, state.season, state.actionsRemaining);
   layout.updateFooter(state, playerFaction);
   actionMenu.update(state);
+  advisorScreen.updateState(state);
   renderCurrentTab(state);
 }
 
@@ -231,11 +249,5 @@ if (state.completedEvents.length === 0) {
     layout.hideOverlay();
   }
 }
-
-// Show advisor after cutscene or immediately
-cutsceneScreen.onCutsceneComplete(() => {
-  layout.hideOverlay();
-  advisorPanel.show(layout.getContentArea(), controller.getState());
-});
 
 console.log('AI 삼국지 — 적벽대전 시작!', turnInfo);

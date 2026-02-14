@@ -6,8 +6,15 @@ AI 책사(제갈량)와 함께하는 턴제 전략 게임. Claude API를 연동�
 
 ```bash
 npm install
-npm test          # vitest — 142 tests
-npm run dev       # vite dev server (web UI)
+npm test          # vitest — 171 tests
+npm run dev       # vite + hono 동시 기동 (concurrently)
+npm run dev:web   # vite만 (프론트엔드)
+npm run dev:server # hono만 (API 서버, port 3001)
+```
+
+AI 채팅을 사용하려면:
+```bash
+ANTHROPIC_API_KEY=sk-... npm run dev
 ```
 
 ## 프로젝트 구조
@@ -23,13 +30,16 @@ core/               ← 순수 TypeScript 게임 엔진 (브라우저/서버 공
 web/                ← Vite 기반 웹 프론트엔드 (Vanilla TS, 프레임워크 없음)
   src/main.ts       ← 앱 진입점 — 모든 컴포넌트 연결
   src/game-controller.ts ← 엔진 6개 모듈 조합
-  src/layout.ts     ← 탭 레이아웃 (map/city/general/diplomacy/log)
+  src/layout.ts     ← 탭 레이아웃 (map/city/general/diplomacy/log/advisor)
   src/renderer.ts   ← DOM 헬퍼 (h(), assetUrl(), createGauge())
-  src/screens/      ← 7개 화면 (map, city, general, diplomacy, log, battle, cutscene)
-  src/components/   ← UI 컴포넌트 (action-menu, advisor-panel, turn-summary)
-  src/styles/       ← CSS (main, ink-wash, battle, cutscene)
+  src/screens/      ← 8개 화면 (map, city, general, diplomacy, log, battle, cutscene, advisor)
+  src/services/     ← API 클라이언트 (advisor-api.ts)
+  src/components/   ← UI 컴포넌트 (action-menu, turn-summary)
+  src/styles/       ← CSS (main, ink-wash, battle, cutscene, advisor)
 
-server/             ← 백엔드 서버 (Hono) — Claude API 프록시 [구현 예정]
+server/             ← Hono 백엔드 서버 — Claude API 프록시
+  index.ts          ← POST /api/chat (SSE streaming), GET /api/health
+
 assets/             ← 이미지 에셋 (Vite publicDir로 서빙, /map/background.webp 형태)
 docs/               ← 설계 문서
 ```
@@ -42,37 +52,15 @@ docs/               ← 설계 문서
 - **모듈**: ES modules (`"type": "module"`), import 시 `.js` 확장자 필수.
 - **한국어**: 게임 내 텍스트, 커밋 메시지 모두 한국어.
 
-## 현재 진행 상황
+## 완료된 작업
 
-### 완료
 - [x] Week 1: 엔진 코어 (6 모듈, 142 tests)
 - [x] 비주얼 인프라 (디자인 가이드, 에셋 19개)
 - [x] 웹 UI 프로토타입 (탭 레이아웃, 전투 오버레이, 컷신, 턴 요약)
-- [x] AI 책사 모듈 Phase 1 (types, knowledge, state-filter, prompts, knowledge-selector)
-
-### 진행 중 — AI 책사(제갈량) 연동
-계획 파일: `.claude/plans/warm-roaming-dusk.md`
-
-**Phase 1: Core Advisor** ✅
-- `core/advisor/types.ts` — AdvisorView, ChatMessage, ChatRequest 타입
-- `core/advisor/knowledge.ts` — 적벽대전 배경지식 8 chunks
-- `core/advisor/state-filter.ts` — GameState → AdvisorView (범주형 변환)
-- `core/advisor/knowledge-selector.ts` — 상황별 지식 최대 3개 선택
-- `core/advisor/prompts.ts` — 제갈량 페르소나 + system prompt 빌더
-- **TODO**: state-filter.test.ts, knowledge-selector.test.ts, prompts.test.ts
-
-**Phase 2: Backend Server** (미시작)
-- `server/index.ts` — Hono, POST /api/chat, Claude API streaming
-- deps: `@anthropic-ai/sdk`, `hono`, `@hono/node-server`
-- `web/vite.config.ts`에 `/api` proxy 추가
-- `package.json` scripts: `concurrently` 사용 dev:web + dev:server
-
-**Phase 3: Chat UI** (미시작)
-- `web/src/screens/advisor-screen.ts` — 채팅 화면
-- `web/src/services/advisor-api.ts` — SSE 스트리밍 클라이언트
-- `web/src/styles/advisor.css`
-- `layout.ts`에 'advisor' 탭 추가
-- `main.ts` 통합: 턴 브리핑, 행동 코멘트, 전투 조언, 자유 대화
+- [x] AI 책사 연동 전체 (Phase 1-3)
+  - Core Advisor: types, knowledge(8 chunks), state-filter, knowledge-selector, prompts + 29 tests
+  - Backend: Hono 서버, POST /api/chat (Claude API streaming), vite proxy
+  - Chat UI: advisor 탭, SSE 스트리밍 채팅, 자동 브리핑/행동 코멘트/전투 조언
 
 ## 아키텍처 핵심
 
@@ -89,7 +77,14 @@ Claude에게 정확한 숫자를 주지 않는다. 범주형으로 변환:
 - 300자 이내 응답
 
 ### 게임 루프
-턴 시작 → 행동 3회 → 턴 종료 → 요약 모달 → (컷신) → 제갈량 브리핑 → 다음 턴
+턴 시작 → 행동 3회 → 턴 종료 → 요약 모달 → (컷신) → 책사 탭 자동 전환 + 브리핑 → 다음 턴
+
+### 서버 아키텍처
+```
+Browser (Vite:5173)  →  /api proxy  →  Server (Hono:3001)  →  Claude API
+  GameState ─────────→  state-filter ──→ AdvisorView ────────→  system prompt
+                     ←── SSE stream ──←  text_delta ────────←  streaming
+```
 
 ## 코드 스타일
 

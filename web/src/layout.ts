@@ -1,7 +1,7 @@
 import { h } from './renderer.js';
 import type { GameState } from '../../core/data/types.js';
 
-export type TabId = 'map' | 'city' | 'general' | 'diplomacy' | 'log';
+export type TabId = 'map' | 'city' | 'general' | 'diplomacy' | 'log' | 'advisor';
 
 const TAB_LABELS: Record<TabId, string> = {
   map: '전략 맵',
@@ -9,6 +9,7 @@ const TAB_LABELS: Record<TabId, string> = {
   general: '장수',
   diplomacy: '외교',
   log: '기록',
+  advisor: '책사',
 };
 
 export class Layout {
