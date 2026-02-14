@@ -29,7 +29,8 @@ export interface ParseResult {
 // ─── 구분자 ────────────────────────────────────────────
 
 const SEPARATOR_REGEX = /-{2,}\s*actions\s*-{2,}/i;
-const LINE_REGEX = /^\d+\.\s*\[([^\]]+)\]\s*(\d+)%\s*(.+)$/;
+// 유연한 매칭: **[...]** or [...], 확신도/confidence 접두어, - : 구분자
+const LINE_REGEX = /^\d+\.\s*\*{0,2}\[([^\]]+)\]\*{0,2}\s*[-–—]?\s*(?:확신도\s*)?(\d+)%\s*[:\s]*(.+)$/;
 
 // ─── 메인 파서 ─────────────────────────────────────────
 
@@ -75,6 +76,44 @@ const VALID_SCALES: ConscriptScale[] = ['small', 'medium', 'large'];
 const VALID_FOCUSES: DevelopFocus[] = ['agriculture', 'commerce', 'defense'];
 const VALID_TROOP_SCALES: TroopsScale[] = ['small', 'medium', 'main'];
 
+// 한국어 → 영어 매핑 (SLM이 한국어 파라미터를 출력하는 경우)
+const SCALE_KO: Record<string, ConscriptScale> = {
+  '소규모': 'small', '소': 'small',
+  '중규모': 'medium', '중': 'medium',
+  '대규모': 'large', '대': 'large',
+};
+const FOCUS_KO: Record<string, DevelopFocus> = {
+  '농업': 'agriculture', '농': 'agriculture',
+  '상업': 'commerce', '상': 'commerce',
+  '방어': 'defense', '방': 'defense',
+};
+const TROOP_SCALE_KO: Record<string, TroopsScale> = {
+  '소규모': 'small', '소': 'small',
+  '중규모': 'medium', '중': 'medium',
+  '주력': 'main', '전체': 'main',
+};
+
+function resolveScale(input: string | undefined): ConscriptScale | undefined {
+  if (!input) return undefined;
+  const s = input.trim();
+  if (VALID_SCALES.includes(s as ConscriptScale)) return s as ConscriptScale;
+  return SCALE_KO[s];
+}
+
+function resolveFocus(input: string | undefined): DevelopFocus | undefined {
+  if (!input) return undefined;
+  const s = input.trim();
+  if (VALID_FOCUSES.includes(s as DevelopFocus)) return s as DevelopFocus;
+  return FOCUS_KO[s];
+}
+
+function resolveTroopScale(input: string | undefined): TroopsScale | undefined {
+  if (!input) return undefined;
+  const s = input.trim();
+  if (VALID_TROOP_SCALES.includes(s as TroopsScale)) return s as TroopsScale;
+  return TROOP_SCALE_KO[s];
+}
+
 /**
  * "[action|param1|param2...]" 문자열을 GameAction으로 변환.
  * - 성공 → GameAction
@@ -94,15 +133,15 @@ function parseAction(
 
     case 'conscript': {
       const city = resolveCity(parts[1], ctx);
-      const scale = parts[2] as ConscriptScale;
-      if (!city || !VALID_SCALES.includes(scale)) return undefined;
+      const scale = resolveScale(parts[2]);
+      if (!city || !scale) return undefined;
       return { type: 'domestic', action: 'conscript', params: { city, scale } };
     }
 
     case 'develop': {
       const city = resolveCity(parts[1], ctx);
-      const focus = parts[2] as DevelopFocus;
-      if (!city || !VALID_FOCUSES.includes(focus)) return undefined;
+      const focus = resolveFocus(parts[2]);
+      if (!city || !focus) return undefined;
       return { type: 'domestic', action: 'develop', params: { city, focus } };
     }
 
@@ -147,8 +186,8 @@ function parseAction(
     case 'march': {
       const from = resolveCity(parts[1], ctx);
       const to = parts[2]?.trim();  // 도착지는 도시 외에 전투장(chibi)도 가능
-      const scale = parts[3] as TroopsScale;
-      if (!from || !to || !VALID_TROOP_SCALES.includes(scale)) return undefined;
+      const scale = resolveTroopScale(parts[3]);
+      if (!from || !to || !scale) return undefined;
       // 출발지의 장수 자동 선택
       const generals = ctx.playerGenerals
         .filter(g => g.location === from)

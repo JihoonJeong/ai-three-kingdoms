@@ -264,4 +264,36 @@ describe('parseRecommendations', () => {
       expect(dev1.params.focus).toBe('agriculture');
     }
   });
+
+  it('SLM 스타일 포맷을 파싱한다 (마크다운 볼드, 확신도 접두어, 한국어 파라미터)', () => {
+    const text = `상황 분석...
+
+### 추천 행동:
+---ACTIONS---
+1. **[send_envoy|손권]** - 확신도 80% : 손권에게 사신 파견
+2. **[develop|하구|농업]** - 확신도 75% : 하구의 농업 개발
+3. **[scout|적벽 지역]** - 확신도 90% : 적벽 정찰`;
+
+    const result = parseRecommendations(text, CTX);
+    expect(result.recommendations).toHaveLength(3);
+
+    // send_envoy
+    expect(result.recommendations[0].action).toEqual({
+      type: 'diplomacy', action: 'send_envoy',
+      params: { target: '손권', purpose: '우호 증진' },
+    });
+    expect(result.recommendations[0].confidence).toBe(80);
+
+    // develop with Korean focus
+    expect(result.recommendations[1].action).toEqual({
+      type: 'domestic', action: 'develop',
+      params: { city: 'hagu', focus: 'agriculture' },
+    });
+
+    // scout with free-text target
+    expect(result.recommendations[2].action).toEqual({
+      type: 'military', action: 'scout',
+      params: { target: '적벽 지역' },
+    });
+  });
 });

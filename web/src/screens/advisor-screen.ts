@@ -267,6 +267,10 @@ export class AdvisorScreen {
     const ctx = this.buildRecommendationContext();
     const { recommendations } = parseRecommendations(fullText, ctx);
 
+    // DEBUG: AI 응답 파싱 결과 확인
+    console.log('[advisor] fullText:', fullText);
+    console.log('[advisor] parsed recommendations:', recommendations);
+
     if (recommendations.length > 0) {
       this.recommendations = recommendations;
       this.executedIndices.clear();
