@@ -3,18 +3,27 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 import type {
-  GamePhase, TurnStartResult, TurnEndResult,
+  GamePhase, TurnStartResult, TurnEndResult, BattleState,
 } from '../data/types.js';
-import { FOOD_CONSUMPTION_PER_TROOP, getTotalTroopsOfCity } from '../data/types.js';
+import {
+  FOOD_CONSUMPTION_PER_TROOP, FOOD_PRODUCTION_BASE, AGRICULTURE_MULTIPLIER,
+  getTotalTroopsOfCity,
+} from '../data/types.js';
 import { GameStateManager } from './game-state.js';
 import { EventSystem } from './event-system.js';
 import { VictoryJudge } from './victory-judge.js';
+import { FactionAIEngine } from './faction-ai.js';
+import type { BattleEngine } from './battle-engine.js';
+import type { ActionExecutor } from './action-executor.js';
 
 export class TurnManager {
   constructor(
     private stateManager: GameStateManager,
     private eventSystem: EventSystem,
     private victoryJudge: VictoryJudge,
+    private battleEngine: BattleEngine | null = null,
+    private rng: () => number = Math.random,
+    private actionExecutor: ActionExecutor | null = null,
   ) {}
 
   startTurn(): TurnStartResult {
@@ -50,9 +59,9 @@ export class TurnManager {
     // 2. 이벤트 체크 및 적용
     const eventResults = this.eventSystem.processTurn(this.stateManager);
 
-    // 3. AI 세력 행동 (간단한 자동 진행)
-    const aiChanges = this.processAIFactions();
-    stateChanges.push(...aiChanges);
+    // 3. AI 세력 행동
+    const aiResult = this.processAIFactions();
+    stateChanges.push(...aiResult.changes);
 
     // 4. 게임오버 체크
     const gameOverCheck = this.victoryJudge.checkGameOver(state);
@@ -81,6 +90,7 @@ export class TurnManager {
       stateChanges,
       nextTurnPreview: `다음 턴은 ${nextSeason}입니다 (턴 ${nextState.turn}/${nextState.maxTurns})`,
       gameOver: false,
+      aiInitiatedBattle: aiResult.battle,
     };
   }
 
@@ -106,9 +116,18 @@ export class TurnManager {
     const cities = this.stateManager.getCitiesByFaction(playerFaction.id);
 
     for (const city of cities) {
+      // 식량 생산
+      const production = Math.floor(
+        FOOD_PRODUCTION_BASE[city.population] *
+        AGRICULTURE_MULTIPLIER[city.development.agriculture]
+      );
+
+      // 식량 소비
       const totalTroops = getTotalTroopsOfCity(city);
       const consumption = Math.floor(totalTroops * FOOD_CONSUMPTION_PER_TROOP);
-      const newFood = Math.max(0, city.food - consumption);
+
+      const net = production - consumption;
+      const newFood = Math.max(0, city.food + net);
 
       this.stateManager.updateCity(city.id, { food: newFood });
 
@@ -121,43 +140,26 @@ export class TurnManager {
           morale: Math.max(0, city.morale - 15),
         });
         changes.push(`${city.name}: 군량 고갈! 병사 ${desertedInfantry}명 탈영, 민심 급락`);
-      } else if (newFood < consumption * 3) {
-        changes.push(`${city.name}: 군량이 3턴 분 이하입니다 (${newFood})`);
+      } else if (net < 0 && newFood < consumption * 3) {
+        changes.push(`${city.name}: 군량이 부족합니다 (생산 ${production}, 소비 ${consumption}, 잔여 ${newFood})`);
+      } else if (net > 0) {
+        changes.push(`${city.name}: 식량 증산 (생산 ${production}, 소비 ${consumption}, +${net})`);
       }
     }
 
     return changes;
   }
 
-  private processAIFactions(): string[] {
-    // MVP: AI 세력은 간단한 자동 행동만 수행
-    // 조조군: 매 턴 소규모 병력 증강
-    // 손권군: 동맹 상태에 따라 협조 또는 관망
-    const changes: string[] = [];
-    const state = this.stateManager.getState();
+  // ─── AI 세력 행동 ──────────────────────────────────────
 
-    // 조조군 자동 강화
-    for (const city of state.cities) {
-      if (city.owner === '조조') {
-        // 소규모 식량 생산 + 훈련
-        this.stateManager.updateCity(city.id, {
-          food: city.food + 500,
-          training: Math.min(100, city.training + 3),
-        });
-      }
+  private processAIFactions(): { changes: string[]; battle?: BattleState } {
+    if (!this.actionExecutor) {
+      return { changes: [] };
     }
 
-    // 손권군: 동맹 시 시상 병력 유지
-    const allianceWithSunQuan = this.stateManager.isAlly('손권');
-    if (allianceWithSunQuan) {
-      const sishang = this.stateManager.getCity('sishang');
-      if (sishang) {
-        this.stateManager.updateCity('sishang', {
-          training: Math.min(100, sishang.training + 5),
-        });
-      }
-    }
-
-    return changes;
+    const aiEngine = new FactionAIEngine(
+      this.stateManager, this.actionExecutor, this.rng,
+    );
+    return aiEngine.processAll();
   }
 }

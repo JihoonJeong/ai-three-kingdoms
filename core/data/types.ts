@@ -146,6 +146,16 @@ export function getRelationLevel(value: number): RelationLevel {
 export type ConscriptScale = 'small' | 'medium' | 'large';
 export type DevelopFocus = 'agriculture' | 'commerce' | 'defense';
 export type TroopsScale = 'small' | 'medium' | 'main';
+export type TransferType = 'troops' | 'food';
+export type TransferScale = 'small' | 'medium' | 'large';
+
+export const TRANSFER_RATIOS: Record<TransferScale, number> = {
+  small: 0.3, medium: 0.5, large: 0.7,
+} as const;
+
+export const FOOD_TRANSFER_AMOUNTS: Record<TransferScale, number> = {
+  small: 1000, medium: 2500, large: 5000,
+} as const;
 
 export type GameAction =
   // 내정
@@ -154,6 +164,7 @@ export type GameAction =
   | { type: 'domestic'; action: 'train'; params: { city: string } }
   | { type: 'domestic'; action: 'recruit'; params: { city: string; targetGeneral: string } }
   | { type: 'domestic'; action: 'assign'; params: { general: string; destination: string } }
+  | { type: 'domestic'; action: 'transfer'; params: { from: string; to: string; transferType: TransferType; scale: TransferScale } }
   // 외교
   | { type: 'diplomacy'; action: 'send_envoy'; params: { target: FactionId; purpose: string } }
   | { type: 'diplomacy'; action: 'persuade'; params: { targetGeneral: string; method: string } }
@@ -342,6 +353,7 @@ export interface TurnEndResult {
   nextTurnPreview: string;
   gameOver: boolean;
   result?: GameResult;
+  aiInitiatedBattle?: BattleState;
 }
 
 // ─── 상수 ──────────────────────────────────────────────
@@ -365,6 +377,21 @@ export const DEVELOP_SUCCESS_RATE: Record<string, number> = {
 export const TRAINING_INCREASE = 15;
 
 export const FOOD_CONSUMPTION_PER_TROOP = 0.1;  // 턴당 병사 1명당 식량 소비
+
+// 식량 생산: 도시 인구 기반 × 농업 등급 배율
+export const FOOD_PRODUCTION_BASE: Record<PopulationLevel, number> = {
+  '대도시': 600,
+  '중도시': 400,
+  '소도시': 200,
+};
+
+export const AGRICULTURE_MULTIPLIER: Record<Grade, number> = {
+  D: 0.4,
+  C: 0.7,
+  B: 1.0,
+  A: 1.4,
+  S: 1.8,
+};
 
 export const BATTLE_DEFEAT_TROOP_RATIO = 0.3;    // 병력 30% 이하 패배
 export const BATTLE_DEFEAT_MORALE = 20;           // 사기 20 이하 패배

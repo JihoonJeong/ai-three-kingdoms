@@ -4,6 +4,7 @@
 
 import { h } from '../renderer.js';
 import {
+  checkConfig,
   getProviders,
   detectOllama,
   testConnection,
@@ -62,6 +63,8 @@ export class SetupScreen {
   private ollamaModels: ModelInfo[] = [];
   private ollamaAvailable = false;
   private language: GameLanguage = 'ko';
+  private savedProvider: string | null = null;
+  private savedHasApiKey = false;
 
   private onCompleteCb: (() => void) | null = null;
   private onSkipCb: (() => void) | null = null;
@@ -76,9 +79,12 @@ export class SetupScreen {
     this.overlay = h('div', { className: 'setup-overlay' });
     container.appendChild(this.overlay);
 
-    // 제공자 목록 로드
+    // 제공자 목록 + 기존 설정 로드
     try {
-      this.providers = await getProviders();
+      const [providers, config] = await Promise.all([getProviders(), checkConfig()]);
+      this.providers = providers;
+      this.savedProvider = config.provider;
+      this.savedHasApiKey = config.hasApiKey;
     } catch {
       this.providers = [];
     }
@@ -468,23 +474,54 @@ export class SetupScreen {
 
     // API 키 입력 (필요한 경우)
     let apiKeyInput: HTMLInputElement | null = null;
+    const hasSavedKey = this.savedHasApiKey && this.savedProvider === provider.id;
     if (provider.requiresApiKey) {
       const field = h('div', { className: 'setup-field' });
       field.appendChild(h('label', {}, 'API 키'));
       apiKeyInput = h('input', {
         type: 'password',
-        placeholder: provider.id === 'claude' ? 'sk-ant-...' :
-                     provider.id === 'openai' ? 'sk-...' : 'AI...',
+        placeholder: hasSavedKey
+          ? '저장된 키 사용 중 (변경하려면 새 키 입력)'
+          : provider.id === 'claude' ? 'sk-ant-...'
+          : provider.id === 'openai' ? 'sk-...' : 'AI...',
       }) as HTMLInputElement;
       field.appendChild(apiKeyInput);
 
-      const hintTexts: Record<string, string> = {
-        claude: 'console.anthropic.com 에서 발급',
-        openai: 'platform.openai.com 에서 발급',
-        gemini: 'aistudio.google.com 에서 발급',
+      const keyGuide: Record<string, { url: string; siteName: string; steps: string[] }> = {
+        claude: {
+          url: 'https://console.anthropic.com/settings/keys',
+          siteName: 'Anthropic Console',
+          steps: ['위 링크에서 회원가입/로그인', 'Create Key 클릭', '생성된 키를 복사하여 붙여넣기'],
+        },
+        openai: {
+          url: 'https://platform.openai.com/api-keys',
+          siteName: 'OpenAI Platform',
+          steps: ['위 링크에서 회원가입/로그인', 'Create new secret key 클릭', '생성된 키를 복사하여 붙여넣기'],
+        },
+        gemini: {
+          url: 'https://aistudio.google.com/apikey',
+          siteName: 'Google AI Studio',
+          steps: ['위 링크에서 Google 계정 로그인', 'Create API Key 클릭', '생성된 키를 복사하여 붙여넣기'],
+        },
       };
-      if (hintTexts[provider.id]) {
-        field.appendChild(h('div', { className: 'setup-hint' }, hintTexts[provider.id]));
+      const guide = keyGuide[provider.id];
+      if (guide) {
+        const hintBox = h('div', { className: 'setup-api-guide' });
+
+        const link = h('a', {
+          href: guide.url,
+          target: '_blank',
+          className: 'setup-api-guide-link',
+        }, `${guide.siteName}에서 API 키 발급`);
+        hintBox.appendChild(link);
+
+        const stepList = h('ol', { className: 'setup-api-guide-steps' });
+        for (const step of guide.steps) {
+          stepList.appendChild(h('li', {}, step));
+        }
+        hintBox.appendChild(stepList);
+
+        field.appendChild(hintBox);
       }
 
       form.appendChild(field);
@@ -537,7 +574,7 @@ export class SetupScreen {
       const config = {
         provider: provider.id,
         model: modelSelect.value,
-        apiKey: apiKeyInput?.value,
+        apiKey: apiKeyInput?.value || undefined,
       };
 
       try {
@@ -561,7 +598,7 @@ export class SetupScreen {
 
     const saveBtn = h('button', { className: 'setup-btn setup-btn-primary' }, '저장 후 시작');
     saveBtn.addEventListener('click', async () => {
-      if (provider.requiresApiKey && !apiKeyInput?.value) {
+      if (provider.requiresApiKey && !apiKeyInput?.value && !hasSavedKey) {
         testResult.style.display = 'block';
         testResult.className = 'setup-test-result error';
         testResult.textContent = 'API 키를 입력하세요';
@@ -580,7 +617,7 @@ export class SetupScreen {
       const config = {
         provider: provider.id,
         model: modelSelect.value,
-        apiKey: apiKeyInput?.value,
+        apiKey: apiKeyInput?.value || undefined,
       };
 
       try {

@@ -58,9 +58,10 @@ const ACTION_FORMAT_INSTRUCTION = `
 - 파라미터는 ID 참조표의 ID만 사용하라
 - 서사 텍스트에 액션을 섞지 말라
 - **아래 목록에 없는 액션을 절대 만들지 말라** (send_recon, prepare, reinforce 등 금지)
+- 위 형식을 지키기 어려우면, 번호를 매겨 자연어로 설명하라. 도시/장수/세력 이름을 반드시 포함하라.
 
 사용 가능한 액션:
-conscript|도시ID|small/medium/large, develop|도시ID|agriculture/commerce/defense, train|도시ID, recruit|도시ID|장수ID, assign|장수ID|도시ID, send_envoy|세력명, gift|세력명, threaten|세력명, scout|지역ID, fortify|도시ID, march|출발도시ID|도착지ID|small/medium/main, ambush|지역ID|장수ID, pass`;
+conscript|도시ID|small/medium/large, develop|도시ID|agriculture/commerce/defense, train|도시ID, recruit|도시ID|장수ID, assign|장수ID|도시ID, transfer|출발도시ID|도착도시ID|troops/food|small/medium/large, send_envoy|세력명, gift|세력명, threaten|세력명, scout|지역ID, fortify|도시ID, march|출발도시ID|도착지ID|small/medium/main, ambush|지역ID|장수ID, pass`;
 
 function formatCityView(city: AdvisorView['ourCities'][0]): string {
   const gens = city.stationedGenerals.map(g => `${g.name}(${g.role})`).join(', ');

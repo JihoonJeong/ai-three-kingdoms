@@ -25,7 +25,7 @@ export interface CharacterDisplayState {
 }
 
 export interface ExpressionContext {
-  type: 'battle_win' | 'battle_lose' | 'threat' | 'diplomacy_success'
+  type: 'battle' | 'battle_win' | 'battle_lose' | 'threat' | 'diplomacy_success'
     | 'diplomacy_fail' | 'ally_danger' | 'advisor_warning'
     | 'turn_start' | 'event' | 'idle';
   severity?: 'low' | 'medium' | 'high';

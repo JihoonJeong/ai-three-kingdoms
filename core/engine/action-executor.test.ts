@@ -267,4 +267,143 @@ describe('ActionExecutor', () => {
       expect(result.success).toBe(false);
     });
   });
+
+  describe('보급 (transfer)', () => {
+    describe('병력 보급', () => {
+      it('인접 아군 도시로 소규모 병력 보급 (30%)', () => {
+        const result = executor.execute({
+          type: 'domestic', action: 'transfer',
+          params: { from: 'gangha', to: 'hagu', transferType: 'troops', scale: 'small' },
+        });
+        expect(result.success).toBe(true);
+        expect(result.description).toContain('보급');
+        // gangha: infantry 5000*0.3=1500, cavalry 1000*0.3=300, navy 2000*0.3=600
+        const afterFrom = stateManager.getCity('gangha')!;
+        expect(afterFrom.troops.infantry).toBe(5000 - 1500);
+        expect(afterFrom.troops.cavalry).toBe(1000 - 300);
+        expect(afterFrom.troops.navy).toBe(2000 - 600);
+        const afterTo = stateManager.getCity('hagu')!;
+        expect(afterTo.troops.infantry).toBe(3000 + 1500);
+        expect(afterTo.troops.cavalry).toBe(500 + 300);
+        expect(afterTo.troops.navy).toBe(1500 + 600);
+      });
+
+      it('중규모 병력 보급 (50%)', () => {
+        const result = executor.execute({
+          type: 'domestic', action: 'transfer',
+          params: { from: 'gangha', to: 'hagu', transferType: 'troops', scale: 'medium' },
+        });
+        expect(result.success).toBe(true);
+        const after = stateManager.getCity('gangha')!;
+        expect(after.troops.infantry).toBe(5000 - 2500);
+      });
+
+      it('대규모 병력 보급 (70%)', () => {
+        const result = executor.execute({
+          type: 'domestic', action: 'transfer',
+          params: { from: 'gangha', to: 'hagu', transferType: 'troops', scale: 'large' },
+        });
+        expect(result.success).toBe(true);
+        const after = stateManager.getCity('gangha')!;
+        expect(after.troops.infantry).toBe(5000 - 3500);
+      });
+
+      it('병력 없으면 실패한다', () => {
+        stateManager.updateCity('gangha', {
+          troops: { infantry: 0, cavalry: 0, navy: 0 },
+        });
+        const result = executor.execute({
+          type: 'domestic', action: 'transfer',
+          params: { from: 'gangha', to: 'hagu', transferType: 'troops', scale: 'small' },
+        });
+        expect(result.success).toBe(false);
+        expect(result.description).toContain('병력');
+      });
+    });
+
+    describe('식량 보급', () => {
+      it('인접 아군 도시로 소규모 식량 보급 (1000)', () => {
+        const result = executor.execute({
+          type: 'domestic', action: 'transfer',
+          params: { from: 'gangha', to: 'hagu', transferType: 'food', scale: 'small' },
+        });
+        expect(result.success).toBe(true);
+        expect(stateManager.getCity('gangha')!.food).toBe(8000 - 1000);
+        expect(stateManager.getCity('hagu')!.food).toBe(4000 + 1000);
+      });
+
+      it('대규모 식량 보급 (5000)', () => {
+        const result = executor.execute({
+          type: 'domestic', action: 'transfer',
+          params: { from: 'gangha', to: 'hagu', transferType: 'food', scale: 'large' },
+        });
+        expect(result.success).toBe(true);
+        expect(stateManager.getCity('gangha')!.food).toBe(8000 - 5000);
+        expect(stateManager.getCity('hagu')!.food).toBe(4000 + 5000);
+      });
+
+      it('식량 부족 시 실패한다', () => {
+        stateManager.updateCity('gangha', { food: 800 });
+        const result = executor.execute({
+          type: 'domestic', action: 'transfer',
+          params: { from: 'gangha', to: 'hagu', transferType: 'food', scale: 'small' },
+        });
+        expect(result.success).toBe(false);
+        expect(result.description).toContain('군량이 부족');
+      });
+    });
+
+    describe('검증', () => {
+      it('비인접 도시로 보급 불가', () => {
+        // gangha.adjacent = ['hagu', 'nanjun'] — sishang은 비인접
+        stateManager.updateCity('sishang', { owner: '유비' });
+        const result = executor.execute({
+          type: 'domestic', action: 'transfer',
+          params: { from: 'gangha', to: 'sishang', transferType: 'troops', scale: 'small' },
+        });
+        expect(result.success).toBe(false);
+        expect(result.description).toContain('인접');
+      });
+
+      it('적 도시로 보급 불가', () => {
+        const result = executor.execute({
+          type: 'domestic', action: 'transfer',
+          params: { from: 'gangha', to: 'nanjun', transferType: 'troops', scale: 'small' },
+        });
+        expect(result.success).toBe(false);
+        expect(result.description).toContain('아군');
+      });
+
+      it('같은 도시로 보급 불가', () => {
+        const result = executor.execute({
+          type: 'domestic', action: 'transfer',
+          params: { from: 'gangha', to: 'gangha', transferType: 'troops', scale: 'small' },
+        });
+        expect(result.success).toBe(false);
+      });
+
+      it('장수 없이도 보급 가능하다', () => {
+        // gangha의 장수를 전부 hagu로 이동
+        const generals = stateManager.getState().generals.filter(
+          g => g.faction === '유비' && g.location === 'gangha',
+        );
+        for (const g of generals) {
+          stateManager.updateGeneral(g.id, { location: 'hagu' });
+        }
+        const result = executor.execute({
+          type: 'domestic', action: 'transfer',
+          params: { from: 'gangha', to: 'hagu', transferType: 'troops', scale: 'small' },
+        });
+        expect(result.success).toBe(true);
+      });
+
+      it('행동 1회를 소모한다', () => {
+        const result = executor.execute({
+          type: 'domestic', action: 'transfer',
+          params: { from: 'gangha', to: 'hagu', transferType: 'food', scale: 'small' },
+        });
+        expect(result.remainingActions).toBe(2);
+      });
+    });
+  });
 });

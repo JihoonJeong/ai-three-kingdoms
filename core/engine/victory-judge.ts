@@ -27,7 +27,7 @@ export class VictoryJudge {
     }
 
     // 턴 초과 → 게임 종료 (등급 판정)
-    if (state.turn > state.maxTurns) {
+    if (state.turn >= state.maxTurns) {
       return {
         isOver: true,
         reason: '최대 턴에 도달했습니다. 게임 종료.',

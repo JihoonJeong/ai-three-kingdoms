@@ -19,6 +19,7 @@ import { SetupScreen } from './screens/setup-screen.js';
 import { ActionMenu } from './components/action-menu.js';
 import { TurnSummary } from './components/turn-summary.js';
 import { checkConfig, testConnection } from './services/config-api.js';
+import { getTotalTroopsOfCity } from '../../core/data/types.js';
 import type { GameState, GameAction, BattleState, EventResult, GameResult } from '../../core/data/types.js';
 
 // ─── Bootstrap ─────────────────────────────────────────
@@ -264,6 +265,7 @@ function startGame(aiEnabled: boolean, modelName?: string | null): void {
 
   // ─── Turn End ──────────────────────────────────────────
   let pendingCutsceneEvents: EventResult[] = [];
+  let pendingAIBattle = false;
 
   actionMenu.onEndTurn(() => {
     const completedTurn = controller.getState().turn;
@@ -284,6 +286,11 @@ function startGame(aiEnabled: boolean, modelName?: string | null): void {
       return;
     }
 
+    // AI 전투 대기열
+    if (result.aiInitiatedBattle) {
+      pendingAIBattle = true;
+    }
+
     // 컷신 대기열에 저장
     pendingCutsceneEvents = result.events;
 
@@ -291,12 +298,22 @@ function startGame(aiEnabled: boolean, modelName?: string | null): void {
     turnSummary.show(controller.getState(), result, completedTurn);
   });
 
-  // 턴 요약 닫힌 후 → 컷신(있으면) → 책사 브리핑
+  // 턴 요약 닫힌 후 → 컷신(있으면) → AI 전투(있으면) → 책사 브리핑
   turnSummary.onDismiss(() => {
-    // 컷신이 있으면 먼저 표시
+    // 1. 컷신이 있으면 먼저 표시
     if (pendingCutsceneEvents.length > 0) {
       processCutscenes(pendingCutsceneEvents);
       pendingCutsceneEvents = [];
+    }
+
+    // 2. AI 전투 처리
+    if (pendingAIBattle) {
+      pendingAIBattle = false;
+      const battle = controller.getActiveBattle();
+      if (battle) {
+        startBattle(battle);
+        return; // 책사 브리핑은 전투 후
+      }
     }
 
     if (!cutsceneScreen.isActive()) {
@@ -312,10 +329,14 @@ function startGame(aiEnabled: boolean, modelName?: string | null): void {
   // ─── Battle ────────────────────────────────────────────
   function startBattle(battle: BattleState): void {
     layout.showOverlay();
-    battleScreen.render(layout.getOverlayArea(), battle, controller.getState().generals);
+    const state = controller.getState();
+    const locCity = state.cities.find(c => c.id === battle.location);
+    const locBf = state.battlefields.find(b => b.id === battle.location);
+    const locationName = locCity?.name ?? locBf?.name ?? battle.location;
+    battleScreen.render(layout.getOverlayArea(), battle, state.generals, playerFaction, locationName);
 
     // 책사에게 전투 발생 알림
-    advisorScreen.notifyBattle(battle.location, controller.getState());
+    advisorScreen.notifyBattle(battle.location, state);
   }
 
   battleScreen.onExecuteTactic((tacticId) => {
@@ -324,13 +345,24 @@ function startGame(aiEnabled: boolean, modelName?: string | null): void {
       if (result.isOver) {
         battleScreen.showResult(result, playerFaction);
       } else {
-        battleScreen.update(result, controller.getState().generals);
+        battleScreen.showTurnResult(result, controller.getState().generals);
       }
     }
   });
 
   battleScreen.onRetreatClick(() => {
     layout.hideOverlay();
+
+    // AI 전투 종료 후 다음 턴 시작이 필요한 경우
+    const state = controller.getState();
+    if (!state.activeBattle && state.actionsRemaining === 0) {
+      controller.startNextTurn();
+      // 책사 브리핑 요청
+      layout.setActiveTab('advisor');
+      renderCurrentTab(controller.getState());
+      advisorScreen.requestTurnBriefing(controller.getState());
+    }
+
     updateUI();
   });
 
@@ -397,9 +429,62 @@ function startGame(aiEnabled: boolean, modelName?: string | null): void {
         <span>턴: ${result.stats.totalTurns}</span>
         <span>전투 승: ${result.stats.battlesWon}</span>
       </div>
-      <button class="btn btn-primary" onclick="location.reload()">다시 시작</button>
     `;
+
+    const btnWrap = document.createElement('div');
+    btnWrap.style.cssText = 'display:flex;gap:var(--space-sm);justify-content:center;';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'btn btn-secondary';
+    saveBtn.textContent = '기록 저장';
+    saveBtn.addEventListener('click', () => downloadGameLog(result));
+
+    const restartBtn = document.createElement('button');
+    restartBtn.className = 'btn btn-primary';
+    restartBtn.textContent = '다시 시작';
+    restartBtn.addEventListener('click', () => location.reload());
+
+    btnWrap.append(saveBtn, restartBtn);
+    panel.appendChild(btnWrap);
     overlay.appendChild(panel);
+  }
+
+  function downloadGameLog(result: GameResult): void {
+    const state = controller.getState();
+    const log = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      result,
+      summary: {
+        turns: state.turn,
+        grade: result.grade,
+        battlesWon: result.stats.battlesWon,
+        battlesLost: result.stats.battlesLost,
+      },
+      finalState: {
+        cities: state.cities.map(c => ({
+          id: c.id, name: c.name, owner: c.owner,
+          troops: getTotalTroopsOfCity(c), food: c.food,
+          morale: c.morale, training: c.training,
+        })),
+        generals: state.generals.map(g => ({
+          id: g.id, name: g.name, faction: g.faction,
+          location: g.location, condition: g.condition,
+        })),
+        diplomacy: state.diplomacy,
+        flags: state.flags,
+      },
+      actionLog: state.actionLog,
+      eventLog: logScreen.getEntries(),
+    };
+
+    const blob = new Blob([JSON.stringify(log, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `삼국지-${result.grade}-턴${state.turn}-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   // ─── 설정 재진입 (책사 화면에서) ────────────────────────

@@ -61,7 +61,7 @@ const EVENT_CUTSCENES: Record<string, CutsceneStep[]> = {
       imageKey: 'chain-formation',
       text: '"연환진... 이것이야말로 하늘이 내린 기회입니다." 제갈량의 눈이 빛난다.',
       characterId: 'zhugeliang',
-      characterExpression: 'determined',
+      characterExpression: 'smile',
       duration: 4000,
     },
   ],

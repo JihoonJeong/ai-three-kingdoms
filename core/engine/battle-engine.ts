@@ -217,19 +217,24 @@ export class BattleEngine {
 
     // 최대 전투 턴 초과
     if (battle.battleTurn > battle.maxBattleTurns) {
-      // 피해가 더 적은 쪽이 우세 판정
-      if (attackerRatio > defenderRatio + 0.1) {
+      // 총 피해 비교: 더 많은 피해를 입힌 쪽이 승리
+      const totalAttackerCasualties = battle.log.reduce((s, l) => s + l.attackerCasualties, 0);
+      const totalDefenderCasualties = battle.log.reduce((s, l) => s + l.defenderCasualties, 0);
+
+      if (totalDefenderCasualties > totalAttackerCasualties * 1.1) {
+        // 공격측이 10% 이상 더 많은 피해를 입힘 → 공격 승
         return {
           isOver: true,
           result: this.createVictoryResult(attackers, defenders),
         };
-      } else if (defenderRatio > attackerRatio + 0.1) {
+      } else if (totalAttackerCasualties > totalDefenderCasualties * 1.1) {
+        // 방어측이 10% 이상 더 많은 피해를 입힘 → 방어 승
         return {
           isOver: true,
           result: this.createVictoryResult(defenders, attackers),
         };
       }
-      // 대치
+      // 대치 (무승부)
       return {
         isOver: true,
         result: {
@@ -319,6 +324,14 @@ export class BattleEngine {
     return tactics;
   }
 
+  selectAttackerTactic(battle: BattleState): string {
+    const { attackers } = battle;
+    const ratio = attackers.troops / attackers.initialTroops;
+    if (ratio < 0.4) return 'defend';
+    if (this.rng() < 0.3) return 'charge';
+    return 'frontal_assault';
+  }
+
   // ─── 내부 계산 ───────────────────────────────────────
 
   private calculatePower(
@@ -398,14 +411,14 @@ export class BattleEngine {
   ): string {
     if (attackerTactic === '화공' || attackerTactic === '화선') {
       if (attackerWinning) {
-        return `아군의 ${attackerTactic}이(가) 적진을 휩쓸었습니다! 적 피해 ${defenderCasualties}명.`;
+        return `${attackerTactic}이(가) 적진을 휩쓸었습니다! 방어측 피해 ${defenderCasualties}명.`;
       }
-      return `${attackerTactic}을(를) 시도했으나 효과가 미미합니다. 아군 피해 ${attackerCasualties}명.`;
+      return `${attackerTactic}을(를) 시도했으나 효과가 미미합니다. 공격측 피해 ${attackerCasualties}명.`;
     }
 
     if (attackerWinning) {
-      return `아군이 ${attackerTactic}(으)로 적의 ${defenderTactic}을(를) 제압했습니다. 적 피해 ${defenderCasualties}명, 아군 피해 ${attackerCasualties}명.`;
+      return `공격측의 ${attackerTactic}이(가) 방어측의 ${defenderTactic}을(를) 제압했습니다. 방어측 -${defenderCasualties}명, 공격측 -${attackerCasualties}명.`;
     }
-    return `적의 ${defenderTactic}에 의해 아군이 밀렸습니다. 아군 피해 ${attackerCasualties}명, 적 피해 ${defenderCasualties}명.`;
+    return `방어측의 ${defenderTactic}이(가) 공격측의 ${attackerTactic}을(를) 막아냈습니다. 공격측 -${attackerCasualties}명, 방어측 -${defenderCasualties}명.`;
   }
 }

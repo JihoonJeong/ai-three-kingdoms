@@ -9,6 +9,10 @@ export class LogScreen {
     this.eventLog.push({ turn, text, type });
   }
 
+  getEntries(): Array<{ turn: number; text: string; type: string }> {
+    return [...this.eventLog];
+  }
+
   render(container: HTMLElement, state: GameState): void {
     this.container = container;
     container.innerHTML = '';

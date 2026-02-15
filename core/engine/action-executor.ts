@@ -5,10 +5,12 @@
 import type {
   GameAction, ActionResult, ConscriptScale, DevelopFocus,
   FactionId, TroopsScale, BattleState, Grade,
+  TransferType, TransferScale,
 } from '../data/types.js';
 import {
   CONSCRIPT_TABLE, DEVELOP_SUCCESS_RATE, TRAINING_INCREASE,
   GRADE_VALUES, gradeUp, getTotalTroopsOfCity,
+  TRANSFER_RATIOS, FOOD_TRANSFER_AMOUNTS,
 } from '../data/types.js';
 import { GameStateManager } from './game-state.js';
 import { BattleEngine } from './battle-engine.js';
@@ -43,62 +45,8 @@ export class ActionExecutor {
       };
     }
 
-    let result: ActionResult;
-
-    switch (action.action) {
-      // 내정
-      case 'conscript':
-        result = this.executeConscript(action.params.city, action.params.scale);
-        break;
-      case 'develop':
-        result = this.executeDevelop(action.params.city, action.params.focus);
-        break;
-      case 'train':
-        result = this.executeTrain(action.params.city);
-        break;
-      case 'recruit':
-        result = this.executeRecruit(action.params.city, action.params.targetGeneral);
-        break;
-      case 'assign':
-        result = this.executeAssign(action.params.general, action.params.destination);
-        break;
-      // 외교
-      case 'send_envoy':
-        result = this.executeSendEnvoy(action.params.target, action.params.purpose);
-        break;
-      case 'persuade':
-        result = this.executePersuade(action.params.targetGeneral, action.params.method);
-        break;
-      case 'threaten':
-        result = this.executeThreaten(action.params.target);
-        break;
-      case 'gift':
-        result = this.executeGift(action.params.target, action.params.amount);
-        break;
-      // 군사
-      case 'march':
-        result = this.executeMarch(
-          action.params.from, action.params.to,
-          action.params.generals, action.params.troopsScale,
-        );
-        break;
-      case 'scout':
-        result = this.executeScout(action.params.target);
-        break;
-      case 'fortify':
-        result = this.executeFortify(action.params.city);
-        break;
-      case 'ambush':
-        result = this.executeAmbush(action.params.location, action.params.general);
-        break;
-      default:
-        return {
-          success: false,
-          description: '알 수 없는 행동입니다.',
-          sideEffects: [],
-          remainingActions: state.actionsRemaining,
-        };
-    }
+    const playerFaction = this.stateManager.getPlayerFaction().id;
+    const result = this.dispatchAction(action, playerFaction);
 
     // 성공/실패 관계없이 행동 1회 소모
     const remaining = this.stateManager.useAction();
@@ -114,12 +62,71 @@ export class ActionExecutor {
     return result;
   }
 
+  /** AI/범용 세력 행동 실행 (행동 횟수 미소모, 로그 미기록) */
+  executeFor(action: GameAction, factionId: FactionId): ActionResult {
+    if (this.stateManager.getState().activeBattle) {
+      return this.fail('전투가 진행 중입니다.');
+    }
+    return this.dispatchAction(action, factionId);
+  }
+
+  // ─── 공통 디스패치 ─────────────────────────────────────
+
+  private dispatchAction(action: GameAction, factionId: FactionId): ActionResult {
+    switch (action.action) {
+      // 내정
+      case 'conscript':
+        return this.executeConscript(factionId, action.params.city, action.params.scale);
+      case 'develop':
+        return this.executeDevelop(factionId, action.params.city, action.params.focus);
+      case 'train':
+        return this.executeTrain(factionId, action.params.city);
+      case 'recruit':
+        return this.executeRecruit(factionId, action.params.city, action.params.targetGeneral);
+      case 'assign':
+        return this.executeAssign(factionId, action.params.general, action.params.destination);
+      case 'transfer':
+        return this.executeTransfer(
+          factionId, action.params.from, action.params.to,
+          action.params.transferType, action.params.scale,
+        );
+      // 외교
+      case 'send_envoy':
+        return this.executeSendEnvoy(factionId, action.params.target, action.params.purpose);
+      case 'persuade':
+        return this.executePersuade(factionId, action.params.targetGeneral, action.params.method);
+      case 'threaten':
+        return this.executeThreaten(factionId, action.params.target);
+      case 'gift':
+        return this.executeGift(factionId, action.params.target, action.params.amount);
+      // 군사
+      case 'march':
+        return this.executeMarch(
+          factionId, action.params.from, action.params.to,
+          action.params.generals, action.params.troopsScale,
+        );
+      case 'scout':
+        return this.executeScout(factionId, action.params.target);
+      case 'fortify':
+        return this.executeFortify(factionId, action.params.city);
+      case 'ambush':
+        return this.executeAmbush(factionId, action.params.location, action.params.general);
+      default:
+        return {
+          success: false,
+          description: '알 수 없는 행동입니다.',
+          sideEffects: [],
+          remainingActions: this.stateManager.getState().actionsRemaining,
+        };
+    }
+  }
+
   // ─── 내정 ────────────────────────────────────────────
 
-  private executeConscript(cityId: string, scale: ConscriptScale): ActionResult {
+  private executeConscript(factionId: FactionId, cityId: string, scale: ConscriptScale): ActionResult {
     const city = this.stateManager.getCity(cityId);
     if (!city) return this.fail(`도시를 찾을 수 없습니다: ${cityId}`);
-    if (city.owner !== this.stateManager.getPlayerFaction().id) {
+    if (city.owner !== factionId) {
       return this.fail('아군 도시에서만 징병할 수 있습니다.');
     }
 
@@ -156,26 +163,26 @@ export class ActionExecutor {
     };
   }
 
-  private executeDevelop(cityId: string, focus: DevelopFocus): ActionResult {
+  private executeDevelop(factionId: FactionId, cityId: string, focus: DevelopFocus): ActionResult {
     const city = this.stateManager.getCity(cityId);
     if (!city) return this.fail(`도시를 찾을 수 없습니다: ${cityId}`);
-    if (city.owner !== this.stateManager.getPlayerFaction().id) {
+    if (city.owner !== factionId) {
       return this.fail('아군 도시에서만 개발할 수 있습니다.');
     }
+
+    const focusNames: Record<DevelopFocus, string> = {
+      agriculture: '농업', commerce: '상업', defense: '방어',
+    };
 
     const currentGrade = city.development[focus];
     const nextGrade = gradeUp(currentGrade);
     if (currentGrade === nextGrade) {
-      return this.fail(`${city.name}의 ${focus}는 이미 최고 등급입니다.`);
+      return this.fail(`${city.name}의 ${focusNames[focus]}는 이미 최고 등급입니다.`);
     }
 
     const rateKey = `${currentGrade}_${nextGrade}`;
     const successRate = DEVELOP_SUCCESS_RATE[rateKey] ?? 0;
     const roll = this.rng();
-
-    const focusNames: Record<DevelopFocus, string> = {
-      agriculture: '농업', commerce: '상업', defense: '방어',
-    };
 
     if (roll < successRate) {
       this.stateManager.updateCity(cityId, {
@@ -197,10 +204,10 @@ export class ActionExecutor {
     }
   }
 
-  private executeTrain(cityId: string): ActionResult {
+  private executeTrain(factionId: FactionId, cityId: string): ActionResult {
     const city = this.stateManager.getCity(cityId);
     if (!city) return this.fail(`도시를 찾을 수 없습니다: ${cityId}`);
-    if (city.owner !== this.stateManager.getPlayerFaction().id) {
+    if (city.owner !== factionId) {
       return this.fail('아군 도시에서만 훈련할 수 있습니다.');
     }
 
@@ -208,12 +215,13 @@ export class ActionExecutor {
       return this.fail(`${city.name}에 훈련시킬 병력이 없습니다.`);
     }
 
+    const oldTraining = city.training;
     const newTraining = Math.min(100, city.training + TRAINING_INCREASE);
     this.stateManager.updateCity(cityId, { training: newTraining });
 
     // 장수 스킬 보너스
     const trainers = this.stateManager.getGeneralsByLocation(cityId)
-      .filter(g => g.faction === this.stateManager.getPlayerFaction().id);
+      .filter(g => g.faction === factionId);
     const bestCommand = trainers.reduce((best, g) => {
       const val = GRADE_VALUES[g.abilities.command];
       return val > best ? val : best;
@@ -227,20 +235,20 @@ export class ActionExecutor {
 
     return {
       success: true,
-      description: `${city.name}의 부대를 훈련시켰습니다. 훈련도: ${city.training} → ${Math.min(100, newTraining + bonus)}.`,
+      description: `${city.name}의 부대를 훈련시켰습니다. 훈련도: ${oldTraining} → ${Math.min(100, newTraining + bonus)}.`,
       sideEffects: bonus > 0 ? [`장수의 통솔 능력으로 추가 훈련 효과 (+${bonus})`] : [],
       remainingActions: 0,
     };
   }
 
-  private executeRecruit(cityId: string, targetGeneralId: string): ActionResult {
+  private executeRecruit(factionId: FactionId, cityId: string, targetGeneralId: string): ActionResult {
     const city = this.stateManager.getCity(cityId);
     if (!city) return this.fail(`도시를 찾을 수 없습니다: ${cityId}`);
 
     const target = this.stateManager.getGeneral(targetGeneralId);
     if (!target) return this.fail(`장수를 찾을 수 없습니다: ${targetGeneralId}`);
 
-    if (target.faction === this.stateManager.getPlayerFaction().id) {
+    if (target.faction === factionId) {
       return this.fail(`${target.name}은(는) 이미 아군입니다.`);
     }
 
@@ -254,21 +262,21 @@ export class ActionExecutor {
     }
 
     // 등용 성공률: 기본 20% + 매력 보너스
-    const player = this.stateManager.getPlayerFaction();
-    const leader = this.stateManager.getGeneral(player.leader);
+    const faction = this.stateManager.getFaction(factionId);
+    const leader = faction ? this.stateManager.getGeneral(faction.leader) : undefined;
     const charismaBonus = leader ? GRADE_VALUES[leader.abilities.charisma] * 0.2 : 0;
     const loyaltyPenalty = target.loyalty === '높음' ? -15 : target.loyalty === '보통' ? 0 : 10;
     const successRate = Math.min(0.8, Math.max(0.05, (20 + charismaBonus + loyaltyPenalty) / 100));
 
     if (this.rng() < successRate) {
       this.stateManager.updateGeneral(targetGeneralId, {
-        faction: player.id,
+        faction: factionId,
         location: cityId,
         loyalty: '보통',
       });
       return {
         success: true,
-        description: `${target.name}이(가) 유비군에 합류했습니다!`,
+        description: `${target.name}이(가) ${faction?.name ?? factionId}군에 합류했습니다!`,
         sideEffects: ['충성도가 "보통"이므로 관리에 주의하십시오.'],
         remainingActions: 0,
       };
@@ -282,10 +290,10 @@ export class ActionExecutor {
     };
   }
 
-  private executeAssign(generalId: string, destination: string): ActionResult {
+  private executeAssign(factionId: FactionId, generalId: string, destination: string): ActionResult {
     const general = this.stateManager.getGeneral(generalId);
     if (!general) return this.fail(`장수를 찾을 수 없습니다: ${generalId}`);
-    if (general.faction !== this.stateManager.getPlayerFaction().id) {
+    if (general.faction !== factionId) {
       return this.fail('아군 장수만 배치할 수 있습니다.');
     }
     if (general.condition === '사망' || general.condition === '포로') {
@@ -294,7 +302,7 @@ export class ActionExecutor {
 
     const destCity = this.stateManager.getCity(destination);
     if (!destCity) return this.fail(`도시를 찾을 수 없습니다: ${destination}`);
-    if (destCity.owner !== this.stateManager.getPlayerFaction().id) {
+    if (destCity.owner !== factionId) {
       return this.fail('아군 도시로만 배치할 수 있습니다.');
     }
 
@@ -315,17 +323,93 @@ export class ActionExecutor {
     };
   }
 
+  private executeTransfer(
+    factionId: FactionId,
+    fromId: string,
+    toId: string,
+    transferType: TransferType,
+    scale: TransferScale,
+  ): ActionResult {
+    const fromCity = this.stateManager.getCity(fromId);
+    if (!fromCity) return this.fail(`도시를 찾을 수 없습니다: ${fromId}`);
+    if (fromCity.owner !== factionId) {
+      return this.fail('아군 도시에서만 보급할 수 있습니다.');
+    }
+
+    const toCity = this.stateManager.getCity(toId);
+    if (!toCity) return this.fail(`도시를 찾을 수 없습니다: ${toId}`);
+    if (toCity.owner !== factionId) {
+      return this.fail('아군 도시로만 보급할 수 있습니다.');
+    }
+
+    if (fromId === toId) {
+      return this.fail('같은 도시로는 보급할 수 없습니다.');
+    }
+
+    if (!fromCity.adjacent.includes(toId)) {
+      return this.fail(`${fromCity.name}에서 ${toCity.name}(으)로 직접 보급할 수 없습니다. 인접하지 않습니다.`);
+    }
+
+    const scaleNames: Record<TransferScale, string> = {
+      small: '소규모', medium: '중규모', large: '대규모',
+    };
+
+    if (transferType === 'troops') {
+      const totalTroops = getTotalTroopsOfCity(fromCity);
+      if (totalTroops <= 0) {
+        return this.fail(`${fromCity.name}에 보급할 병력이 없습니다.`);
+      }
+
+      const ratio = TRANSFER_RATIOS[scale];
+      const infantryMoved = Math.floor(fromCity.troops.infantry * ratio);
+      const cavalryMoved = Math.floor(fromCity.troops.cavalry * ratio);
+      const navyMoved = Math.floor(fromCity.troops.navy * ratio);
+
+      this.stateManager.addCityTroops(fromId, 'infantry', -infantryMoved);
+      this.stateManager.addCityTroops(fromId, 'cavalry', -cavalryMoved);
+      this.stateManager.addCityTroops(fromId, 'navy', -navyMoved);
+
+      this.stateManager.addCityTroops(toId, 'infantry', infantryMoved);
+      this.stateManager.addCityTroops(toId, 'cavalry', cavalryMoved);
+      this.stateManager.addCityTroops(toId, 'navy', navyMoved);
+
+      const actualMoved = infantryMoved + cavalryMoved + navyMoved;
+      return {
+        success: true,
+        description: `${fromCity.name}에서 ${toCity.name}(으)로 병력 ${actualMoved.toLocaleString()}명을 보급했습니다. (${scaleNames[scale]})`,
+        sideEffects: [],
+        remainingActions: 0,
+      };
+    } else {
+      const amount = FOOD_TRANSFER_AMOUNTS[scale];
+      if (fromCity.food < amount) {
+        return this.fail(`${fromCity.name}의 군량이 부족합니다. 필요: ${amount}, 보유: ${fromCity.food}`);
+      }
+
+      this.stateManager.updateCity(fromId, { food: fromCity.food - amount });
+      const toCityNow = this.stateManager.getCity(toId)!;
+      this.stateManager.updateCity(toId, { food: toCityNow.food + amount });
+
+      return {
+        success: true,
+        description: `${fromCity.name}에서 ${toCity.name}(으)로 군량 ${amount.toLocaleString()}을(를) 보급했습니다. (${scaleNames[scale]})`,
+        sideEffects: [],
+        remainingActions: 0,
+      };
+    }
+  }
+
   // ─── 외교 ────────────────────────────────────────────
 
-  private executeSendEnvoy(target: FactionId, purpose: string): ActionResult {
-    const playerFaction = this.stateManager.getPlayerFaction();
-    const relation = this.stateManager.getRelation(playerFaction.id, target);
+  private executeSendEnvoy(factionId: FactionId, target: FactionId, purpose: string): ActionResult {
+    const relation = this.stateManager.getRelation(factionId, target);
     if (!relation) return this.fail(`${target}과(와)의 외교 관계가 없습니다.`);
 
     // 성공률 계산
-    const leader = this.stateManager.getGeneral(playerFaction.leader);
+    const faction = this.stateManager.getFaction(factionId);
+    const leader = faction ? this.stateManager.getGeneral(faction.leader) : undefined;
     const charismaBonus = leader ? GRADE_VALUES[leader.abilities.charisma] * 0.15 : 0;
-    const diplomats = this.stateManager.getGeneralsByFaction(playerFaction.id)
+    const diplomats = this.stateManager.getGeneralsByFaction(factionId)
       .filter(g => g.skills.includes('외교'));
     const diplomatBonus = diplomats.length > 0 ? 15 : 0;
     const relationBonus = relation.value * 0.2;
@@ -338,12 +422,12 @@ export class ActionExecutor {
 
     const roll = this.rng();
     const relationChange = roll < successRate ? 15 : -5;
-    const newValue = this.stateManager.addRelationValue(playerFaction.id, target, relationChange);
+    const newValue = this.stateManager.addRelationValue(factionId, target, relationChange);
 
     if (roll < successRate) {
-      // 동맹 체결 조건: 관계 80 이상 + purpose가 alliance
-      if (purpose === 'alliance' && newValue >= 80) {
-        this.stateManager.updateRelation(playerFaction.id, target, { isAlliance: true });
+      // 동맹 체결 조건: 관계 80 이상 (purpose 무관, 자동 체결)
+      if (newValue >= 80 && !relation.isAlliance) {
+        this.stateManager.updateRelation(factionId, target, { isAlliance: true });
         this.stateManager.setFlag('allianceStarted', true);
         if (newValue >= 90) this.stateManager.setFlag('allianceStrong', true);
         return {
@@ -371,11 +455,11 @@ export class ActionExecutor {
     };
   }
 
-  private executePersuade(targetGeneralId: string, method: string): ActionResult {
+  private executePersuade(factionId: FactionId, targetGeneralId: string, method: string): ActionResult {
     const target = this.stateManager.getGeneral(targetGeneralId);
     if (!target) return this.fail(`장수를 찾을 수 없습니다: ${targetGeneralId}`);
 
-    if (target.faction === this.stateManager.getPlayerFaction().id) {
+    if (target.faction === factionId) {
       return this.fail(`${target.name}은(는) 이미 아군입니다.`);
     }
 
@@ -413,13 +497,12 @@ export class ActionExecutor {
     };
   }
 
-  private executeThreaten(target: FactionId): ActionResult {
-    const playerFaction = this.stateManager.getPlayerFaction();
-    const relation = this.stateManager.getRelation(playerFaction.id, target);
+  private executeThreaten(factionId: FactionId, target: FactionId): ActionResult {
+    const relation = this.stateManager.getRelation(factionId, target);
     if (!relation) return this.fail(`${target}과(와)의 외교 관계가 없습니다.`);
 
     // 위협: 관계 하락, 적 일시적 행동 억제
-    this.stateManager.addRelationValue(playerFaction.id, target, -15);
+    this.stateManager.addRelationValue(factionId, target, -15);
     this.stateManager.setFlag(`threaten_${target}`, true);
 
     return {
@@ -430,13 +513,12 @@ export class ActionExecutor {
     };
   }
 
-  private executeGift(target: FactionId, amount: number): ActionResult {
-    const playerFaction = this.stateManager.getPlayerFaction();
-    const relation = this.stateManager.getRelation(playerFaction.id, target);
+  private executeGift(factionId: FactionId, target: FactionId, amount: number): ActionResult {
+    const relation = this.stateManager.getRelation(factionId, target);
     if (!relation) return this.fail(`${target}과(와)의 외교 관계가 없습니다.`);
 
-    // 자원 체크: 플레이어 도시 중 가장 식량이 많은 곳에서 차감
-    const cities = this.stateManager.getCitiesByFaction(playerFaction.id);
+    // 자원 체크: 해당 세력 도시 중 가장 식량이 많은 곳에서 차감
+    const cities = this.stateManager.getCitiesByFaction(factionId);
     const richestCity = cities.reduce((best, c) => c.food > best.food ? c : best, cities[0]);
     if (!richestCity || richestCity.food < amount) {
       return this.fail(`선물로 보낼 자원이 부족합니다.`);
@@ -447,7 +529,7 @@ export class ActionExecutor {
     });
 
     const relationBonus = Math.floor(amount / 200);
-    const newValue = this.stateManager.addRelationValue(playerFaction.id, target, relationBonus);
+    const newValue = this.stateManager.addRelationValue(factionId, target, relationBonus);
 
     return {
       success: true,
@@ -460,17 +542,21 @@ export class ActionExecutor {
   // ─── 군사 ────────────────────────────────────────────
 
   private executeMarch(
+    factionId: FactionId,
     from: string, to: string, generalIds: string[], troopsScale: TroopsScale,
   ): ActionResult {
     const fromCity = this.stateManager.getCity(from);
     if (!fromCity) return this.fail(`출발 도시를 찾을 수 없습니다: ${from}`);
-    if (fromCity.owner !== this.stateManager.getPlayerFaction().id) {
+    if (fromCity.owner !== factionId) {
       return this.fail('아군 도시에서만 진군할 수 있습니다.');
     }
 
     // 인접 체크
     if (!fromCity.adjacent.includes(to)) {
-      return this.fail(`${fromCity.name}에서 ${to}(으)로 직접 진군할 수 없습니다.`);
+      const toCity = this.stateManager.getCity(to);
+      const toBf = this.stateManager.getBattlefield(to);
+      const toName = toCity?.name ?? toBf?.name ?? to;
+      return this.fail(`${fromCity.name}에서 ${toName}(으)로 직접 진군할 수 없습니다.`);
     }
 
     // 장수 체크
@@ -510,12 +596,18 @@ export class ActionExecutor {
 
     const actualMarchTroops = infantryMoved + cavalryMoved + navyMoved;
 
+    // 동맹 체크 헬퍼
+    const isAllyOf = (other: FactionId) => {
+      const rel = this.stateManager.getRelation(factionId, other);
+      return rel?.isAlliance ?? false;
+    };
+
     // 전투 발생 체크
     const toCity = this.stateManager.getCity(to);
     const battlefield = this.stateManager.getBattlefield(to);
 
-    if (toCity && toCity.owner && toCity.owner !== this.stateManager.getPlayerFaction().id &&
-        !this.stateManager.isAlly(toCity.owner)) {
+    if (toCity && toCity.owner && toCity.owner !== factionId &&
+        !isAllyOf(toCity.owner)) {
       // 적 도시 → 전투 발생
       const defenderGenerals = this.stateManager.getGeneralsByLocation(to)
         .filter(g => g.faction === toCity.owner);
@@ -525,7 +617,7 @@ export class ActionExecutor {
         location: to,
         terrain: '평야',
         weather: this.stateManager.getState().season.includes('겨울') ? '북서풍' : '맑음',
-        attackerFaction: this.stateManager.getPlayerFaction().id,
+        attackerFaction: factionId,
         attackerGenerals: generalIds,
         attackerTroops: actualMarchTroops,
         defenderFaction: toCity.owner,
@@ -547,24 +639,35 @@ export class ActionExecutor {
     if (battlefield) {
       // 전투 지역으로 진군 → 적이 있는지 체크
       const enemies = this.stateManager.getGeneralsByLocation(to)
-        .filter(g => g.faction !== this.stateManager.getPlayerFaction().id &&
-                     !this.stateManager.isAlly(g.faction));
+        .filter(g => g.faction !== factionId && !isAllyOf(g.faction));
 
       if (enemies.length > 0) {
         const enemyFaction = enemies[0].faction;
-        // 적 병력 추정 (임시: 인접 도시 병력의 일부)
+        // 적 병력 추정 (인접 도시 병력의 30%)
         const enemyCities = this.stateManager.getCitiesByFaction(enemyFaction);
         const estimatedTroops = enemyCities.reduce(
           (sum, c) => sum + Math.floor(getTotalTroopsOfCity(c) * 0.3), 0
         );
 
+        // 동맹군 합류: 전투 지역에 있는 동맹 장수
+        const allies = this.stateManager.getGeneralsByLocation(to)
+          .filter(g => g.faction !== factionId && isAllyOf(g.faction));
+        const allAttackerGenerals = [...generalIds, ...allies.map(g => g.id)];
+
+        // 동맹 병력 추정 (동맹 도시 병력의 20%)
+        const alliedTroops = allies.length > 0
+          ? this.stateManager.getCitiesByFaction(allies[0].faction).reduce(
+              (sum, c) => sum + Math.floor(getTotalTroopsOfCity(c) * 0.2), 0
+            )
+          : 0;
+
         const battle = this.battleEngine.initBattle({
           location: to,
           terrain: battlefield.terrain,
           weather: this.stateManager.getState().season.includes('겨울') ? '북서풍' : '맑음',
-          attackerFaction: this.stateManager.getPlayerFaction().id,
-          attackerGenerals: generalIds,
-          attackerTroops: actualMarchTroops,
+          attackerFaction: factionId,
+          attackerGenerals: allAttackerGenerals,
+          attackerTroops: actualMarchTroops + alliedTroops,
           defenderFaction: enemyFaction,
           defenderGenerals: enemies.map(g => g.id),
           defenderTroops: estimatedTroops,
@@ -573,10 +676,17 @@ export class ActionExecutor {
 
         this.stateManager.setBattle(battle);
 
+        const allyNames = allies.map(g => g.name);
+        const allyMsg = allyNames.length > 0
+          ? ` 동맹군(${allyNames.join(', ')})이 합류합니다!`
+          : '';
+
         return {
           success: true,
-          description: `${fromCity.name}에서 ${battlefield.name}(으)로 진군합니다. 적과 조우! 전투가 시작됩니다!`,
-          sideEffects: [`병력 ${actualMarchTroops}명 출진`],
+          description: `${fromCity.name}에서 ${battlefield.name}(으)로 진군합니다. 적과 조우! 전투가 시작됩니다!${allyMsg}`,
+          sideEffects: [
+            `병력 ${actualMarchTroops}명 출진${alliedTroops > 0 ? `, 동맹 지원 ${alliedTroops}명` : ''}`,
+          ],
           remainingActions: 0,
           battleTriggered: battle,
         };
@@ -584,7 +694,7 @@ export class ActionExecutor {
     }
 
     // 적 없음 → 도시로 병력 이동
-    if (toCity && (toCity.owner === this.stateManager.getPlayerFaction().id || toCity.owner === null)) {
+    if (toCity && (toCity.owner === factionId || toCity.owner === null)) {
       this.stateManager.addCityTroops(to, 'infantry', infantryMoved);
       this.stateManager.addCityTroops(to, 'cavalry', cavalryMoved);
       this.stateManager.addCityTroops(to, 'navy', navyMoved);
@@ -599,7 +709,7 @@ export class ActionExecutor {
     };
   }
 
-  private executeScout(target: string): ActionResult {
+  private executeScout(factionId: FactionId, target: string): ActionResult {
     const targetCity = this.stateManager.getCity(target);
     const targetBattlefield = this.stateManager.getBattlefield(target);
     if (!targetCity && !targetBattlefield) {
@@ -607,7 +717,7 @@ export class ActionExecutor {
     }
 
     // 정찰 성공률: 기본 70%
-    const scouts = this.stateManager.getGeneralsByFaction(this.stateManager.getPlayerFaction().id)
+    const scouts = this.stateManager.getGeneralsByFaction(factionId)
       .filter(g => g.skills.includes('기략') || g.skills.includes('기습'));
     const scoutBonus = scouts.length > 0 ? 0.15 : 0;
     const successRate = 0.7 + scoutBonus;
@@ -644,10 +754,10 @@ export class ActionExecutor {
     };
   }
 
-  private executeFortify(cityId: string): ActionResult {
+  private executeFortify(factionId: FactionId, cityId: string): ActionResult {
     const city = this.stateManager.getCity(cityId);
     if (!city) return this.fail(`도시를 찾을 수 없습니다: ${cityId}`);
-    if (city.owner !== this.stateManager.getPlayerFaction().id) {
+    if (city.owner !== factionId) {
       return this.fail('아군 도시에서만 방비를 강화할 수 있습니다.');
     }
 
@@ -675,10 +785,10 @@ export class ActionExecutor {
     };
   }
 
-  private executeAmbush(location: string, generalId: string): ActionResult {
+  private executeAmbush(factionId: FactionId, location: string, generalId: string): ActionResult {
     const general = this.stateManager.getGeneral(generalId);
     if (!general) return this.fail(`장수를 찾을 수 없습니다: ${generalId}`);
-    if (general.faction !== this.stateManager.getPlayerFaction().id) {
+    if (general.faction !== factionId) {
       return this.fail('아군 장수만 매복시킬 수 있습니다.');
     }
 
@@ -686,9 +796,13 @@ export class ActionExecutor {
     this.stateManager.setFlag(`ambush_${location}`, generalId);
     this.stateManager.updateGeneral(generalId, { location });
 
+    const loc = this.stateManager.getCity(location);
+    const bf = this.stateManager.getBattlefield(location);
+    const locName = loc?.name ?? bf?.name ?? location;
+
     return {
       success: true,
-      description: `${general.name}이(가) ${location}에 매복을 설치했습니다.`,
+      description: `${general.name}이(가) ${locName}에 매복을 설치했습니다.`,
       sideEffects: ['적이 이 경로로 진군하면 기습을 가할 수 있습니다.'],
       remainingActions: 0,
     };

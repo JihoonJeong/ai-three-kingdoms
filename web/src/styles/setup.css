@@ -205,6 +205,38 @@
   color: var(--color-charcoal);
 }
 
+.setup-api-guide {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(0, 0, 0, 0.02);
+  margin-top: var(--space-xs);
+}
+
+.setup-api-guide-link {
+  display: inline-block;
+  color: var(--color-liu);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.setup-api-guide-link:hover {
+  opacity: 0.8;
+}
+
+.setup-api-guide-steps {
+  margin: var(--space-xs) 0 0 0;
+  padding-left: 20px;
+  font-size: 12px;
+  color: var(--color-charcoal);
+  line-height: 1.7;
+}
+
+.setup-api-guide-steps li {
+  padding-left: 2px;
+}
+
 /* ─── 버튼 ───────────────────────────────────────────── */
 
 .setup-actions {

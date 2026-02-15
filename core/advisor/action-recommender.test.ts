@@ -549,4 +549,141 @@ describe('parseRecommendations', () => {
     expect(result.recommendations).toHaveLength(1);
     expect(result.recommendations[0].confidence).toBe(80);
   });
+
+  it('설명에서 "퍼센트로/퍼센트" 중복 표현을 제거한다', () => {
+    const text = `서사...
+
+---ACTIONS---
+1. [scout|chibi] 95% 퍼센트로 장릉 주변 지형 분석
+2. [train|gangha] 80% 퍼센트 강하 병사 훈련
+3. [send_envoy|손권] 70% 손권에게 사신 파견`;
+
+    const result = parseRecommendations(text, CTX);
+    expect(result.recommendations).toHaveLength(3);
+    expect(result.recommendations[0].description).toBe('장릉 주변 지형 분석');
+    expect(result.recommendations[1].description).toBe('강하 병사 훈련');
+    expect(result.recommendations[2].description).toBe('손권에게 사신 파견');
+  });
+
+  it('액션 별명(alias)을 표준 액션으로 변환한다', () => {
+    const text = `서사...
+
+---ACTIONS---
+1. [reassign|유비|hagu] 85% 유비를 하구로 재배치
+2. [patrol|chibi] 70% 적벽 정찰
+3. [enlist|gangha|medium] 60% 강하 병력 동원`;
+
+    const result = parseRecommendations(text, CTX);
+    expect(result.recommendations).toHaveLength(3);
+
+    // reassign → assign
+    expect(result.recommendations[0].action).toEqual({
+      type: 'domestic', action: 'assign',
+      params: { general: 'liubei', destination: 'hagu' },
+    });
+    // patrol → scout
+    expect(result.recommendations[1].action).toEqual({
+      type: 'military', action: 'scout',
+      params: { target: 'chibi' },
+    });
+    // enlist → conscript
+    expect(result.recommendations[2].action).toEqual({
+      type: 'domestic', action: 'conscript',
+      params: { city: 'gangha', scale: 'medium' },
+    });
+  });
+
+  it('conscript 규모 별명(light→small 등)을 변환한다', () => {
+    const text = `서사...
+
+---ACTIONS---
+1. [conscript|gangha|light] 75% 소규모 징병`;
+
+    const result = parseRecommendations(text, CTX);
+    expect(result.recommendations).toHaveLength(1);
+    expect(result.recommendations[0].action).toEqual({
+      type: 'domestic', action: 'conscript',
+      params: { city: 'gangha', scale: 'small' },
+    });
+  });
+
+  it('번호 리스트 폴백: ---ACTIONS--- 없이 N. [action] N% 형태를 파싱한다', () => {
+    const text = `주공, 위기입니다. 식량이 부족합니다.
+
+### 구체적인 행동 제안
+
+1. **[trade|hagu|external] 95%** 외부와의 교역을 활성화
+2. **[conscript|gangha|medium] 90%** 강하에서 병력 동원
+3. **[ration_optimize|hagu] 95%** 식량 분배 최적화
+4. **[fortify|hagu] 85%** 하구 방어 강화
+5. **[train|gangha] 80%** 강하 병사 훈련`;
+
+    const result = parseRecommendations(text, CTX);
+    // trade, ration_optimize는 invalid → skip
+    // conscript, fortify, train만 유효 → 3개
+    expect(result.recommendations).toHaveLength(3);
+    expect(result.recommendations[0].action).toEqual({
+      type: 'domestic', action: 'conscript',
+      params: { city: 'gangha', scale: 'medium' },
+    });
+    expect(result.recommendations[1].action).toEqual({
+      type: 'military', action: 'fortify',
+      params: { city: 'hagu' },
+    });
+    expect(result.recommendations[2].action).toEqual({
+      type: 'domestic', action: 'train',
+      params: { city: 'gangha' },
+    });
+  });
+
+  it('파라미터 순서가 뒤바뀐 conscript를 교정한다 (conscript|essential|hagu)', () => {
+    const text = `서사...
+
+---ACTIONS---
+1. [conscript|essential|hagu] 90% 필수 병력 징집`;
+
+    const result = parseRecommendations(text, CTX);
+    // essential은 규모도 도시도 아님, hagu는 도시 → 순서 교정
+    // essential → scale 매핑 실패 → 기본값 medium 사용
+    expect(result.recommendations).toHaveLength(1);
+    expect(result.recommendations[0].action).toEqual({
+      type: 'domestic', action: 'conscript',
+      params: { city: 'hagu', scale: 'medium' },
+    });
+  });
+
+  it('develop에 도시만 있고 focus가 없으면 기본값 agriculture를 사용한다', () => {
+    const text = `서사...
+
+---ACTIONS---
+1. [develop|hagu|unknown_focus] 70% 하구 개발`;
+
+    const result = parseRecommendations(text, CTX);
+    expect(result.recommendations).toHaveLength(1);
+    expect(result.recommendations[0].action).toEqual({
+      type: 'domestic', action: 'develop',
+      params: { city: 'hagu', focus: 'agriculture' },
+    });
+  });
+
+  it('transfer 병력 보급 액션을 파싱한다', () => {
+    const text = `보급이 필요하오.
+
+---ACTIONS---
+1. [transfer|gangha|hagu|troops|medium] 80% 강하에서 하구로 병력 보급
+2. [train|hagu] 60% 하구 병사 훈련
+3. [transfer|gangha|hagu|food|small] 50% 강하에서 하구로 식량 보급`;
+
+    const result = parseRecommendations(text, CTX);
+    expect(result.recommendations).toHaveLength(3);
+    expect(result.recommendations[0].action).toEqual({
+      type: 'domestic', action: 'transfer',
+      params: { from: 'gangha', to: 'hagu', transferType: 'troops', scale: 'medium' },
+    });
+    expect(result.recommendations[0].confidence).toBe(80);
+    expect(result.recommendations[2].action).toEqual({
+      type: 'domestic', action: 'transfer',
+      params: { from: 'gangha', to: 'hagu', transferType: 'food', scale: 'small' },
+    });
+  });
 });

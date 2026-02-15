@@ -6,6 +6,7 @@ import type { AIProvider, ChatOptions, ProviderConfig, ProviderInfo, TestResult 
 import { sseToken, sseDone, sseError, inferExpression } from './stream-utils.js';
 
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
+const utf8 = new TextEncoder();
 
 const info: ProviderInfo = {
   id: 'gemini',
@@ -31,10 +32,10 @@ export const geminiProvider: AIProvider = {
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: '안녕' }] }],
+        body: utf8.encode(JSON.stringify({
+          contents: [{ parts: [{ text: 'hi' }] }],
           generationConfig: { maxOutputTokens: 16 },
-        }),
+        })),
       });
 
       if (!res.ok) {
@@ -82,11 +83,11 @@ export const geminiProvider: AIProvider = {
           const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+            body: utf8.encode(JSON.stringify({
               systemInstruction: { parts: [{ text: systemPrompt }] },
               contents: geminiContents,
               generationConfig,
-            }),
+            })),
           });
 
           if (!res.ok || !res.body) {

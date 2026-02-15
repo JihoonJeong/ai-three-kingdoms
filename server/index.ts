@@ -40,6 +40,7 @@ app.get('/api/config', (c) => {
     provider: config?.provider ?? null,
     model: config?.model ?? null,
     source,  // 'env-file' | 'env-var' | 'none'
+    hasApiKey: !!config?.apiKey,
   });
 });
 
@@ -155,6 +156,14 @@ app.post('/api/config/test', async (c) => {
     return c.json({ success: false, error: `알 수 없는 제공자: ${body.provider}` });
   }
 
+  // API 키 미포함 시 저장된 설정에서 보충
+  if (!body.apiKey && provider.info.requiresApiKey) {
+    const saved = loadConfig();
+    if (saved?.provider === body.provider && saved.apiKey) {
+      body.apiKey = saved.apiKey;
+    }
+  }
+
   const result = await provider.testConnection(body);
   return c.json(result);
 });
@@ -164,8 +173,13 @@ app.post('/api/config/test', async (c) => {
 app.post('/api/config/save', async (c) => {
   const body = await c.req.json<ProviderConfig>();
 
-  // 이전 Ollama 모델 언로드 (모델 전환 시 메모리 확보)
+  // API 키 미포함 시 저장된 설정에서 보충 (마법사에서 "키 저장됨" 상태로 저장)
   const prevConfig = loadConfig();
+  if (!body.apiKey && prevConfig?.provider === body.provider && prevConfig.apiKey) {
+    body.apiKey = prevConfig.apiKey;
+  }
+
+  // 이전 Ollama 모델 언로드 (모델 전환 시 메모리 확보)
   if (prevConfig?.provider === 'ollama' && prevConfig.model) {
     if (prevConfig.model !== body.model || body.provider !== 'ollama') {
       unloadOllamaModel(prevConfig.model, prevConfig.baseUrl).catch(() => {});

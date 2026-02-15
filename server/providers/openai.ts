@@ -6,6 +6,7 @@ import type { AIProvider, ChatOptions, ProviderConfig, ProviderInfo, TestResult 
 import { sseToken, sseDone, sseError, inferExpression } from './stream-utils.js';
 
 const BASE_URL = 'https://api.openai.com/v1';
+const utf8 = new TextEncoder();
 
 const info: ProviderInfo = {
   id: 'openai',
@@ -15,8 +16,7 @@ const info: ProviderInfo = {
   defaultModels: [
     { id: 'gpt-4o', name: 'GPT-4o' },
     { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
-    { id: 'gpt-5.2', name: 'GPT-5.2 Thinking' },
-    { id: 'gpt-5.2-chat-latest', name: 'GPT-5.2 Instant' },
+    { id: 'gpt-5.2', name: 'GPT-5.2' },
   ],
 };
 
@@ -25,17 +25,25 @@ export const openaiProvider: AIProvider = {
 
   async testConnection(config: ProviderConfig): Promise<TestResult> {
     try {
+      const model = config.model || info.defaultModels[0].id;
+      const isNew = /^(o[134]|gpt-5)/.test(model);
+      const body: Record<string, unknown> = {
+        model,
+        messages: [{ role: 'user', content: 'hi' }],
+      };
+      if (isNew) {
+        body.max_completion_tokens = 16;
+      } else {
+        body.max_tokens = 16;
+      }
+
       const res = await fetch(`${BASE_URL}/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${config.apiKey}`,
         },
-        body: JSON.stringify({
-          model: config.model || info.defaultModels[0].id,
-          messages: [{ role: 'user', content: '안녕' }],
-          max_tokens: 16,
-        }),
+        body: utf8.encode(JSON.stringify(body)),
       });
 
       if (!res.ok) {
@@ -58,8 +66,8 @@ export const openaiProvider: AIProvider = {
   ): ReadableStream<Uint8Array> {
     const model = config.model || info.defaultModels[0].id;
     const useThinking = chatOptions?.think ?? false;
-    // o-시리즈 추론 모델 감지 (o1, o3, o4-mini 등)
-    const isReasoningModel = /^o[134]/.test(model);
+    // max_completion_tokens 사용 모델 (o-시리즈 + GPT-5 이상)
+    const isNewModel = /^(o[134]|gpt-5)/.test(model);
 
     return new ReadableStream({
       async start(controller) {
@@ -76,7 +84,7 @@ export const openaiProvider: AIProvider = {
             stream: true,
           };
 
-          if (isReasoningModel) {
+          if (isNewModel) {
             // 추론 모델: reasoning_effort로 강도 조절
             body.reasoning_effort = useThinking ? 'high' : 'low';
             body.max_completion_tokens = useThinking ? 8000 : 2048;
@@ -90,7 +98,7 @@ export const openaiProvider: AIProvider = {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${config.apiKey}`,
             },
-            body: JSON.stringify(body),
+            body: utf8.encode(JSON.stringify(body)),
           });
 
           if (!res.ok || !res.body) {

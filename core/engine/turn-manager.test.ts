@@ -107,12 +107,28 @@ describe('TurnManager', () => {
       expect(result.gameOver).toBe(false);
     });
 
-    it('식량을 소비한다', () => {
+    it('식량을 생산하고 소비한다', () => {
+      const city = stateManager.getCity('gangha')!;
+      const foodBefore = city.food;
+      // 강하: 중도시(400) × 농업B(1.0) = 400 생산, 8000병 × 0.1 = 800 소비
+      turnManager.startTurn();
+      turnManager.endTurn();
+      const foodAfter = stateManager.getCity('gangha')!.food;
+      // 순손실 = 800 - 400 = 400
+      expect(foodAfter).toBe(foodBefore - 400);
+    });
+
+    it('농업 등급이 높으면 식량 생산량이 증가한다', () => {
+      // 강하 농업을 S로 올림: 중도시(400) × S(1.8) = 720 생산
+      stateManager.updateCity('gangha', {
+        development: { agriculture: 'S', commerce: 'C', defense: 'B' },
+      });
       const foodBefore = stateManager.getCity('gangha')!.food;
       turnManager.startTurn();
       turnManager.endTurn();
       const foodAfter = stateManager.getCity('gangha')!.food;
-      expect(foodAfter).toBeLessThan(foodBefore);
+      // 순손실 = 800 - 720 = 80
+      expect(foodAfter).toBe(foodBefore - 80);
     });
 
     it('다음 턴 프리뷰를 반환한다', () => {

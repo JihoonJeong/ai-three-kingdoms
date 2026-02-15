@@ -61,15 +61,44 @@
   justify-content: center;
 }
 
+/* ─── General Portrait (이름 + 능력치) ─────────────── */
 .battle-portrait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
   width: 100px;
-  height: 100px;
+}
+
+.battle-portrait-img {
+  width: 80px;
+  height: 80px;
   border: 2px solid var(--color-gold);
   overflow: hidden;
 }
 
-.battle-portrait img { width: 100%; height: 100%; object-fit: cover; }
+.battle-portrait-img img { width: 100%; height: 100%; object-fit: cover; }
 
+.battle-portrait-info { text-align: center; }
+
+.battle-portrait-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-hanji);
+}
+
+.battle-portrait-stats {
+  font-size: 9px;
+  color: var(--color-gold);
+  opacity: 0.8;
+}
+
+.battle-portrait-skills {
+  font-size: 8px;
+  color: var(--color-cinnabar);
+}
+
+/* ─── Stats Gauges ─────────────────────────────────── */
 .battle-stats { width: 100%; }
 
 .battle-stat-row {
@@ -108,6 +137,26 @@
   opacity: 0.8;
 }
 
+/* ─── Battle Guide ─────────────────────────────────── */
+.battle-guide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-lg);
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--color-hanji);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.battle-guide-text { opacity: 0.9; }
+
+.battle-guide-text.active {
+  color: var(--color-gold);
+  font-weight: 700;
+}
+
 /* ─── Tactic Cards ──────────────────────────────────── */
 .tactic-cards {
   display: flex;
@@ -120,6 +169,7 @@
 }
 
 .tactic-card {
+  position: relative;
   width: 100px;
   min-width: 100px;
   background: rgba(245, 240, 232, 0.9);
@@ -130,8 +180,34 @@
   text-align: center;
 }
 
-.tactic-card:hover { border-color: var(--color-gold); transform: translateY(-4px); }
-.tactic-card.selected { border-color: var(--color-gold); box-shadow: 0 0 12px rgba(212, 160, 23, 0.4); }
+.tactic-card:hover {
+  border-color: var(--color-gold);
+  transform: translateY(-4px);
+}
+
+.tactic-card.selected {
+  border: 3px solid var(--color-gold);
+  box-shadow: 0 0 16px rgba(212, 160, 23, 0.5);
+  transform: translateY(-6px) scale(1.05);
+  background: rgba(245, 240, 232, 1);
+}
+
+/* 선택 배지 */
+.tactic-selected-badge {
+  display: none;
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: var(--color-gold);
+  color: var(--color-ink);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 1;
+}
+
+.tactic-card.selected .tactic-selected-badge { display: block; }
 
 .tactic-card-img {
   width: 80px;
@@ -149,6 +225,22 @@
 .tactic-card-risk.mid { color: var(--color-warn); }
 .tactic-card-risk.high { color: var(--color-fail); }
 
+.tactic-card-req {
+  font-size: 9px;
+  color: var(--color-gold);
+  margin-top: 2px;
+  opacity: 0.8;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1px 3px;
+}
+
+/* ─── Execute Button ───────────────────────────────── */
+.btn-execute.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* ─── Battle Footer ─────────────────────────────────── */
 .battle-footer {
   display: flex;
@@ -161,7 +253,7 @@
 
 .battle-log {
   flex: 1;
-  max-height: 60px;
+  max-height: 120px;
   overflow-y: auto;
   font-size: 12px;
   color: var(--color-hanji);
@@ -169,7 +261,13 @@
   margin-right: var(--space-md);
 }
 
-.battle-log-entry { padding: 1px 0; }
+.battle-log-entry { padding: 2px 0; border-bottom: 1px solid rgba(245, 240, 232, 0.1); }
+
+.log-turn { color: var(--color-gold); font-weight: 700; }
+.log-tactics { opacity: 0.7; }
+.log-damage { font-size: 10px; margin-top: 1px; }
+.dmg-enemy { color: #2d6a4f; margin-right: var(--space-sm); }
+.dmg-ally { color: var(--color-cinnabar); }
 
 /* ─── Battle Effects ────────────────────────────────── */
 .fx-fire {
@@ -197,14 +295,82 @@
   80% { transform: translateX(4px); }
 }
 
+/* ─── Turn Result Overlay ──────────────────────────── */
+.battle-turn-result {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 10;
+}
+
+.turn-result-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-gold);
+}
+
+.turn-result-tactics {
+  font-size: 16px;
+  color: var(--color-hanji);
+  letter-spacing: 2px;
+}
+
+.turn-result-desc {
+  font-size: 14px;
+  color: var(--color-hanji);
+  max-width: 500px;
+  text-align: center;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+.turn-result-stats {
+  display: flex;
+  gap: var(--space-lg);
+}
+
+.turn-result-stat {
+  padding: var(--space-md) var(--space-lg);
+  min-width: 140px;
+  text-align: center;
+  border: 1px solid rgba(245, 240, 232, 0.2);
+}
+
+.turn-result-stat .stat-label {
+  font-size: 12px;
+  color: var(--color-hanji);
+  opacity: 0.7;
+  margin-bottom: var(--space-xs);
+}
+
+.turn-result-stat .stat-value {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.turn-result-stat.enemy .stat-value { color: #2d6a4f; }
+.turn-result-stat.ally .stat-value { color: var(--color-cinnabar); }
+
+.stat-morale { font-size: 12px; margin-top: var(--space-xs); }
+.stat-morale.positive { color: #2d6a4f; }
+.stat-morale.negative { color: var(--color-cinnabar); }
+
 /* ─── Battle Result Overlay ─────────────────────────── */
 .battle-result {
   position: absolute;
   top: 0; left: 0;
   width: 100%; height: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: var(--space-md);
   background: rgba(0, 0, 0, 0.7);
   z-index: 10;
 }
@@ -216,4 +382,21 @@
 }
 
 .battle-result-win { color: var(--color-gold); }
+.battle-result-draw { color: var(--color-hanji); }
 .battle-result-lose { color: var(--color-cinnabar); }
+
+.battle-result-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 14px;
+  color: var(--color-hanji);
+  opacity: 0.9;
+}
+
+.battle-result-captured {
+  font-size: 13px;
+  color: var(--color-gold);
+  margin-top: var(--space-xs);
+}

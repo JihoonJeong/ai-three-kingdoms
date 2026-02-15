@@ -38,6 +38,9 @@ export function resolveExpression(generalId: string, context: ExpressionContext)
   if (!map) return 'default';
 
   switch (context.type) {
+    case 'battle':
+      return map.expr1 ?? 'default';  // 전투 표정 (분노/돌격/결의)
+
     case 'battle_win':
     case 'diplomacy_success':
       return map.expr2 ?? 'default';  // 긍정 표정

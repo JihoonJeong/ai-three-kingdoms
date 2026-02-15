@@ -178,6 +178,11 @@ export class EventSystem {
         return caimao ? caimao.condition !== '사망' && caimao.condition !== '포로' : false;
       }
 
+      case 'cao_at_chibi':
+        return state.generals.some(
+          g => g.faction === '조조' && g.location === 'chibi' && g.condition === '양호'
+        );
+
       default:
         // 일반 플래그 체크
         return !!state.flags[condition];

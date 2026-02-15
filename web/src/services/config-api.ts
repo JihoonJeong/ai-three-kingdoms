@@ -7,6 +7,7 @@ export interface ConfigStatus {
   provider: string | null;
   model: string | null;
   source: 'env-file' | 'env-var' | 'none';
+  hasApiKey: boolean;
 }
 
 export interface ModelInfo {

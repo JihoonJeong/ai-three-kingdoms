@@ -286,10 +286,17 @@ export class AdvisorScreen {
   private extractNarrative(text: string): { narrative: string; hasActions: boolean } {
     const match = SEPARATOR_REGEX.exec(text);
     if (match) return { narrative: text.slice(0, match.index).trim(), hasActions: true };
-    // Fallback: **액션**: 또는 인라인 **action|params** 패턴 감지
+    // Fallback: **액션**: 또는 인라인 **action|params** 패턴, [cmd|params] 번호 리스트 감지
     const hasFallback = /\*{0,2}액션\*{0,2}\s*[:：]/.test(text)
-      || /\*\*[a-z_]+\|[^*]+\*\*/.test(text);
-    return { narrative: text.trim(), hasActions: hasFallback };
+      || /\*\*[a-z_]+\|[^*]+\*\*/.test(text)
+      || /^\d+\.\s*\[?[a-z_]+\|/m.test(text);
+    // 액션 라인 제거: [cmd|params], **cmd|params**, **액션**: 형태
+    const cleaned = text.split('\n').filter(l => {
+      const t = l.trim();
+      return !/^\d+\.\s*\*{0,2}\[?[a-z_]+\|/.test(t)
+        && !/\*{0,2}액션\*{0,2}\s*[:：]\s*[a-z_]+\|/.test(t);
+    }).join('\n').trim();
+    return { narrative: cleaned || text.trim(), hasActions: hasFallback };
   }
 
   /** AI 응답에서 추천을 파싱하여 패널 갱신 */
@@ -298,6 +305,17 @@ export class AdvisorScreen {
 
     const ctx = this.buildRecommendationContext();
     const { recommendations } = parseRecommendations(fullText, ctx);
+
+    // 디버그: AI 원본 ACTIONS 블록 vs 파싱 결과
+    const sepMatch = /-{2,}\s*actions?\s*-{2,}/i.exec(fullText);
+    if (sepMatch) {
+      const actionBlock = fullText.slice(sepMatch.index).trim();
+      console.log('[추천 디버그] AI 원본 ACTIONS:\n', actionBlock);
+      console.log('[추천 디버그] 파싱 결과:', recommendations.length, '개',
+        recommendations.map(r => `${r.description}(${r.confidence}%)`));
+    } else {
+      console.log('[추천 디버그] ---ACTIONS--- 구분자 없음. Fallback 파싱:', recommendations.length, '개');
+    }
 
     if (recommendations.length > 0) {
       this.recommendations = recommendations;
