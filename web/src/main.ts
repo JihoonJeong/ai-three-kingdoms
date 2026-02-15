@@ -19,8 +19,10 @@ import { SetupScreen } from './screens/setup-screen.js';
 import { ActionMenu } from './components/action-menu.js';
 import { TurnSummary } from './components/turn-summary.js';
 import { checkConfig, testConnection } from './services/config-api.js';
+import { requestFactionTurn } from './services/advisor-api.js';
 import { getTotalTroopsOfCity } from '../../core/data/types.js';
 import type { GameState, GameAction, BattleState, EventResult, GameResult } from '../../core/data/types.js';
+import type { FactionLLMClient } from '../../core/advisor/faction-llm-client.js';
 
 // ─── Bootstrap ─────────────────────────────────────────
 const app = document.getElementById('app')!;
@@ -174,6 +176,16 @@ function startGame(aiEnabled: boolean, modelName?: string | null): void {
   app.innerHTML = '';
 
   const controller = new GameController();
+
+  // AI 활성화 시 Faction LLM 클라이언트 설정
+  if (aiEnabled) {
+    const llmClient: FactionLLMClient = {
+      requestFactionTurn: (factionId, gameState) =>
+        requestFactionTurn(factionId, gameState),
+    };
+    controller.setLLMClient(llmClient);
+  }
+
   const layout = new Layout(app);
 
   // ─── Screens ───────────────────────────────────────────
@@ -267,13 +279,18 @@ function startGame(aiEnabled: boolean, modelName?: string | null): void {
   let pendingCutsceneEvents: EventResult[] = [];
   let pendingAIBattle = false;
 
-  actionMenu.onEndTurn(() => {
+  actionMenu.onEndTurn(async () => {
     const completedTurn = controller.getState().turn;
 
     // 스냅샷: 턴 종료 전 상태 저장
     turnSummary.captureBeforeState(controller.getState());
 
-    const result = controller.endTurn();
+    // 턴 종료 버튼 비활성화 (LLM 호출 대기)
+    actionMenu.setEnabled(false);
+
+    const result = await controller.endTurn();
+
+    actionMenu.setEnabled(true);
 
     // 이벤트 로그 기록
     for (const evt of result.events) {

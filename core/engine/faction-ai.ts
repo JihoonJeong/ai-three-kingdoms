@@ -11,6 +11,10 @@ import {
 } from '../data/types.js';
 import { GameStateManager } from './game-state.js';
 import { ActionExecutor } from './action-executor.js';
+import type { FactionLLMClient } from '../advisor/faction-llm-client.js';
+import type { FactionTurnJSON } from '../advisor/types.js';
+import { actionJSONToGameAction } from '../advisor/action-recommender.js';
+import type { RecommendationContext } from '../advisor/action-recommender.js';
 
 // ─── 타입 정의 ─────────────────────────────────────────
 
@@ -48,20 +52,40 @@ export class FactionAIEngine {
     private stateManager: GameStateManager,
     private executor: ActionExecutor,
     private rng: () => number,
+    private llmClient?: FactionLLMClient,
   ) {}
 
-  processAll(): { changes: string[]; battle?: BattleState } {
+  async processAll(): Promise<{ changes: string[]; battle?: BattleState }> {
     const changes: string[] = [];
     const state = this.stateManager.getState();
     let battle: BattleState | undefined;
 
     for (const faction of state.factions) {
       if (faction.isPlayer) continue;
-      const strategy = STRATEGIES[faction.id];
-      if (!strategy) continue;
 
-      const ctx = this.buildContext(state, faction.id);
-      const plan = strategy.planTurn(state, ctx, this.rng);
+      let plan: AITurnPlan;
+
+      if (this.llmClient) {
+        // LLM 모드: 서버를 통해 LLM 호출
+        try {
+          const response = await this.llmClient.requestFactionTurn(
+            faction.id, state,
+          );
+          plan = this.convertJSONToPlan(response, state, faction.id);
+        } catch {
+          // LLM 실패 시 폴백: 기존 하드코딩 전략
+          const strategy = STRATEGIES[faction.id];
+          if (!strategy) continue;
+          const ctx = this.buildContext(state, faction.id);
+          plan = strategy.planTurn(state, ctx, this.rng);
+        }
+      } else {
+        // 폴백: 기존 하드코딩 전략
+        const strategy = STRATEGIES[faction.id];
+        if (!strategy) continue;
+        const ctx = this.buildContext(state, faction.id);
+        plan = strategy.planTurn(state, ctx, this.rng);
+      }
 
       // ① 플래그 설정 (마일스톤/적응 규칙에서 예약)
       for (const [key, value] of Object.entries(plan.flagsToSet)) {
@@ -117,6 +141,71 @@ export class FactionAIEngine {
       isAlliedWithPlayer: isAllied,
       playerTotalTroops,
       flags: state.flags,
+    };
+  }
+
+  private convertJSONToPlan(
+    response: FactionTurnJSON,
+    state: Readonly<GameState>,
+    factionId: FactionId,
+  ): AITurnPlan {
+    const ctx = this.buildContext(state, factionId);
+
+    // 해당 세력 시점의 RecommendationContext 구성
+    const recCtx: RecommendationContext = {
+      playerCities: state.cities.filter(c => c.owner === factionId)
+        .map(c => ({ id: c.id, name: c.name })),
+      playerGenerals: state.generals.filter(g => g.faction === factionId)
+        .map(g => ({ id: g.id, name: g.name, location: g.location })),
+      factions: state.factions.filter(f => f.id !== factionId).map(f => f.id),
+      allLocations: [
+        ...state.cities.map(c => c.id),
+        ...state.battlefields.map(b => b.id),
+      ],
+    };
+
+    const actions: GameAction[] = [];
+    const deployments: Deployment[] = [];
+
+    for (const aj of response.actions) {
+      // assign으로 전장(chibi 등)에 배치하려는 경우 → deployment로 변환
+      if (aj.type === 'assign' && aj.params.destination) {
+        const isBattlefield = state.battlefields.some(
+          b => b.id === aj.params.destination,
+        );
+        if (isBattlefield && aj.params.general) {
+          deployments.push({
+            generalId: aj.params.general,
+            destination: aj.params.destination,
+          });
+          continue;
+        }
+      }
+
+      const ga = actionJSONToGameAction(aj, recCtx);
+      if (ga) actions.push(ga);
+    }
+
+    // 유지 보너스 기본값 (하드코딩 전략과 동일)
+    let trainingBonus: number;
+    let foodBonus: number;
+
+    if (factionId === '조조') {
+      trainingBonus = ctx.phase === 'preparation' ? 3 : 2;
+      foodBonus = 300;
+    } else {
+      // 손권
+      trainingBonus = ctx.isAlliedWithPlayer ? 5 : 2;
+      foodBonus = ctx.isAlliedWithPlayer ? 200 : 0;
+    }
+
+    return {
+      actions,
+      deployments,
+      messages: response.message ? [response.message] : [],
+      trainingBonus,
+      foodBonus,
+      flagsToSet: {},
     };
   }
 

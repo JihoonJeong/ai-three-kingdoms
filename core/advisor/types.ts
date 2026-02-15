@@ -75,6 +75,30 @@ export interface AdvisorView {
   contextKnowledge: string[];
 }
 
+// ─── 액션 JSON 스키마 ────────────────────────────────────
+
+/** LLM이 출력하는 단일 액션 */
+export interface ActionJSON {
+  type: string;                    // conscript, develop, train, recruit, assign,
+                                   // transfer, send_envoy, gift, threaten,
+                                   // scout, fortify, march, ambush, pass
+  params: Record<string, string>;  // 액션별 파라미터
+  confidence: number;              // 0-100
+  description: string;             // 한국어 설명 (Faction AI는 빈 문자열 가능)
+}
+
+/** 제갈량 응답 파싱 결과 */
+export interface AdvisorResponse {
+  narrative: string;               // 서사 브리핑
+  actions: ActionJSON[];           // 추천 액션 (최대 3개)
+}
+
+/** Faction AI 턴 계획 (LLM 출력) */
+export interface FactionTurnJSON {
+  actions: ActionJSON[];           // 이번 턴 행동 (최대 3개)
+  message?: string;                // 정찰 보고용 메시지 (선택)
+}
+
 // ─── 채팅 메시지 ────────────────────────────────────────
 
 export type ChatRole = 'user' | 'assistant';

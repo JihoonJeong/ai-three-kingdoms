@@ -2,12 +2,31 @@
 // 책사 API 클라이언트 (SSE Streaming)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-import type { GameState, GameLanguage } from '../../../core/data/types.js';
-import type { ChatMessage, AdvisorExpression, ChatStreamCallbacks } from '../../../core/advisor/types.js';
+import type { GameState, GameLanguage, FactionId } from '../../../core/data/types.js';
+import type { ChatMessage, AdvisorExpression, ChatStreamCallbacks, FactionTurnJSON } from '../../../core/advisor/types.js';
 
 export async function checkHealth(): Promise<{ hasApiKey: boolean }> {
   const res = await fetch('/api/health');
   return res.json();
+}
+
+export async function requestFactionTurn(
+  factionId: FactionId,
+  gameState: GameState,
+): Promise<FactionTurnJSON> {
+  try {
+    const res = await fetch('/api/faction-turn', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ factionId, gameState }),
+    });
+    if (!res.ok) {
+      return { actions: [] };
+    }
+    return await res.json() as FactionTurnJSON;
+  } catch {
+    return { actions: [] };  // 실패 시 빈 행동
+  }
 }
 
 export interface StreamChatOptions {

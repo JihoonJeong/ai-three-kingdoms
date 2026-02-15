@@ -13,10 +13,13 @@ import { GameStateManager } from './game-state.js';
 import { EventSystem } from './event-system.js';
 import { VictoryJudge } from './victory-judge.js';
 import { FactionAIEngine } from './faction-ai.js';
+import type { FactionLLMClient } from '../advisor/faction-llm-client.js';
 import type { BattleEngine } from './battle-engine.js';
 import type { ActionExecutor } from './action-executor.js';
 
 export class TurnManager {
+  private llmClient?: FactionLLMClient;
+
   constructor(
     private stateManager: GameStateManager,
     private eventSystem: EventSystem,
@@ -25,6 +28,10 @@ export class TurnManager {
     private rng: () => number = Math.random,
     private actionExecutor: ActionExecutor | null = null,
   ) {}
+
+  setLLMClient(client: FactionLLMClient | undefined): void {
+    this.llmClient = client;
+  }
 
   startTurn(): TurnStartResult {
     const state = this.stateManager.getState();
@@ -48,7 +55,7 @@ export class TurnManager {
     };
   }
 
-  endTurn(): TurnEndResult {
+  async endTurn(): Promise<TurnEndResult> {
     const state = this.stateManager.getState();
     const stateChanges: string[] = [];
 
@@ -60,7 +67,7 @@ export class TurnManager {
     const eventResults = this.eventSystem.processTurn(this.stateManager);
 
     // 3. AI 세력 행동
-    const aiResult = this.processAIFactions();
+    const aiResult = await this.processAIFactions();
     stateChanges.push(...aiResult.changes);
 
     // 4. 게임오버 체크
@@ -152,13 +159,13 @@ export class TurnManager {
 
   // ─── AI 세력 행동 ──────────────────────────────────────
 
-  private processAIFactions(): { changes: string[]; battle?: BattleState } {
+  private async processAIFactions(): Promise<{ changes: string[]; battle?: BattleState }> {
     if (!this.actionExecutor) {
       return { changes: [] };
     }
 
     const aiEngine = new FactionAIEngine(
-      this.stateManager, this.actionExecutor, this.rng,
+      this.stateManager, this.actionExecutor, this.rng, this.llmClient,
     );
     return aiEngine.processAll();
   }

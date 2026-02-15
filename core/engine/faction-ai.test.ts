@@ -5,6 +5,8 @@ import { BattleEngine } from './battle-engine.js';
 import { GameStateManager } from './game-state.js';
 import { createRedCliffsScenario } from '../data/scenarios/red-cliffs.js';
 import { getTotalTroopsOfCity } from '../data/types.js';
+import type { FactionLLMClient } from '../advisor/faction-llm-client.js';
+import type { FactionTurnJSON } from '../advisor/types.js';
 
 describe('FactionAIEngine', () => {
   let stateManager: GameStateManager;
@@ -16,11 +18,12 @@ describe('FactionAIEngine', () => {
     allied?: boolean;
     chibiDeployed?: boolean;
     chibiVictory?: boolean;
+    llmClient?: FactionLLMClient;
   }) {
     stateManager = new GameStateManager(createRedCliffsScenario('test-ai'));
     const battleEngine = new BattleEngine(fixedRng);
     executor = new ActionExecutor(stateManager, battleEngine, fixedRng);
-    aiEngine = new FactionAIEngine(stateManager, executor, fixedRng);
+    aiEngine = new FactionAIEngine(stateManager, executor, fixedRng, options?.llmClient);
 
     // 턴 설정
     for (let i = 1; i < turn; i++) {
@@ -42,32 +45,32 @@ describe('FactionAIEngine', () => {
     }
   }
 
-  describe('CaoStrategy', () => {
-    it('Turn 3에 남군 대규모 징집 계획', () => {
+  describe('CaoStrategy (폴백)', () => {
+    it('Turn 3에 남군 대규모 징집 계획', async () => {
       createEngine(3);
       const nanjunBefore = stateManager.getCity('nanjun')!;
       const troopsBefore = getTotalTroopsOfCity(nanjunBefore);
 
-      const result = aiEngine.processAll();
+      const result = await aiEngine.processAll();
 
       const nanjunAfter = stateManager.getCity('nanjun')!;
       const troopsAfter = getTotalTroopsOfCity(nanjunAfter);
       expect(troopsAfter).toBeGreaterThan(troopsBefore);
-      expect(result.changes.some(c => c.includes('징병'))).toBe(true);
+      expect(result.changes.some(c => c.includes('징집'))).toBe(true);
     });
 
-    it('Turn 5에 조인을 장릉→남군 이동', () => {
+    it('Turn 5에 조인을 장릉→남군 이동', async () => {
       createEngine(5);
       // 마일스톤 3 플래그를 미리 설정 (이전 턴에 이미 실행된 것으로)
       stateManager.setFlag('cao_m_conscript1', true);
 
-      aiEngine.processAll();
+      await aiEngine.processAll();
 
       const caoren = stateManager.getGeneral('caoren')!;
       expect(caoren.location).toBe('nanjun');
     });
 
-    it('Turn 9에 적벽 배치 계획', () => {
+    it('Turn 9에 적벽 배치 계획', async () => {
       createEngine(9);
       // 이전 마일스톤 플래그 설정
       stateManager.setFlag('cao_m_conscript1', true);
@@ -75,7 +78,7 @@ describe('FactionAIEngine', () => {
       stateManager.setFlag('cao_m_conscript2', true);
       stateManager.setFlag('cao_m_march_south', true);
 
-      const result = aiEngine.processAll();
+      const result = await aiEngine.processAll();
 
       const caimao = stateManager.getGeneral('caimao')!;
       const zhangyun = stateManager.getGeneral('zhangyun')!;
@@ -85,21 +88,21 @@ describe('FactionAIEngine', () => {
       expect(result.changes.some(c => c.includes('적벽'))).toBe(true);
     });
 
-    it('동맹 감지 시 적벽 배치 가속 (Turn 7)', () => {
+    it('동맹 감지 시 적벽 배치 가속 (Turn 7)', async () => {
       createEngine(7, { allied: true });
       // 이전 마일스톤 플래그 설정
       stateManager.setFlag('cao_m_conscript1', true);
       stateManager.setFlag('cao_m_caoren', true);
       stateManager.setFlag('cao_m_conscript2', true);
 
-      aiEngine.processAll();
+      await aiEngine.processAll();
 
       const caimao = stateManager.getGeneral('caimao')!;
       expect(caimao.location).toBe('chibi');
       expect(stateManager.getFlag('cao_chibi_deployed')).toBe(true);
     });
 
-    it('Turn 10에 적벽 증원 배치', () => {
+    it('Turn 10에 적벽 증원 배치', async () => {
       createEngine(10, { chibiDeployed: true });
       // 이전 마일스톤 플래그 설정
       stateManager.setFlag('cao_m_conscript1', true);
@@ -110,7 +113,7 @@ describe('FactionAIEngine', () => {
       stateManager.updateGeneral('caimao', { location: 'chibi' });
       stateManager.updateGeneral('zhangyun', { location: 'chibi' });
 
-      aiEngine.processAll();
+      await aiEngine.processAll();
 
       expect(stateManager.getFlag('cao_chibi_reinforced')).toBe(true);
       // 조조 빼고 chibi에 아닌 양호 장수 하나가 적벽으로 이동
@@ -120,21 +123,21 @@ describe('FactionAIEngine', () => {
       expect(chibiGenerals.length).toBeGreaterThanOrEqual(3);
     });
 
-    it('적벽 승리 후 공격 중단', () => {
+    it('적벽 승리 후 공격 중단', async () => {
       createEngine(12, { chibiDeployed: true, chibiVictory: true });
       stateManager.setFlag('cao_m_conscript1', true);
       stateManager.setFlag('cao_m_caoren', true);
       stateManager.setFlag('cao_m_conscript2', true);
       stateManager.setFlag('cao_m_march_south', true);
 
-      const result = aiEngine.processAll();
+      const result = await aiEngine.processAll();
 
       // 훈련/식량 유지는 하지만 공격 행동 없음
       const hasAttack = result.changes.some(c => c.includes('공격') || c.includes('진군'));
       expect(hasAttack).toBe(false);
     });
 
-    it('남군 병력 부족 시 보충 징집', () => {
+    it('남군 병력 부족 시 보충 징집', async () => {
       createEngine(8);
       stateManager.setFlag('cao_m_conscript1', true);
       stateManager.setFlag('cao_m_caoren', true);
@@ -148,7 +151,7 @@ describe('FactionAIEngine', () => {
       const nanjunBefore = stateManager.getCity('nanjun')!;
       const troopsBefore = getTotalTroopsOfCity(nanjunBefore);
 
-      aiEngine.processAll();
+      await aiEngine.processAll();
 
       const nanjunAfter = stateManager.getCity('nanjun')!;
       const troopsAfter = getTotalTroopsOfCity(nanjunAfter);
@@ -156,23 +159,23 @@ describe('FactionAIEngine', () => {
       expect(troopsAfter).toBeGreaterThan(troopsBefore);
     });
 
-    it('훈련 보너스 적용 (preparation phase)', () => {
+    it('훈련 보너스 적용 (preparation phase)', async () => {
       createEngine(2);
       const nanjunBefore = stateManager.getCity('nanjun')!;
       const trainingBefore = nanjunBefore.training;
 
-      aiEngine.processAll();
+      await aiEngine.processAll();
 
       const nanjunAfter = stateManager.getCity('nanjun')!;
       expect(nanjunAfter.training).toBeGreaterThanOrEqual(trainingBefore + 3);
     });
 
-    it('식량 정규화 (생산/소비 + 보너스 300)', () => {
+    it('식량 정규화 (생산/소비 + 보너스 300)', async () => {
       createEngine(1);
       const nanjunBefore = stateManager.getCity('nanjun')!;
       const foodBefore = nanjunBefore.food;
 
-      aiEngine.processAll();
+      await aiEngine.processAll();
 
       const nanjunAfter = stateManager.getCity('nanjun')!;
       // 식량 변동 발생 (생산 + 300 보너스 - 소비)
@@ -180,38 +183,38 @@ describe('FactionAIEngine', () => {
     });
   });
 
-  describe('SunStrategy', () => {
-    it('동맹 시 시상 훈련 보너스 +5', () => {
+  describe('SunStrategy (폴백)', () => {
+    it('동맹 시 시상 훈련 보너스 +5', async () => {
       createEngine(3, { allied: true });
       const sishangBefore = stateManager.getCity('sishang')!;
       const trainingBefore = sishangBefore.training;
 
-      aiEngine.processAll();
+      await aiEngine.processAll();
 
       const sishangAfter = stateManager.getCity('sishang')!;
       // 훈련 보너스 +5 + 가능한 train 액션
       expect(sishangAfter.training).toBeGreaterThanOrEqual(trainingBefore + 5);
     });
 
-    it('비동맹 시 낮은 훈련 보너스 +2', () => {
+    it('비동맹 시 낮은 훈련 보너스 +2', async () => {
       createEngine(3);
       const sishangBefore = stateManager.getCity('sishang')!;
       const trainingBefore = sishangBefore.training;
 
-      aiEngine.processAll();
+      await aiEngine.processAll();
 
       const sishangAfter = stateManager.getCity('sishang')!;
       expect(sishangAfter.training).toBe(Math.min(100, trainingBefore + 2));
     });
 
-    it('동맹 + 적벽 배치 시 주유 파견 (Turn 10+)', () => {
+    it('동맹 + 적벽 배치 시 주유 파견 (Turn 10+)', async () => {
       createEngine(10, { allied: true, chibiDeployed: true });
       stateManager.setFlag('cao_m_conscript1', true);
       stateManager.setFlag('cao_m_caoren', true);
       stateManager.setFlag('cao_m_conscript2', true);
       stateManager.setFlag('cao_m_march_south', true);
 
-      const result = aiEngine.processAll();
+      const result = await aiEngine.processAll();
 
       const zhouyu = stateManager.getGeneral('zhouyu')!;
       expect(zhouyu.location).toBe('chibi');
@@ -219,7 +222,7 @@ describe('FactionAIEngine', () => {
       expect(result.changes.some(c => c.includes('주유'))).toBe(true);
     });
 
-    it('동맹 + 하구 식량 부족 시 식량 지원 (Turn 6+)', () => {
+    it('동맹 + 하구 식량 부족 시 식량 지원 (Turn 6+)', async () => {
       createEngine(6, { allied: true });
       stateManager.setFlag('cao_m_conscript1', true);
       stateManager.setFlag('cao_m_caoren', true);
@@ -228,48 +231,150 @@ describe('FactionAIEngine', () => {
       // 하구 식량을 5000으로 낮춤
       stateManager.updateCity('hagu', { food: 5000 });
 
-      const result = aiEngine.processAll();
+      const result = await aiEngine.processAll();
 
       // 손권이 유비에게 선물 (식량 지원)
       expect(result.changes.some(c => c.includes('선물') || c.includes('군량'))).toBe(true);
     });
 
-    it('비동맹 시 식량 지원 없음', () => {
+    it('비동맹 시 식량 지원 없음', async () => {
       createEngine(6);
       stateManager.setFlag('cao_m_conscript1', true);
       stateManager.setFlag('cao_m_caoren', true);
       stateManager.setFlag('cao_m_conscript2', true);
       stateManager.updateCity('hagu', { food: 3000 });
 
-      const result = aiEngine.processAll();
+      const result = await aiEngine.processAll();
 
       const hasGift = result.changes.some(c => c.includes('선물') || c.includes('군량'));
       expect(hasGift).toBe(false);
     });
   });
 
+  describe('LLM 모드', () => {
+    it('LLM 응답으로 징집 실행', async () => {
+      const mockClient: FactionLLMClient = {
+        requestFactionTurn: async (factionId) => {
+          if (factionId === '조조') {
+            return {
+              actions: [
+                { type: 'conscript', params: { city: 'nanjun', scale: 'large' }, confidence: 90, description: '' },
+              ],
+            };
+          }
+          return { actions: [] };
+        },
+      };
+
+      createEngine(3, { llmClient: mockClient });
+      const nanjunBefore = stateManager.getCity('nanjun')!;
+      const troopsBefore = getTotalTroopsOfCity(nanjunBefore);
+
+      const result = await aiEngine.processAll();
+
+      const nanjunAfter = stateManager.getCity('nanjun')!;
+      const troopsAfter = getTotalTroopsOfCity(nanjunAfter);
+      expect(troopsAfter).toBeGreaterThan(troopsBefore);
+      expect(result.changes.some(c => c.includes('징병'))).toBe(true);
+    });
+
+    it('LLM 응답의 assign + 전장 → deployment로 변환', async () => {
+      const mockClient: FactionLLMClient = {
+        requestFactionTurn: async (factionId) => {
+          if (factionId === '조조') {
+            return {
+              actions: [
+                { type: 'assign', params: { general: 'caimao', destination: 'chibi' }, confidence: 85, description: '' },
+              ],
+            };
+          }
+          return { actions: [] };
+        },
+      };
+
+      createEngine(9, { llmClient: mockClient });
+      stateManager.setFlag('cao_m_conscript1', true);
+
+      await aiEngine.processAll();
+
+      const caimao = stateManager.getGeneral('caimao')!;
+      expect(caimao.location).toBe('chibi');
+    });
+
+    it('LLM 실패 시 폴백 전략 사용', async () => {
+      const mockClient: FactionLLMClient = {
+        requestFactionTurn: async () => {
+          throw new Error('LLM 연결 실패');
+        },
+      };
+
+      createEngine(3, { llmClient: mockClient });
+      const nanjunBefore = stateManager.getCity('nanjun')!;
+      const troopsBefore = getTotalTroopsOfCity(nanjunBefore);
+
+      const result = await aiEngine.processAll();
+
+      // 폴백 전략이 실행되어 정상 동작
+      expect(result).toBeDefined();
+      const nanjunAfter = stateManager.getCity('nanjun')!;
+      const troopsAfter = getTotalTroopsOfCity(nanjunAfter);
+      expect(troopsAfter).toBeGreaterThan(troopsBefore);
+    });
+
+    it('LLM 빈 응답 시 유지보수만 적용', async () => {
+      const mockClient: FactionLLMClient = {
+        requestFactionTurn: async () => ({ actions: [] }),
+      };
+
+      createEngine(2, { llmClient: mockClient });
+      const nanjunBefore = stateManager.getCity('nanjun')!;
+      const trainingBefore = nanjunBefore.training;
+
+      await aiEngine.processAll();
+
+      // 훈련 보너스는 여전히 적용 (유지보수)
+      const nanjunAfter = stateManager.getCity('nanjun')!;
+      expect(nanjunAfter.training).toBeGreaterThanOrEqual(trainingBefore + 3);
+    });
+
+    it('LLM 응답의 message 포함', async () => {
+      const mockClient: FactionLLMClient = {
+        requestFactionTurn: async (factionId) => {
+          if (factionId === '조조') {
+            return {
+              actions: [],
+              message: '정찰 보고: 조조군이 움직이고 있습니다',
+            };
+          }
+          return { actions: [] };
+        },
+      };
+
+      createEngine(3, { llmClient: mockClient });
+      const result = await aiEngine.processAll();
+
+      expect(result.changes).toContain('정찰 보고: 조조군이 움직이고 있습니다');
+    });
+  });
+
   describe('통합 테스트', () => {
-    it('AI 세력 전체 턴 처리 (플레이어 세력 제외)', () => {
+    it('AI 세력 전체 턴 처리 (플레이어 세력 제외)', async () => {
       createEngine(3);
 
-      const result = aiEngine.processAll();
+      const result = await aiEngine.processAll();
 
       // 조조 + 손권 행동 포함, 유비 행동 없음
       expect(result.changes.length).toBeGreaterThan(0);
     });
 
-    it('행동 실패 시 graceful 처리', () => {
+    it('행동 실패 시 graceful 처리', async () => {
       createEngine(1);
-      // 전투 상태로 만들어 액션 실패 유도
-      // (전투 중이면 executeFor가 실패하지만 processAll은 계속 진행)
-      // 이 테스트에서는 정상 상태에서 실패 가능한 액션이 없으므로
-      // 전체가 정상 처리되는지만 확인
-      const result = aiEngine.processAll();
+      const result = await aiEngine.processAll();
       expect(result).toBeDefined();
       expect(Array.isArray(result.changes)).toBe(true);
     });
 
-    it('조조 전투 발생 후에도 손권 행동 정상 처리', () => {
+    it('조조 전투 발생 후에도 손권 행동 정상 처리', async () => {
       createEngine(14, { allied: true, chibiDeployed: true });
       // 이전 마일스톤 플래그 전부 설정
       stateManager.setFlag('cao_m_conscript1', true);
@@ -282,7 +387,7 @@ describe('FactionAIEngine', () => {
       // 하구 식량 낮춰서 손권 gift 트리거
       stateManager.updateCity('hagu', { food: 3000 });
 
-      const result = aiEngine.processAll();
+      const result = await aiEngine.processAll();
 
       // 조조 march→전투 발생 후에도 손권 gift 성공해야 함
       expect(result.battle).toBeDefined();
@@ -291,12 +396,12 @@ describe('FactionAIEngine', () => {
       expect(stateManager.getState().activeBattle).toBeNull();
     });
 
-    it('플레이어 행동 횟수에 영향 없음', () => {
+    it('플레이어 행동 횟수에 영향 없음', async () => {
       createEngine(3);
       stateManager.resetActions();
       const actionsBefore = stateManager.getState().actionsRemaining;
 
-      aiEngine.processAll();
+      await aiEngine.processAll();
 
       expect(stateManager.getState().actionsRemaining).toBe(actionsBefore);
     });

@@ -9,7 +9,8 @@ export class ActionMenu {
   private state: GameState | null = null;
   private playerFaction = '유비';
   private onActionCb: ActionCallback | null = null;
-  private onEndTurnCb: (() => void) | null = null;
+  private onEndTurnCb: (() => void | Promise<void>) | null = null;
+  private enabled = true;
   private openDropdown: HTMLElement | null = null;
 
   constructor(container: HTMLElement) {
@@ -20,7 +21,8 @@ export class ActionMenu {
 
   setPlayerFaction(f: string): void { this.playerFaction = f; }
   onAction(cb: ActionCallback): void { this.onActionCb = cb; }
-  onEndTurn(cb: () => void): void { this.onEndTurnCb = cb; }
+  onEndTurn(cb: () => void | Promise<void>): void { this.onEndTurnCb = cb; }
+  setEnabled(enabled: boolean): void { this.enabled = enabled; this.render(); }
 
   update(state: GameState): void {
     this.state = state;
@@ -67,7 +69,7 @@ export class ActionMenu {
 
     // End turn
     const endBtn = h('button', { className: 'btn btn-primary' }, '턴 종료');
-    endBtn.disabled = state.activeBattle !== null || state.gameOver;
+    endBtn.disabled = state.activeBattle !== null || state.gameOver || !this.enabled;
     endBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       this.onEndTurnCb?.();

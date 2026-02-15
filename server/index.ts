@@ -7,10 +7,15 @@ import { cors } from 'hono/cors';
 import { serve } from '@hono/node-server';
 import { filterGameState } from '../core/advisor/state-filter.js';
 import { buildSystemPrompt, buildActionReference } from '../core/advisor/prompts.js';
+import { buildFactionStateView } from '../core/advisor/faction-state-filter.js';
+import { buildCaoSystemPrompt, buildSunSystemPrompt } from '../core/advisor/faction-prompts.js';
+import { parseFactionResponse } from '../core/advisor/action-recommender.js';
+import type { RecommendationContext } from '../core/advisor/action-recommender.js';
+import { collectStreamText } from './providers/stream-utils.js';
 import { loadConfig, saveConfig, getConfigSource } from './config.js';
 import { getProvider, getAllProviderInfo } from './providers/registry.js';
 import { detectOllama, unloadOllamaModel } from './providers/ollama.js';
-import type { GameState, GameLanguage } from '../core/data/types.js';
+import type { GameState, GameLanguage, FactionId } from '../core/data/types.js';
 import type { ChatMessage } from '../core/advisor/types.js';
 import type { ProviderConfig } from './providers/types.js';
 
@@ -192,6 +197,72 @@ app.post('/api/config/save', async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : '저장 실패';
     return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ─── Faction AI turn (non-streaming) ─────────────────────
+
+function buildFactionContext(gameState: GameState, factionId: FactionId): RecommendationContext {
+  const factionCities = gameState.cities.filter(c => c.owner === factionId);
+  const factionGenerals = gameState.generals.filter(g => g.faction === factionId);
+  const otherFactions = gameState.factions
+    .filter(f => f.id !== factionId)
+    .map(f => f.id);
+  const allLocations = [
+    ...gameState.cities.map(c => c.id),
+    ...gameState.battlefields.map(b => b.id),
+  ];
+
+  return {
+    playerCities: factionCities.map(c => ({ id: c.id, name: c.name })),
+    playerGenerals: factionGenerals.map(g => ({ id: g.id, name: g.name, location: g.location })),
+    factions: otherFactions,
+    allLocations,
+  };
+}
+
+app.post('/api/faction-turn', async (c) => {
+  const config = loadConfig();
+  if (!config) {
+    return c.json({ actions: [] });  // AI 미설정 시 빈 행동
+  }
+
+  const provider = getProvider(config.provider);
+  if (!provider) {
+    return c.json({ actions: [] });
+  }
+
+  const { factionId, gameState } = await c.req.json<{
+    factionId: FactionId;
+    gameState: GameState;
+  }>();
+
+  try {
+    // 1. 상태 필터링 (해당 세력 시점)
+    const view = buildFactionStateView(gameState, factionId);
+
+    // 2. 프롬프트 빌드
+    const systemPrompt = factionId === '조조'
+      ? buildCaoSystemPrompt(view)
+      : buildSunSystemPrompt(view);
+
+    // 3. LLM 호출 (streamChat → collectStreamText)
+    const stream = provider.streamChat(
+      systemPrompt,
+      [{ role: 'user', content: '이번 턴 행동을 결정하라.' }],
+      config,
+      { think: false },
+    );
+    const fullText = await collectStreamText(stream);
+
+    // 4. JSON 파싱
+    const ctx = buildFactionContext(gameState, factionId);
+    const result = parseFactionResponse(fullText, ctx);
+
+    return c.json(result);
+  } catch (err) {
+    console.error(`Faction AI 오류 (${factionId}):`, err);
+    return c.json({ actions: [] });  // 실패 시 빈 행동 (게임 계속)
   }
 });
 

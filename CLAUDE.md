@@ -6,7 +6,7 @@ AI 책사(제갈량)와 함께하는 턴제 전략 게임. Claude API를 연동�
 
 ```bash
 npm install
-npm test          # vitest — 265 tests
+npm test          # vitest — 295 tests
 npm run dev       # vite + hono 동시 기동 (concurrently)
 npm run dev:web   # vite만 (프론트엔드)
 npm run dev:server # hono만 (API 서버, port 3001)
@@ -27,7 +27,7 @@ core/               ← 순수 TypeScript 게임 엔진 (브라우저/서버 공
   data/types.ts     ← 모든 타입 정의 (City, General, GameState, GameAction 등)
   data/scenarios/   ← 시나리오 데이터 (red-cliffs.ts)
   engine/           ← 엔진 7모듈 (game-state, turn-manager, action-executor, battle-engine, event-system, victory-judge, faction-ai)
-  advisor/          ← AI 책사 모듈 (types, knowledge, state-filter, prompts, knowledge-selector, action-recommender, semantic-matcher)
+  advisor/          ← AI 책사 모듈 (types, knowledge, state-filter, prompts, knowledge-selector, action-recommender, semantic-matcher, faction-prompts, faction-state-filter, faction-llm-client)
   ui/               ← UI 헬퍼 (strategy-map, battle-view, character-display, event-cutscene)
 
 web/                ← Vite 기반 웹 프론트엔드 (Vanilla TS, 프레임워크 없음)
@@ -41,7 +41,7 @@ web/                ← Vite 기반 웹 프론트엔드 (Vanilla TS, 프레임�
   src/styles/       ← CSS (main, ink-wash, battle, cutscene, advisor, setup)
 
 server/             ← Hono 백엔드 서버 — 멀티 AI 제공자 프록시
-  index.ts          ← POST /api/chat, /api/config/*, GET /api/health
+  index.ts          ← POST /api/chat, /api/faction-turn, /api/config/*, GET /api/health
   config.ts         ← .env 파일 기반 설정 관리
   providers/        ← AI 제공자 (claude, openai, gemini, ollama) + 레지스트리
 
@@ -85,6 +85,13 @@ docs/               ← 설계 문서
   - 보급 (transfer): 장수 없이 인접 아군 도시 간 병력/식량 이동
   - 액션 메뉴 완성: 대규모 징병, 등용, 설득, 매복, 보급(병력/식량)
   - 진군 UX 개선: 아군 도시 제외 → 보급으로 분리
+- [x] Phase 1: 액션 JSON 전환 + Faction AI LLM화
+  - ActionJSON 타입: `{ type, params, confidence, description }` — 텍스트 파싱 → 구조화 JSON
+  - 책사 응답 XML 포맷: `<narrative>` + `<actions>` JSON 배열
+  - Faction AI LLM 모드: FactionLLMClient 인터페이스 → `/api/faction-turn` 엔드포인트
+  - FactionStateView: 자기 세력은 정확한 수치, 적 세력은 범주형
+  - 비동기 전환: processAll/endTurn async, LLM 실패 시 하드코딩 전략 폴백
+  - collectStreamText: 기존 SSE streamChat()을 래핑하여 전체 텍스트 수집
 
 ## 아키텍처 핵심
 
@@ -106,14 +113,22 @@ executeFor(action, factionId)  ← AI/범용 (행동 미소모, 로그 미기록
   └─ dispatchAction(action, factionId)
 ```
 
-### Faction AI — 2층 전략
+### Faction AI — LLM + 하드코딩 폴백
 ```
-TurnManager.endTurn()
-  → FactionAIEngine.processAll()
-    ├─ CaoStrategy.planTurn()  ← 마일스톤 테이블 + 적응 규칙
-    ├─ SunStrategy.planTurn()  ← 동맹 상태 반응형
+TurnManager.endTurn()  (async)
+  → FactionAIEngine.processAll()  (async)
+    ├─ LLM 모드 (llmClient 설정 시):
+    │   → /api/faction-turn → FactionStateView + 프롬프트 → LLM → FactionTurnJSON
+    │   → convertJSONToPlan() → AITurnPlan → ActionExecutor.executeFor()
+    │   (실패 시 하드코딩 폴백)
+    ├─ 하드코딩 폴백:
+    │   ├─ CaoStrategy.planTurn()  ← 마일스톤 테이블 + 적응 규칙
+    │   └─ SunStrategy.planTurn()  ← 동맹 상태 반응형
     └─ 행동 실행 → ActionExecutor.executeFor()
 ```
+- FactionLLMClient: `requestFactionTurn(factionId, gameState) → FactionTurnJSON`
+- FactionStateView: 자기 세력 정확 수치, 적 세력 범주형 (AdvisorView와 유사)
+- collectStreamText: 기존 SSE stream을 래핑하여 전체 응답 텍스트 수집
 
 ### AdvisorView — 범주형 상태
 Claude에게 정확한 숫자를 주지 않는다. 범주형으로 변환:
@@ -130,14 +145,18 @@ Claude에게 정확한 숫자를 주지 않는다. 범주형으로 변환:
 ### 게임 루프
 턴 시작 → 행동 3회 → 턴 종료 → AI 세력 행동 → 요약 모달 → (컷신) → 책사 탭 자동 전환 + 브리핑 → 다음 턴
 
-### 행동 추천 흐름
+### 행동 추천 흐름 (ActionJSON)
 ```
-턴 시작 → 책사 브리핑 (서사 3~5문장 + ---ACTIONS--- 블록)
+턴 시작 → 책사 브리핑:
+  <narrative>서사 3~5문장</narrative>
+  <actions>[{type, params, confidence, description}, ...]</actions>
   → parseRecommendations() → 추천 패널 3개 카드 표시
   → 채팅 토론 → 추천/confidence 갱신
   → 원클릭 실행 or 직접 행동 (실패해도 행동 소모)
   → 턴 종료 → 다음 브리핑에 행동 결과 일괄 포함
 ```
+- ActionJSON: `{ type: string, params: Record<string,string>, confidence: number, description: string }`
+- XML 태그 기반 파싱 (구조화) + `---ACTIONS---` 레거시 폴백
 
 ### 서버 아키텍처
 ```

@@ -33,35 +33,29 @@ const PERSONA = `당신은 제갈량 공명(諸葛亮 孔明)이다. 유비 현�
 4. 게임이 지정한 언어로만 답한다.`;
 
 const ACTION_FORMAT_INSTRUCTION = `
-## 행동 추천 규칙 (반드시 준수)
+## 응답 형식 (반드시 준수)
 
-**중요**: 응답은 반드시 두 부분으로 구성하라:
-1. 전략 분석과 조언 (3~5문장으로 현재 판세, 위협, 기회를 설명)
-2. ---ACTIONS--- 구분자 뒤에 추천 행동 3개
+응답은 반드시 <narrative> 태그와 <actions> 태그로 구성하라.
 
-**반드시 아래 예시와 동일한 형식을 사용하라.**
+<narrative>
+주공, 지금 판세가 심상치 않소이다. 조조가 대군을 이끌고 남하하니, 적벽에서의 결전이 머지않았소. 하구의 식량이 부족하여 장기전을 버티기 어려우니, 먼저 내정을 다지는 것이 급선무요. 이번 턴에는 내정과 외교에 힘을 쏟으시길 권하오.
+</narrative>
+<actions>
+[
+  {"type":"develop","params":{"city":"hagu","focus":"agriculture"},"confidence":85,"description":"하구 농업 개발"},
+  {"type":"train","params":{"city":"gangha"},"confidence":75,"description":"강하 병사 훈련"},
+  {"type":"send_envoy","params":{"target":"손권"},"confidence":90,"description":"손권에게 사신 파견"}
+]
+</actions>
 
-<예시>
-주공, 지금 판세가 심상치 않소이다. 조조가 대군을 이끌고 남하하니, 적벽에서의 결전이 머지않았소. 하구의 식량이 부족하여 장기전을 버티기 어려우니, 먼저 내정을 다지는 것이 급선무요. 손권과의 동맹을 더욱 공고히 하여 조조에 맞설 연합전선을 구축해야 하오. 이번 턴에는 내정과 외교에 힘을 쏟으시길 권하오.
+**규칙:**
+- <narrative> 안에 서사(3~5문장), <actions> 안에 JSON 배열(최대 3개)
+- JSON 필드: type(액션명), params(파라미터), confidence(0-100), description(한국어 설명)
+- params의 ID는 반드시 아래 참조표의 ID만 사용하라
+- 아래 목록에 없는 type을 절대 만들지 말라
 
----ACTIONS---
-1. [develop|hagu|agriculture] 85% 하구 농업 개발
-2. [train|gangha] 75% 강하 병사 훈련
-3. [send_envoy|손권] 90% 손권에게 사신 파견
-</예시>
-
-**절대 지켜야 할 규칙:**
-- ---ACTIONS--- 구분자를 반드시 포함하라
-- 번호는 반드시 1부터 시작하라 (1, 2, 3)
-- 각 줄: 번호. [액션|파라미터] 퍼센트% 설명
-- 대괄호 [] 안에 액션과 파라미터를 넣어라
-- 파라미터는 ID 참조표의 ID만 사용하라
-- 서사 텍스트에 액션을 섞지 말라
-- **아래 목록에 없는 액션을 절대 만들지 말라** (send_recon, prepare, reinforce 등 금지)
-- 위 형식을 지키기 어려우면, 번호를 매겨 자연어로 설명하라. 도시/장수/세력 이름을 반드시 포함하라.
-
-사용 가능한 액션:
-conscript|도시ID|small/medium/large, develop|도시ID|agriculture/commerce/defense, train|도시ID, recruit|도시ID|장수ID, assign|장수ID|도시ID, transfer|출발도시ID|도착도시ID|troops/food|small/medium/large, send_envoy|세력명, gift|세력명, threaten|세력명, scout|지역ID, fortify|도시ID, march|출발도시ID|도착지ID|small/medium/main, ambush|지역ID|장수ID, pass`;
+사용 가능한 type:
+conscript, develop, train, recruit, assign, transfer, send_envoy, gift, threaten, scout, fortify, march, ambush, pass`;
 
 function formatCityView(city: AdvisorView['ourCities'][0]): string {
   const gens = city.stationedGenerals.map(g => `${g.name}(${g.role})`).join(', ');

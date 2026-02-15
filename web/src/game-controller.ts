@@ -5,6 +5,7 @@ import { BattleEngine } from '../../core/engine/battle-engine.js';
 import { EventSystem } from '../../core/engine/event-system.js';
 import { VictoryJudge } from '../../core/engine/victory-judge.js';
 import { createRedCliffsScenario, getScenarioEvents } from '../../core/data/scenarios/red-cliffs.js';
+import type { FactionLLMClient } from '../../core/advisor/faction-llm-client.js';
 import type {
   GameState, GameAction, ActionResult, BattleState,
   EventResult, GameResult, TurnStartResult, TurnEndResult,
@@ -183,8 +184,12 @@ export class GameController {
     return battle;
   }
 
-  endTurn(): TurnEndResult {
-    const result = this.turnManager.endTurn();
+  setLLMClient(client: FactionLLMClient | undefined): void {
+    this.turnManager.setLLMClient(client);
+  }
+
+  async endTurn(): Promise<TurnEndResult> {
+    const result = await this.turnManager.endTurn();
 
     if (result.events.length > 0) {
       this.callbacks.onEventsTriggered?.(result.events);

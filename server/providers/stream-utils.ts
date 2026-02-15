@@ -118,6 +118,54 @@ export class ThinkingFilter {
   }
 }
 
+/**
+ * streamChat()의 SSE 스트림을 소비하여 전체 텍스트를 반환한다.
+ * Faction AI처럼 스트리밍이 불필요한 경우에 사용.
+ */
+export async function collectStreamText(stream: ReadableStream<Uint8Array>): Promise<string> {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const events = buffer.split('\n\n');
+      buffer = events.pop() || '';
+
+      for (const event of events) {
+        if (!event.startsWith('data: ')) continue;
+        try {
+          const parsed = JSON.parse(event.slice(6)) as {
+            type: string;
+            fullText?: string;
+            error?: string;
+          };
+          if (parsed.type === 'done' && parsed.fullText) {
+            return parsed.fullText;
+          }
+          if (parsed.type === 'error') {
+            throw new Error(parsed.error || 'LLM 오류');
+          }
+        } catch (e) {
+          if (e instanceof Error && e.message !== 'LLM 오류') {
+            // JSON 파싱 실패 — skip
+          } else {
+            throw e;
+          }
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  throw new Error('LLM 응답에서 완료 이벤트를 찾을 수 없습니다');
+}
+
 export function inferExpression(text: string): AdvisorExpression {
   if (/급|위험|경고|주의|위태|긴급/.test(text)) return 'warning';
   if (/심각|패배|위기|절체절명/.test(text)) return 'serious';
