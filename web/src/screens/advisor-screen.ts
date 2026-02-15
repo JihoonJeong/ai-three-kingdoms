@@ -282,15 +282,50 @@ export class AdvisorScreen {
     return 'default';
   }
 
-  /** AI 응답에서 서사 부분만 추출 (---ACTIONS--- 이후 제거) */
+  /** AI 응답에서 서사 부분만 추출 (XML 태그, JSON 배열, ---ACTIONS--- 제거) */
   private extractNarrative(text: string): { narrative: string; hasActions: boolean } {
-    const match = SEPARATOR_REGEX.exec(text);
-    if (match) return { narrative: text.slice(0, match.index).trim(), hasActions: true };
-    // Fallback: **액션**: 또는 인라인 **action|params** 패턴, [cmd|params] 번호 리스트 감지
+    // 1차: <narrative> XML 태그가 있으면 그 안의 내용만 반환
+    const narrativeTag = /<narrative>([\s\S]*?)<\/narrative>/i.exec(text);
+    const actionsTag = /<actions>[\s\S]*?<\/actions>/i.test(text);
+    if (narrativeTag) {
+      return { narrative: narrativeTag[1].trim(), hasActions: actionsTag };
+    }
+
+    // 1-b: 스트리밍 중 <narrative> 열렸지만 닫히지 않은 경우
+    const openNarrative = /<narrative>([\s\S]*)/i.exec(text);
+    if (openNarrative) {
+      // <actions> 이후 제거
+      const content = openNarrative[1].replace(/<actions>[\s\S]*/i, '').trim();
+      return { narrative: content, hasActions: /<actions>/i.test(text) };
+    }
+
+    // 2차: <actions> 태그만 있으면 (narrative 태그 없이) 태그 이전 텍스트 사용
+    if (actionsTag) {
+      const before = text.replace(/<actions>[\s\S]*?<\/actions>/i, '').trim();
+      return { narrative: before, hasActions: true };
+    }
+
+    // 2-b: 스트리밍 중 <actions> 열렸지만 닫히지 않은 경우
+    if (/<actions>/i.test(text)) {
+      const before = text.replace(/<actions>[\s\S]*/i, '').trim();
+      return { narrative: before, hasActions: true };
+    }
+
+    // 3차: ---ACTIONS--- 구분자
+    const sepMatch = SEPARATOR_REGEX.exec(text);
+    if (sepMatch) return { narrative: text.slice(0, sepMatch.index).trim(), hasActions: true };
+
+    // 4차: 날 JSON 배열 (태그 없이 [{...}] 형태)
+    const jsonMatch = /\[[\s\S]*?\{[\s\S]*?"type"[\s\S]*?\}[\s\S]*?\]/.exec(text);
+    if (jsonMatch) {
+      const before = text.slice(0, jsonMatch.index).trim();
+      return { narrative: before || text.trim(), hasActions: true };
+    }
+
+    // 5차: 레거시 인라인 패턴
     const hasFallback = /\*{0,2}액션\*{0,2}\s*[:：]/.test(text)
       || /\*\*[a-z_]+\|[^*]+\*\*/.test(text)
       || /^\d+\.\s*\[?[a-z_]+\|/m.test(text);
-    // 액션 라인 제거: [cmd|params], **cmd|params**, **액션**: 형태
     const cleaned = text.split('\n').filter(l => {
       const t = l.trim();
       return !/^\d+\.\s*\*{0,2}\[?[a-z_]+\|/.test(t)
@@ -423,12 +458,12 @@ export class AdvisorScreen {
           this.stopThinkingTimer();
         }
 
-        // 스트리밍 중에는 ---ACTIONS--- 이전까지만 표시
+        // 스트리밍 중에는 액션 부분 제거 후 서사만 표시
         const { narrative, hasActions } = this.extractNarrative(fullText);
         this.updateBubbleContent(narrative, true);
         this.scrollToBottom();
 
-        // ---ACTIONS--- 감지 → 추천 패널 로딩 표시
+        // 액션 감지 → 추천 패널 로딩 표시
         if (hasActions && !actionsDetected) {
           actionsDetected = true;
           this.showRecommendLoading();

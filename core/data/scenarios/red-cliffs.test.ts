@@ -28,9 +28,9 @@ describe('적벽대전 시나리오 데이터', () => {
     expect(GENERALS.filter(g => g.faction === '손권')).toHaveLength(2);
   });
 
-  it('이벤트가 8개이다', () => {
+  it('이벤트가 9개이다', () => {
     const events = getScenarioEvents();
-    expect(events).toHaveLength(8);
+    expect(events).toHaveLength(9);
   });
 
   it('도시 인접 관계가 유효하다', () => {

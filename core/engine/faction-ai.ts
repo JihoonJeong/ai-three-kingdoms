@@ -15,6 +15,11 @@ import type { FactionLLMClient } from '../advisor/faction-llm-client.js';
 import type { FactionTurnJSON } from '../advisor/types.js';
 import { actionJSONToGameAction } from '../advisor/action-recommender.js';
 import type { RecommendationContext } from '../advisor/action-recommender.js';
+import {
+  MilestoneRegistry,
+  type MilestoneDefinition, type AdaptiveRuleDefinition,
+  type DeploymentSpec, type MilestoneResolution,
+} from './milestones.js';
 
 // ─── 타입 정의 ─────────────────────────────────────────
 
@@ -48,6 +53,8 @@ export interface FactionStrategy {
 // ─── FactionAIEngine ───────────────────────────────────
 
 export class FactionAIEngine {
+  private milestoneRegistry = new MilestoneRegistry();
+
   constructor(
     private stateManager: GameStateManager,
     private executor: ActionExecutor,
@@ -66,12 +73,17 @@ export class FactionAIEngine {
       let plan: AITurnPlan;
 
       if (this.llmClient) {
-        // LLM 모드: 서버를 통해 LLM 호출
+        // 하이브리드 LLM 모드: 마일스톤 안전장치 + LLM 자율 행동
         try {
           const response = await this.llmClient.requestFactionTurn(
             faction.id, state,
           );
           plan = this.convertJSONToPlan(response, state, faction.id);
+
+          // 마일스톤/적응 규칙 안전장치: LLM 누락 시 강제 삽입
+          const pendingMs = this.milestoneRegistry.getPendingMilestones(faction.id, state);
+          const activeRules = this.milestoneRegistry.getActiveAdaptiveRules(faction.id, state);
+          this.enforceMilestones(plan, pendingMs, activeRules, state);
         } catch {
           // LLM 실패 시 폴백: 기존 하드코딩 전략
           const strategy = STRATEGIES[faction.id];
@@ -233,6 +245,80 @@ export class FactionAIEngine {
 
       this.stateManager.updateCity(city.id, { food: newFood });
     }
+  }
+  /**
+   * 마일스톤/적응 규칙 안전장치 — LLM 응답에 누락된 필수 행동을 강제 삽입.
+   * "What은 고정, How는 LLM" 원칙의 코드 안전망.
+   */
+  private enforceMilestones(
+    plan: AITurnPlan,
+    milestones: MilestoneDefinition[],
+    rules: AdaptiveRuleDefinition[],
+    state: Readonly<GameState>,
+  ): void {
+    // 마일스톤 처리
+    for (const ms of milestones) {
+      const resolution = this.resolveRequirements(ms, state);
+
+      // LLM이 이미 해당 행동을 포함했는지 검사
+      if (ms.isSatisfied && ms.isSatisfied(plan.actions, plan.deployments)) {
+        // LLM이 자율적으로 수행 → 플래그만 설정
+        plan.flagsToSet[ms.flag] = true;
+        plan.messages.push(...resolution.messages);
+        continue;
+      }
+
+      // 누락 → 강제 삽입 (앞쪽에 우선 배치)
+      plan.actions.unshift(...resolution.actions);
+      plan.deployments.unshift(...resolution.deployments);
+      plan.messages.push(...resolution.messages);
+      plan.flagsToSet[ms.flag] = true;
+    }
+
+    // 적응 규칙 처리 (priority 순, 이미 정렬됨)
+    for (const rule of rules) {
+      const resolution = this.resolveRequirements(rule, state);
+
+      if (rule.isSatisfied && rule.isSatisfied(plan.actions, plan.deployments)) {
+        // LLM이 이미 수행
+        for (const [k, v] of Object.entries(rule.flagsToSet)) {
+          plan.flagsToSet[k] = v;
+        }
+        if (resolution.messages.length > 0) {
+          plan.messages.push(...resolution.messages);
+        }
+        continue;
+      }
+
+      // 누락 → 강제 삽입
+      plan.actions.push(...resolution.actions);
+      plan.deployments.push(...resolution.deployments);
+      if (resolution.messages.length > 0) {
+        plan.messages.push(...resolution.messages);
+      }
+      for (const [k, v] of Object.entries(rule.flagsToSet)) {
+        plan.flagsToSet[k] = v;
+      }
+
+      // cao_rear_attack / cao_exploit_hagu는 동적 플래그 필요
+      if ((rule.id === 'cao_rear_attack' || rule.id === 'cao_exploit_hagu') &&
+          resolution.actions.length > 0) {
+        plan.flagsToSet['cao_last_attack_turn'] = state.turn;
+      }
+    }
+  }
+
+  /** 마일스톤/규칙의 요구사항을 resolve (정적 or 동적) */
+  private resolveRequirements(
+    def: MilestoneDefinition | AdaptiveRuleDefinition,
+    state: Readonly<GameState>,
+  ): MilestoneResolution {
+    if (def.resolve) return def.resolve(state);
+    return {
+      actions: def.actions ? [...def.actions] : [],
+      deployments: def.deployments ? [...def.deployments] : [],
+      messages: def.messages ? [...def.messages] : [],
+    };
   }
 }
 

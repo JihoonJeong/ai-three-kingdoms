@@ -197,6 +197,17 @@ describe('ActionExecutor', () => {
       expect(stateManager.getCity('gangha')!.food).toBe(foodBefore - 2000);
     });
 
+    it('받는 쪽 도시에 식량이 추가된다', () => {
+      // 손권 도시 (sishang) 식량 확인
+      const targetFoodBefore = stateManager.getCity('sishang')!.food;
+      const result = executor.execute({
+        type: 'diplomacy', action: 'gift',
+        params: { target: '손권', amount: 1000 },
+      });
+      expect(result.success).toBe(true);
+      expect(stateManager.getCity('sishang')!.food).toBe(targetFoodBefore + 1000);
+    });
+
     it('자원 부족 시 실패한다', () => {
       stateManager.updateCity('gangha', { food: 100 });
       stateManager.updateCity('hagu', { food: 100 });

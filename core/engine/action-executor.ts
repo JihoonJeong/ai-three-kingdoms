@@ -528,13 +528,24 @@ export class ActionExecutor {
       food: richestCity.food - amount,
     });
 
+    // 받는 쪽 도시 중 식량이 가장 적은 곳에 추가
+    const targetCities = this.stateManager.getCitiesByFaction(target);
+    const sideEffects: string[] = [`${richestCity.name}의 군량이 ${amount} 감소했습니다.`];
+    if (targetCities.length > 0) {
+      const poorestCity = targetCities.reduce((worst, c) => c.food < worst.food ? c : worst, targetCities[0]);
+      this.stateManager.updateCity(poorestCity.id, {
+        food: poorestCity.food + amount,
+      });
+      sideEffects.push(`${poorestCity.name}에 군량 ${amount}이(가) 도착했습니다.`);
+    }
+
     const relationBonus = Math.floor(amount / 200);
     const newValue = this.stateManager.addRelationValue(factionId, target, relationBonus);
 
     return {
       success: true,
       description: `${target}에게 군량 ${amount}을(를) 선물했습니다. 관계가 개선되었습니다.`,
-      sideEffects: [`${richestCity.name}의 군량이 ${amount} 감소했습니다.`],
+      sideEffects,
       remainingActions: 0,
     };
   }

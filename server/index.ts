@@ -9,6 +9,7 @@ import { filterGameState } from '../core/advisor/state-filter.js';
 import { buildSystemPrompt, buildActionReference } from '../core/advisor/prompts.js';
 import { buildFactionStateView } from '../core/advisor/faction-state-filter.js';
 import { buildCaoSystemPrompt, buildSunSystemPrompt } from '../core/advisor/faction-prompts.js';
+import { MilestoneRegistry } from '../core/engine/milestones.js';
 import { parseFactionResponse } from '../core/advisor/action-recommender.js';
 import type { RecommendationContext } from '../core/advisor/action-recommender.js';
 import { collectStreamText } from './providers/stream-utils.js';
@@ -241,10 +242,14 @@ app.post('/api/faction-turn', async (c) => {
     // 1. 상태 필터링 (해당 세력 시점)
     const view = buildFactionStateView(gameState, factionId);
 
-    // 2. 프롬프트 빌드
+    // 2. 마일스톤/적응 규칙 조회 → 프롬프트에 필수 목표 주입
+    const msRegistry = new MilestoneRegistry();
+    const pendingMs = msRegistry.getPendingMilestones(factionId, gameState);
+    const activeRules = msRegistry.getActiveAdaptiveRules(factionId, gameState);
+
     const systemPrompt = factionId === '조조'
-      ? buildCaoSystemPrompt(view)
-      : buildSunSystemPrompt(view);
+      ? buildCaoSystemPrompt(view, pendingMs, activeRules)
+      : buildSunSystemPrompt(view, pendingMs, activeRules);
 
     // 3. LLM 호출 (streamChat → collectStreamText)
     const stream = provider.streamChat(

@@ -40,11 +40,37 @@ function scoreChunk(chunk: KnowledgeChunk, state: GameState): number {
     }
   }
 
+  // 적벽 승리 후: 전투 준비 지식 제외, 후속 전략 지식 우선
+  const chibiWon = !!state.flags['chibiVictory'];
+  const playerFaction = '유비';
+  if (chibiWon) {
+    const battlePrepChunks = ['fire_tactic', 'southeast_wind', 'cao_navy_weakness', 'naval_warfare'];
+    if (battlePrepChunks.includes(chunk.id)) {
+      score -= 20; // 이미 끝난 전투 관련 지식 대폭 감점
+    }
+    if (chunk.id === 'nanjun_capture') {
+      const nanjun = state.cities.find(c => c.id === 'nanjun');
+      if (nanjun && nanjun.owner === playerFaction) {
+        score -= 20; // 이미 점령한 도시 공략 지식 불필요
+      } else {
+        score += 10; // 아직 미점령이면 우선
+      }
+    }
+    if (chunk.id === 'post_chibi_governance') {
+      const playerCityCount = state.cities.filter(c => c.owner === playerFaction).length;
+      if (playerCityCount >= 4) {
+        score -= 15; // 형주 대부분 확보 → 경략 지식 불필요
+      } else {
+        score += 10; // 아직 확보 중이면 우선
+      }
+    }
+  }
+
   // 상황별 보너스
-  if (chunk.id === 'fire_tactic' && state.activeBattle) {
+  if (chunk.id === 'fire_tactic' && state.activeBattle && !chibiWon) {
     score += 6;
   }
-  if (chunk.id === 'naval_warfare' && state.activeBattle?.terrain === '수상') {
+  if (chunk.id === 'naval_warfare' && state.activeBattle?.terrain === '수상' && !chibiWon) {
     score += 6;
   }
   if (chunk.id === 'retreat_strategy' && state.activeBattle?.isOver) {
@@ -62,8 +88,17 @@ function scoreChunk(chunk: KnowledgeChunk, state: GameState): number {
     const sunRelation = state.diplomacy.relations.find(
       r => r.factionA === '손권' || r.factionB === '손권'
     );
-    if (sunRelation && sunRelation.relation !== '긴밀') {
+    if (sunRelation && sunRelation.relation === '긴밀') {
+      score -= 10; // 이미 긴밀하면 동맹 유지 지식 불필요
+    } else if (sunRelation && sunRelation.relation !== '긴밀') {
       score += 3;
+    }
+  }
+  if (chunk.id === 'jingzhou_situation') {
+    // 형주를 이미 대부분 확보했으면 형주 정세 지식 불필요
+    const playerCityCount = state.cities.filter(c => c.owner === playerFaction).length;
+    if (playerCityCount >= 4) {
+      score -= 10;
     }
   }
 

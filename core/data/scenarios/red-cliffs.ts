@@ -427,6 +427,14 @@ const EVENTS: ScenarioEvent[] = [
       { type: 'pursuit_opportunity', target: '조조', location: '화용도' },
     ],
   },
+  {
+    id: 'nanjun_troop_collapse',
+    trigger: { type: 'condition', condition: 'chibi_victory' },
+    description: '적벽 대패 소식에 남군 수비병이 크게 동요합니다. 탈영과 항복이 잇따르고 있습니다.',
+    effects: [
+      { type: 'troop_loss', target: '조조', city: 'nanjun', ratio: 0.5, moralePenalty: -25 },
+    ],
+  },
 ];
 
 // ─── 시나리오 생성 함수 ────────────────────────────────

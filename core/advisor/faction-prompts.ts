@@ -9,6 +9,7 @@ import type {
   FactionStateView, FactionCityView,
   FactionGeneralView, FactionEnemyIntel,
 } from './faction-state-filter.js';
+import type { MilestoneDefinition, AdaptiveRuleDefinition } from '../engine/milestones.js';
 
 // ─── 상태 포매팅 헬퍼 ──────────────────────────────
 
@@ -125,6 +126,34 @@ conscript, develop, train, recruit, assign, transfer, send_envoy, gift, threaten
 - ambush: location, general
 - pass: (없음)`;
 
+// ─── 마일스톤 프롬프트 섹션 ──────────────────────────
+
+export function buildMilestoneSection(
+  milestones: MilestoneDefinition[],
+  rules: AdaptiveRuleDefinition[],
+): string {
+  const items: string[] = [];
+
+  for (const ms of milestones) {
+    items.push(`- [필수] ${ms.promptInstruction}`);
+  }
+
+  for (const rule of rules) {
+    const tag = rule.priority >= 80 ? '필수' : '권고';
+    items.push(`- [${tag}] ${rule.promptInstruction}`);
+  }
+
+  if (items.length === 0) return '';
+
+  return `\n## 이번 턴 필수 목표
+
+다음 행동은 반드시 수행해야 합니다. 이 목표는 최우선이며, 나머지 행동력으로 자율 판단하십시오.
+
+${items.join('\n')}
+
+⚠️ 필수 목표를 JSON actions에 반드시 포함하십시오.`;
+}
+
 // ─── 조조 프롬프트 ──────────────────────────────────
 
 const CAO_PERSONA = `당신은 조조 맹덕(曹操 孟德)이다. 천하통일을 목표로 하는 난세의 간웅.
@@ -169,9 +198,19 @@ function getCaoGoals(view: FactionStateView): string[] {
   return goals;
 }
 
-export function buildCaoSystemPrompt(view: FactionStateView): string {
+export function buildCaoSystemPrompt(
+  view: FactionStateView,
+  milestones?: MilestoneDefinition[],
+  rules?: AdaptiveRuleDefinition[],
+): string {
   const goals = getCaoGoals(view);
   const sections: string[] = [CAO_PERSONA];
+
+  // 마일스톤 필수 목표 (페르소나 직후, 전략 목표 전)
+  if (milestones && rules) {
+    const msSection = buildMilestoneSection(milestones, rules);
+    if (msSection) sections.push(msSection);
+  }
 
   sections.push(`\n## 전략 목표\n${goals.map(g => `- ${g}`).join('\n')}`);
   sections.push(formatStateSection(view));
@@ -222,9 +261,18 @@ function getSunGoals(view: FactionStateView): string[] {
   return goals;
 }
 
-export function buildSunSystemPrompt(view: FactionStateView): string {
+export function buildSunSystemPrompt(
+  view: FactionStateView,
+  milestones?: MilestoneDefinition[],
+  rules?: AdaptiveRuleDefinition[],
+): string {
   const goals = getSunGoals(view);
   const sections: string[] = [SUN_PERSONA];
+
+  if (milestones && rules) {
+    const msSection = buildMilestoneSection(milestones, rules);
+    if (msSection) sections.push(msSection);
+  }
 
   sections.push(`\n## 전략 목표\n${goals.map(g => `- ${g}`).join('\n')}`);
   sections.push(formatStateSection(view));

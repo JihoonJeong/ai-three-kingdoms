@@ -177,7 +177,7 @@ function startGame(aiEnabled: boolean, modelName?: string | null): void {
 
   const controller = new GameController();
 
-  // AI 활성화 시 Faction LLM 클라이언트 설정
+  // 하이브리드 Faction AI: LLM 자율 행동 + 마일스톤 안전장치
   if (aiEnabled) {
     const llmClient: FactionLLMClient = {
       requestFactionTurn: (factionId, gameState) =>

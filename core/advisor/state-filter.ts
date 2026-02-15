@@ -195,6 +195,7 @@ export function filterGameState(state: GameState, playerFaction: string = '유�
       troopsLevel: categorizeTroops(totalTroops),
       foodLevel: categorizeFood(city.food),
       development: categorizeDevelopment(city),
+      developmentGrades: `농업${city.development.agriculture} 상업${city.development.commerce} 방어${city.development.defense}`,
       defense: city.development.defense,
       morale: categorizeMorale(city.morale),
       stationedGenerals: stationedGens.map(g => ({
@@ -268,6 +269,23 @@ export function filterGameState(state: GameState, playerFaction: string = '유�
     };
   }
 
+  // 전략적 전환점 — 실제 진행 상황 반영
+  let strategicContext: string | undefined;
+  if (state.flags['chibiVictory']) {
+    const playerCityCount = playerCities.length;
+    const totalCities = state.cities.length;
+    const nanjunOwned = state.cities.find(c => c.id === 'nanjun')?.owner === playerFaction;
+    const jianglingOwned = state.cities.find(c => c.id === 'jiangling')?.owner === playerFaction;
+
+    if (nanjunOwned && jianglingOwned) {
+      strategicContext = '적벽대전 승리. 형주 전역 확보 완료. 내정 안정화에 집중할 단계.';
+    } else if (nanjunOwned) {
+      strategicContext = '적벽대전 승리. 남군 점령 완료. 잔여 영토 확보 단계.';
+    } else {
+      strategicContext = '적벽대전 승리. 이제 형주 공략 단계.';
+    }
+  }
+
   return {
     turn: state.turn,
     maxTurns: state.maxTurns,
@@ -281,6 +299,7 @@ export function filterGameState(state: GameState, playerFaction: string = '유�
     urgentMatters: deriveUrgentMatters(state, playerFaction),
     opportunities: deriveOpportunities(state, playerFaction),
     lastTurnResults: getLastTurnResults(state),
+    strategicContext,
     contextKnowledge: selectKnowledge(state),
   };
 }

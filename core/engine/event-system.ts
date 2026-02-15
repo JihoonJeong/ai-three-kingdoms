@@ -157,6 +157,29 @@ export class EventSystem {
         return `추격 기회: ${effect.target} (${effect.location})`;
       }
 
+      case 'troop_loss': {
+        const city = stateManager.getCity(effect.city);
+        if (city && city.owner === effect.target as any) {
+          const remaining = Math.floor(
+            (city.troops.infantry + city.troops.cavalry + city.troops.navy) * (1 - effect.ratio)
+          );
+          const total = city.troops.infantry + city.troops.cavalry + city.troops.navy;
+          if (total > 0) {
+            const ratio = remaining / total;
+            stateManager.updateCity(effect.city, {
+              troops: {
+                infantry: Math.floor(city.troops.infantry * ratio),
+                cavalry: Math.floor(city.troops.cavalry * ratio),
+                navy: Math.floor(city.troops.navy * ratio),
+              },
+              morale: Math.max(0, city.morale + effect.moralePenalty),
+            });
+          }
+        }
+        const lostPercent = Math.round(effect.ratio * 100);
+        return `${effect.target} ${city?.name ?? effect.city} 병력 ${lostPercent}% 손실`;
+      }
+
       default:
         return '알 수 없는 효과';
     }

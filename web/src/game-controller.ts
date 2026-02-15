@@ -30,6 +30,7 @@ export class GameController {
   private eventSystem!: EventSystem;
   private victoryJudge!: VictoryJudge;
   private callbacks: Partial<GameCallbacks> = {};
+  private pendingLLMClient?: FactionLLMClient;
 
   private rng(): number {
     return Math.random();
@@ -51,6 +52,11 @@ export class GameController {
       this.battleEngine, () => this.rng(),
       this.actionExecutor,
     );
+
+    // setLLMClient가 startGame 전에 호출된 경우 적용
+    if (this.pendingLLMClient) {
+      this.turnManager.setLLMClient(this.pendingLLMClient);
+    }
 
     const turnInfo = this.turnManager.startTurn();
     this.callbacks.onTurnStart?.(turnInfo);
@@ -100,30 +106,64 @@ export class GameController {
       battle.result = endCheck.result ?? null;
 
       // 전투 결과에 따른 영토 변경 처리
-      if (endCheck.result?.winner === playerFaction) {
-        const battleLocation = battle.location;
-        const bf = state.battlefields.find(b => b.id === battleLocation);
-        if (bf) {
-          for (const cityId of bf.adjacentCities) {
-            const city = this.stateManager.getCity(cityId);
-            if (city && city.owner !== playerFaction) {
-              // 적 도시 점령은 후속전에서 처리
+      const winner = endCheck.result?.winner;
+      const loser = endCheck.result?.loser;
+      const battleLocation = battle.location;
+      const bf = state.battlefields.find(b => b.id === battleLocation);
+      const battleCity = this.stateManager.getCity(battleLocation);
+
+      if (bf) {
+        // 전장 전투 (적벽 등)
+        if (bf.id === 'chibi' && winner === playerFaction) {
+          this.stateManager.setFlag('chibiVictory', true);
+        }
+
+        // 전장 전투 종료 후 양측 장수를 인접 아군 도시로 자동 귀환
+        const returnFactions = winner
+          ? [battle.attackers.faction, battle.defenders.faction]
+          : [battle.attackers.faction, battle.defenders.faction]; // 무승부도 양측 귀환
+        for (const faction of returnFactions) {
+          const returnCity = bf.adjacentCities
+            .map(id => this.stateManager.getCity(id))
+            .find(c => c && c.owner === faction);
+          if (!returnCity) continue;
+          const factionGenerals = faction === battle.attackers.faction
+            ? battle.attackers.generals : battle.defenders.generals;
+          for (const gId of factionGenerals) {
+            const g = this.stateManager.getGeneral(gId);
+            if (g && g.condition !== '포로' && g.location === bf.id) {
+              this.stateManager.updateGeneral(gId, { location: returnCity.id });
             }
           }
-          if (bf.id === 'chibi') {
-            this.stateManager.setFlag('chibiVictory', true);
+          // 잔여 병력을 귀환 도시에 추가
+          const factionTroops = faction === battle.attackers.faction
+            ? battle.attackers.troops : battle.defenders.troops;
+          if (factionTroops > 0) {
+            this.stateManager.addCityTroops(returnCity.id, 'infantry', factionTroops);
           }
+        }
+      } else if (battleCity) {
+        // 도시 전투 — 공격측 승리 시 도시 점령
+        if (winner && winner !== battleCity.owner) {
+          battle.result!.territoryChange = battleCity.name;
+          this.stateManager.updateCity(battleCity.id, { owner: winner });
         }
       }
 
-      // 공격 패배 시 장수 귀환
-      if (playerIsAttacker && battle.result?.loser === playerFaction) {
+      // 공격 패배 또는 무승부 시 공격측 장수 귀환 (플레이어/AI 모두)
+      if (loser === battle.attackers.faction || winner === null) {
         const lastMarchLog = [...state.actionLog].reverse().find(
           log => log.action.action === 'march' && log.result.battleTriggered
         );
-        if (lastMarchLog && lastMarchLog.action.action === 'march') {
+        const returnTo = lastMarchLog?.action.action === 'march'
+          ? lastMarchLog.action.params.from
+          : null;
+        if (returnTo) {
           for (const gId of battle.attackers.generals) {
-            this.stateManager.updateGeneral(gId, { location: lastMarchLog.action.params.from });
+            const g = this.stateManager.getGeneral(gId);
+            if (g && g.condition !== '포로') {
+              this.stateManager.updateGeneral(gId, { location: returnTo });
+            }
           }
         }
       }
@@ -135,19 +175,19 @@ export class GameController {
         }
       }
 
-      // AI 방어전 후: 방어 도시 병력을 전투 잔여 병력으로 갱신
-      if (!playerIsAttacker) {
-        const defCity = this.stateManager.getCity(battle.location);
-        if (defCity && defCity.owner === playerFaction) {
+      // 도시 전투 후: 방어 도시 병력을 전투 잔여 병력으로 갱신
+      if (battleCity) {
+        const defenderIsOwner = battle.defenders.faction === battleCity.owner;
+        if (defenderIsOwner) {
           const remainingTroops = battle.defenders.troops;
-          const currentTotal = defCity.troops.infantry + defCity.troops.cavalry + defCity.troops.navy;
+          const currentTotal = battleCity.troops.infantry + battleCity.troops.cavalry + battleCity.troops.navy;
           if (currentTotal > 0) {
             const ratio = remainingTroops / currentTotal;
-            this.stateManager.updateCity(defCity.id, {
+            this.stateManager.updateCity(battleCity.id, {
               troops: {
-                infantry: Math.floor(defCity.troops.infantry * ratio),
-                cavalry: Math.floor(defCity.troops.cavalry * ratio),
-                navy: Math.floor(defCity.troops.navy * ratio),
+                infantry: Math.floor(battleCity.troops.infantry * ratio),
+                cavalry: Math.floor(battleCity.troops.cavalry * ratio),
+                navy: Math.floor(battleCity.troops.navy * ratio),
               },
             });
           }
@@ -185,7 +225,11 @@ export class GameController {
   }
 
   setLLMClient(client: FactionLLMClient | undefined): void {
-    this.turnManager.setLLMClient(client);
+    this.pendingLLMClient = client;
+    // turnManager가 초기화된 후에만 직접 전달
+    if (this.turnManager) {
+      this.turnManager.setLLMClient(client);
+    }
   }
 
   async endTurn(): Promise<TurnEndResult> {

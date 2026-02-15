@@ -281,7 +281,8 @@ export type EventEffect =
   | { type: 'weather_change'; weather: string }
   | { type: 'tactic_bonus'; tactic: string; bonus: number }
   | { type: 'special_tactic_available'; tactic: string }
-  | { type: 'pursuit_opportunity'; target: string; location: string };
+  | { type: 'pursuit_opportunity'; target: string; location: string }
+  | { type: 'troop_loss'; target: string; city: string; ratio: number; moralePenalty: number };
 
 export interface EventResult {
   eventId: string;

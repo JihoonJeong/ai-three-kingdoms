@@ -59,7 +59,7 @@ conscript, develop, train, recruit, assign, transfer, send_envoy, gift, threaten
 
 function formatCityView(city: AdvisorView['ourCities'][0]): string {
   const gens = city.stationedGenerals.map(g => `${g.name}(${g.role})`).join(', ');
-  return `  - ${city.name}: 병력 ${city.troopsLevel}, 식량 ${city.foodLevel}, 개발 ${city.development}, 방어 ${city.defense}, 사기 ${city.morale}${gens ? `\n    장수: ${gens}` : ''}`;
+  return `  - ${city.name}: 병력 ${city.troopsLevel}, 식량 ${city.foodLevel}, 개발[${city.developmentGrades}], 사기 ${city.morale}${gens ? `\n    장수: ${gens}` : ''}`;
 }
 
 function formatAllyView(ally: AdvisorView['allies'][0]): string {
@@ -108,9 +108,12 @@ export function buildSystemPrompt(view: AdvisorView, language: GameLanguage = 'k
   const sections: string[] = [PERSONA, buildLanguageInstruction(language)];
 
   // 현재 상황
-  sections.push(`\n## 현재 상황
-턴: ${view.turn}/${view.maxTurns} | 시기: ${view.phase} | 계절: ${view.season}
-남은 행동: ${view.actionsRemaining}회`);
+  let situationHeader = `턴: ${view.turn}/${view.maxTurns} | 시기: ${view.phase} | 계절: ${view.season}
+남은 행동: ${view.actionsRemaining}회`;
+  if (view.strategicContext) {
+    situationHeader += `\n⚡ ${view.strategicContext}`;
+  }
+  sections.push(`\n## 현재 상황\n${situationHeader}`);
 
   // 아군 도시
   if (view.ourCities.length > 0) {

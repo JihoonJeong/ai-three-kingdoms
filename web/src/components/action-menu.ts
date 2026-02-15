@@ -370,7 +370,10 @@ export class ActionMenu {
            (g.condition === '양호' || g.condition === '피로'),
     );
 
-    if (availableGenerals.length === 0) return;
+    if (availableGenerals.length === 0) {
+      this.showNotice('배치 가능한 장수가 없습니다.');
+      return;
+    }
 
     const options = availableGenerals.map(g => {
       const locInfo = this.getLocationInfo(g.location);
@@ -394,13 +397,22 @@ export class ActionMenu {
 
     // 현재 위치의 인접 아군 도시만
     const currentCity = this.state.cities.find(c => c.id === general.location);
-    if (!currentCity) return;
+    if (!currentCity) {
+      // 전장에 있는 장수
+      const locInfo = this.getLocationInfo(general.location);
+      const locName = locInfo?.name ?? general.location;
+      this.showNotice(`${general.name}은(는) ${locName}에 있어 배치 이동할 수 없습니다. 전투 종료 후 자동 귀환합니다.`);
+      return;
+    }
 
     const destinations = currentCity.adjacent
       .map(id => this.state!.cities.find(c => c.id === id))
       .filter((c): c is City => c !== null && c !== undefined && c.owner === this.playerFaction);
 
-    if (destinations.length === 0) return;
+    if (destinations.length === 0) {
+      this.showNotice(`${currentCity.name}에서 이동할 수 있는 인접 아군 도시가 없습니다.`);
+      return;
+    }
 
     // 목적지 1개면 자동 선택
     if (destinations.length === 1) {
@@ -673,6 +685,24 @@ export class ActionMenu {
         this.onActionCb?.(action);
       },
     );
+  }
+
+  // ─── 알림 모달 ─────────────────────────────────────────
+
+  private showNotice(message: string): void {
+    const backdrop = h('div', { className: 'modal-backdrop' });
+    const modal = h('div', { className: 'modal' });
+
+    modal.appendChild(h('div', { className: 'modal-body' }, message));
+
+    const footer = h('div', { className: 'modal-footer' });
+    const okBtn = h('button', { className: 'btn btn-primary' }, '확인');
+    okBtn.addEventListener('click', () => backdrop.remove());
+    footer.appendChild(okBtn);
+    modal.appendChild(footer);
+
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
   }
 
   // ─── 모달 ────────────────────────────────────────────

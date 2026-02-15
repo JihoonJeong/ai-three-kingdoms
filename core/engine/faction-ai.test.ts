@@ -357,6 +357,139 @@ describe('FactionAIEngine', () => {
     });
   });
 
+  describe('하이브리드 모드 (LLM + 마일스톤 안전장치)', () => {
+    it('LLM 빈 응답 → 마일스톤 강제 삽입 + 플래그 설정', async () => {
+      const mockClient: FactionLLMClient = {
+        requestFactionTurn: async () => ({ actions: [] }),
+      };
+
+      createEngine(3, { llmClient: mockClient });
+      const nanjunBefore = stateManager.getCity('nanjun')!;
+      const troopsBefore = getTotalTroopsOfCity(nanjunBefore);
+
+      await aiEngine.processAll();
+
+      // enforceMilestones가 cao_m_conscript1 강제 삽입
+      const nanjunAfter = stateManager.getCity('nanjun')!;
+      const troopsAfter = getTotalTroopsOfCity(nanjunAfter);
+      expect(troopsAfter).toBeGreaterThan(troopsBefore);
+      expect(stateManager.getFlag('cao_m_conscript1')).toBe(true);
+    });
+
+    it('LLM이 마일스톤 행동 포함 → 중복 삽입 없음', async () => {
+      const mockClient: FactionLLMClient = {
+        requestFactionTurn: async (factionId) => {
+          if (factionId === '조조') {
+            return {
+              actions: [
+                { type: 'conscript', params: { city: 'nanjun', scale: 'large' }, confidence: 90, description: '' },
+              ],
+            };
+          }
+          return { actions: [] };
+        },
+      };
+
+      createEngine(3, { llmClient: mockClient });
+      await aiEngine.processAll();
+
+      // 플래그는 설정되어야 함
+      expect(stateManager.getFlag('cao_m_conscript1')).toBe(true);
+    });
+
+    it('Turn 9 LLM 빈 응답 → 적벽 배치 강제 삽입', async () => {
+      const mockClient: FactionLLMClient = {
+        requestFactionTurn: async () => ({ actions: [] }),
+      };
+
+      createEngine(9, { llmClient: mockClient });
+      stateManager.setFlag('cao_m_conscript1', true);
+      stateManager.setFlag('cao_m_caoren', true);
+      stateManager.setFlag('cao_m_conscript2', true);
+      stateManager.setFlag('cao_m_march_south', true);
+
+      await aiEngine.processAll();
+
+      const caimao = stateManager.getGeneral('caimao')!;
+      const zhangyun = stateManager.getGeneral('zhangyun')!;
+      expect(caimao.location).toBe('chibi');
+      expect(zhangyun.location).toBe('chibi');
+      expect(stateManager.getFlag('cao_chibi_deployed')).toBe(true);
+    });
+
+    it('동맹 가속 적응 규칙: Turn 7 + 동맹 → 적벽 배치', async () => {
+      const mockClient: FactionLLMClient = {
+        requestFactionTurn: async () => ({ actions: [] }),
+      };
+
+      createEngine(7, { allied: true, llmClient: mockClient });
+      stateManager.setFlag('cao_m_conscript1', true);
+      stateManager.setFlag('cao_m_caoren', true);
+      stateManager.setFlag('cao_m_conscript2', true);
+
+      await aiEngine.processAll();
+
+      const caimao = stateManager.getGeneral('caimao')!;
+      expect(caimao.location).toBe('chibi');
+      expect(stateManager.getFlag('cao_chibi_deployed')).toBe(true);
+    });
+
+    it('손권 LLM 빈 응답 → 주유 파견 강제 삽입', async () => {
+      const mockClient: FactionLLMClient = {
+        requestFactionTurn: async () => ({ actions: [] }),
+      };
+
+      createEngine(10, { allied: true, chibiDeployed: true, llmClient: mockClient });
+      stateManager.setFlag('cao_m_conscript1', true);
+      stateManager.setFlag('cao_m_caoren', true);
+      stateManager.setFlag('cao_m_conscript2', true);
+      stateManager.setFlag('cao_m_march_south', true);
+
+      await aiEngine.processAll();
+
+      const zhouyu = stateManager.getGeneral('zhouyu')!;
+      expect(zhouyu.location).toBe('chibi');
+      expect(stateManager.getFlag('sun_chibi_support')).toBe(true);
+    });
+
+    it('마일스톤 메시지가 changes에 포함', async () => {
+      const mockClient: FactionLLMClient = {
+        requestFactionTurn: async () => ({ actions: [] }),
+      };
+
+      createEngine(9, { llmClient: mockClient });
+      stateManager.setFlag('cao_m_conscript1', true);
+      stateManager.setFlag('cao_m_caoren', true);
+      stateManager.setFlag('cao_m_conscript2', true);
+      stateManager.setFlag('cao_m_march_south', true);
+
+      const result = await aiEngine.processAll();
+
+      expect(result.changes.some(c => c.includes('적벽'))).toBe(true);
+    });
+
+    it('LLM 실패 시 폴백 전략 (마일스톤 안전장치 우회)', async () => {
+      const mockClient: FactionLLMClient = {
+        requestFactionTurn: async () => {
+          throw new Error('LLM 연결 실패');
+        },
+      };
+
+      createEngine(9, { llmClient: mockClient });
+      stateManager.setFlag('cao_m_conscript1', true);
+      stateManager.setFlag('cao_m_caoren', true);
+      stateManager.setFlag('cao_m_conscript2', true);
+      stateManager.setFlag('cao_m_march_south', true);
+
+      await aiEngine.processAll();
+
+      // 폴백 전략의 하드코딩 마일스톤이 실행됨
+      const caimao = stateManager.getGeneral('caimao')!;
+      expect(caimao.location).toBe('chibi');
+      expect(stateManager.getFlag('cao_chibi_deployed')).toBe(true);
+    });
+  });
+
   describe('통합 테스트', () => {
     it('AI 세력 전체 턴 처리 (플레이어 세력 제외)', async () => {
       createEngine(3);

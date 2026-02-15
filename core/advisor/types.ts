@@ -20,6 +20,8 @@ export interface AdvisorCityView {
   troopsLevel: TroopsLevel;
   foodLevel: FoodLevel;
   development: DevelopmentLevel;
+  /** 개별 개발 등급 (예: "농업A 상업B 방어S") */
+  developmentGrades: string;
   defense: Grade;
   morale: MoraleLevel;
   stationedGenerals: {
@@ -71,6 +73,9 @@ export interface AdvisorView {
   urgentMatters: string[];
   opportunities: string[];
   lastTurnResults: string[];
+
+  /** 적벽 승리 등 전략적 전환점 표시 */
+  strategicContext?: string;
 
   contextKnowledge: string[];
 }
