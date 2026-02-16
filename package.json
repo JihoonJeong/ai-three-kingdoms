@@ -11,7 +11,10 @@
     "dev:server": "tsx watch server/index.ts",
     "build:web": "vite build --config web/vite.config.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "sim": "tsx sim/run-batch.ts",
+    "sim:quick": "tsx sim/run-batch.ts --quick",
+    "sim:dry": "tsx sim/run-batch.ts --dry --quick"
   },
   "keywords": [
     "three-kingdoms",
