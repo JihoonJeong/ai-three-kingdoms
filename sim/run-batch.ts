@@ -52,6 +52,7 @@ function parseArgs() {
     switch (args[i]) {
       case '--mode': opts.mode = args[++i] as 'A' | 'B'; break;
       case '--think': opts.think = true; break;
+      case '--no-think': case '--fast': opts.think = false; break;
       case '--count': opts.count = parseInt(args[++i], 10); break;
       case '--quick': opts.quick = true; break;
       case '--dry': opts.dry = true; break;
