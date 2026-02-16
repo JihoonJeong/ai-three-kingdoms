@@ -3,10 +3,12 @@
   "mode": "A",
   "thinking": false,
   "seed": 42,
+  "provider": "ollama",
+  "model": "exaone3.5:7.8b",
   "grade": "D",
   "title": "패배 속의 생존",
   "totalTurns": 21,
-  "duration": 316406,
+  "duration": 112306,
   "flags": {
     "allianceStarted": true,
     "intel_reliability": "대략적",
@@ -63,19 +65,6 @@
             "success": true,
             "description": "손권에 사절을 보냈습니다. 관계가 개선되었습니다. (중립 → 중립)"
           }
-        },
-        {
-          "action": {
-            "type": "domestic",
-            "action": "train",
-            "params": {
-              "city": "gangha"
-            }
-          },
-          "result": {
-            "success": true,
-            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 60 → 79."
-          }
         }
       ],
       "events": [],
@@ -110,7 +99,7 @@
           },
           "result": {
             "success": true,
-            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 79 → 98."
+            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 60 → 79."
           }
         },
         {
@@ -162,7 +151,7 @@
           },
           "result": {
             "success": true,
-            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 98 → 100."
+            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 79 → 98."
           }
         },
         {
@@ -215,7 +204,7 @@
           },
           "result": {
             "success": true,
-            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 98 → 100."
           }
         },
         {
@@ -257,6 +246,19 @@
         },
         {
           "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "gangha"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+          }
+        },
+        {
+          "action": {
             "type": "diplomacy",
             "action": "send_envoy",
             "params": {
@@ -267,19 +269,6 @@
           "result": {
             "success": true,
             "description": "손권에 사절을 보냈습니다. 관계가 개선되었습니다. (긴밀 → 긴밀)"
-          }
-        },
-        {
-          "action": {
-            "type": "domestic",
-            "action": "train",
-            "params": {
-              "city": "gangha"
-            }
-          },
-          "result": {
-            "success": true,
-            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
           }
         }
       ],
@@ -301,13 +290,13 @@
             "type": "domestic",
             "action": "develop",
             "params": {
-              "city": "hagu",
+              "city": "gangha",
               "focus": "agriculture"
             }
           },
           "result": {
             "success": true,
-            "description": "하구의 농업 개발을 시도했으나 아직 성과가 나지 않았습니다. (A 유지)"
+            "description": "강하의 농업이(가) B에서 A로 발전했습니다."
           }
         },
         {
@@ -322,19 +311,6 @@
           "result": {
             "success": true,
             "description": "손권에 사절을 보냈습니다. 관계가 개선되었습니다. (긴밀 → 긴밀)"
-          }
-        },
-        {
-          "action": {
-            "type": "domestic",
-            "action": "train",
-            "params": {
-              "city": "gangha"
-            }
-          },
-          "result": {
-            "success": true,
-            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
           }
         }
       ],
@@ -423,16 +399,15 @@
         },
         {
           "action": {
-            "type": "diplomacy",
-            "action": "send_envoy",
+            "type": "domestic",
+            "action": "train",
             "params": {
-              "target": "손권",
-              "purpose": "우호 증진"
+              "city": "gangha"
             }
           },
           "result": {
             "success": true,
-            "description": "손권에 사절을 보냈습니다. 관계가 개선되었습니다. (긴밀 → 긴밀)"
+            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
           }
         }
       ],
@@ -466,6 +441,19 @@
         },
         {
           "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "gangha"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+          }
+        },
+        {
+          "action": {
             "type": "diplomacy",
             "action": "send_envoy",
             "params": {
@@ -495,12 +483,12 @@
             "action": "develop",
             "params": {
               "city": "hagu",
-              "focus": "agriculture"
+              "focus": "commerce"
             }
           },
           "result": {
-            "success": false,
-            "description": "하구의 농업는 이미 최고 등급입니다."
+            "success": true,
+            "description": "하구의 상업이(가) C에서 B로 발전했습니다."
           }
         },
         {
@@ -514,20 +502,6 @@
           "result": {
             "success": true,
             "description": "강하의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
-          }
-        },
-        {
-          "action": {
-            "type": "diplomacy",
-            "action": "send_envoy",
-            "params": {
-              "target": "손권",
-              "purpose": "우호 증진"
-            }
-          },
-          "result": {
-            "success": true,
-            "description": "손권에 사절을 보냈습니다. 관계가 개선되었습니다. (긴밀 → 긴밀)"
           }
         }
       ],
@@ -550,26 +524,13 @@
             "type": "domestic",
             "action": "develop",
             "params": {
-              "city": "hagu",
+              "city": "gangha",
               "focus": "agriculture"
             }
           },
           "result": {
-            "success": false,
-            "description": "하구의 농업는 이미 최고 등급입니다."
-          }
-        },
-        {
-          "action": {
-            "type": "domestic",
-            "action": "train",
-            "params": {
-              "city": "gangha"
-            }
-          },
-          "result": {
             "success": true,
-            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+            "description": "강하의 농업이(가) A에서 S로 발전했습니다."
           }
         },
         {
@@ -584,6 +545,19 @@
           "result": {
             "success": true,
             "description": "손권에 사절을 보냈습니다. 관계가 개선되었습니다. (긴밀 → 긴밀)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "gangha"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
           }
         }
       ],
@@ -614,6 +588,19 @@
         },
         {
           "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "gangha"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+          }
+        },
+        {
+          "action": {
             "type": "diplomacy",
             "action": "send_envoy",
             "params": {
@@ -624,19 +611,6 @@
           "result": {
             "success": true,
             "description": "손권에 사절을 보냈습니다. 관계가 개선되었습니다. (긴밀 → 긴밀)"
-          }
-        },
-        {
-          "action": {
-            "type": "domestic",
-            "action": "train",
-            "params": {
-              "city": "gangha"
-            }
-          },
-          "result": {
-            "success": true,
-            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
           }
         }
       ],
@@ -650,36 +624,7 @@
     {
       "turn": 13,
       "phase": "battle",
-      "actions": [
-        {
-          "action": {
-            "type": "domestic",
-            "action": "develop",
-            "params": {
-              "city": "hagu",
-              "focus": "agriculture"
-            }
-          },
-          "result": {
-            "success": false,
-            "description": "하구의 농업는 이미 최고 등급입니다."
-          }
-        },
-        {
-          "action": {
-            "type": "diplomacy",
-            "action": "send_envoy",
-            "params": {
-              "target": "손권",
-              "purpose": "우호 증진"
-            }
-          },
-          "result": {
-            "success": true,
-            "description": "손권에 사절을 보냈습니다. 관계가 개선되었습니다. (긴밀 → 긴밀)"
-          }
-        }
-      ],
+      "actions": [],
       "events": [],
       "battles": [],
       "aiActions": [
@@ -696,13 +641,13 @@
             "type": "domestic",
             "action": "develop",
             "params": {
-              "city": "hagu",
+              "city": "gangha",
               "focus": "agriculture"
             }
           },
           "result": {
             "success": false,
-            "description": "하구의 농업는 이미 최고 등급입니다."
+            "description": "강하의 농업는 이미 최고 등급입니다."
           }
         },
         {
@@ -742,23 +687,23 @@
           "turns": [
             {
               "tacticUsed": "ambush",
-              "attackerTroops": 7822,
-              "defenderTroops": 7043
+              "attackerTroops": 7690,
+              "defenderTroops": 7097
             },
             {
               "tacticUsed": "ambush",
-              "attackerTroops": 5900,
-              "defenderTroops": 6579
+              "attackerTroops": 5986,
+              "defenderTroops": 6299
             },
             {
               "tacticUsed": "ambush",
-              "attackerTroops": 4179,
-              "defenderTroops": 6178
+              "attackerTroops": 4726,
+              "defenderTroops": 5718
             },
             {
               "tacticUsed": "ambush",
-              "attackerTroops": 2428,
-              "defenderTroops": 6028
+              "attackerTroops": 2763,
+              "defenderTroops": 5504
             }
           ],
           "result": {
@@ -768,7 +713,7 @@
               "caoren"
             ],
             "spoils": [
-              "잔여 병력 2428명 확보"
+              "잔여 병력 2763명 확보"
             ],
             "territoryChange": null
           }
@@ -789,13 +734,13 @@
             "type": "domestic",
             "action": "develop",
             "params": {
-              "city": "hagu",
+              "city": "gangha",
               "focus": "agriculture"
             }
           },
           "result": {
             "success": false,
-            "description": "하구의 농업는 이미 최고 등급입니다."
+            "description": "강하의 농업는 이미 최고 등급입니다."
           }
         },
         {
@@ -829,6 +774,7 @@
       "events": [],
       "battles": [],
       "aiActions": [
+        "강하: 식량 증산 (생산 720, 소비 550, +170)",
         "손권: 동맹 지원으로 군량을 보냈습니다"
       ]
     },
@@ -881,6 +827,7 @@
       "events": [],
       "battles": [],
       "aiActions": [
+        "강하: 식량 증산 (생산 720, 소비 550, +170)",
         "손권: 동맹 지원으로 군량을 보냈습니다"
       ]
     },
@@ -893,26 +840,13 @@
             "type": "domestic",
             "action": "develop",
             "params": {
-              "city": "hagu",
+              "city": "gangha",
               "focus": "agriculture"
             }
           },
           "result": {
             "success": false,
-            "description": "하구의 농업는 이미 최고 등급입니다."
-          }
-        },
-        {
-          "action": {
-            "type": "domestic",
-            "action": "train",
-            "params": {
-              "city": "gangha"
-            }
-          },
-          "result": {
-            "success": true,
-            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+            "description": "강하의 농업는 이미 최고 등급입니다."
           }
         },
         {
@@ -933,7 +867,7 @@
       "events": [],
       "battles": [],
       "aiActions": [
-        "강하: 군량이 부족합니다 (생산 400, 소비 602, 잔여 1794)",
+        "강하: 식량 증산 (생산 720, 소비 550, +170)",
         "손권: 동맹 지원으로 군량을 보냈습니다"
       ]
     },
@@ -944,20 +878,6 @@
         {
           "action": {
             "type": "domestic",
-            "action": "develop",
-            "params": {
-              "city": "hagu",
-              "focus": "agriculture"
-            }
-          },
-          "result": {
-            "success": false,
-            "description": "하구의 농업는 이미 최고 등급입니다."
-          }
-        },
-        {
-          "action": {
-            "type": "domestic",
             "action": "train",
             "params": {
               "city": "gangha"
@@ -986,7 +906,7 @@
       "events": [],
       "battles": [],
       "aiActions": [
-        "강하: 군량이 부족합니다 (생산 400, 소비 602, 잔여 1592)",
+        "강하: 식량 증산 (생산 720, 소비 550, +170)",
         "손권: 동맹 지원으로 군량을 보냈습니다"
       ]
     },
@@ -999,13 +919,26 @@
             "type": "domestic",
             "action": "develop",
             "params": {
-              "city": "hagu",
+              "city": "gangha",
               "focus": "agriculture"
             }
           },
           "result": {
             "success": false,
-            "description": "하구의 농업는 이미 최고 등급입니다."
+            "description": "강하의 농업는 이미 최고 등급입니다."
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "gangha"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
           }
         },
         {
@@ -1021,25 +954,12 @@
             "success": true,
             "description": "손권에 사절을 보냈습니다. 관계가 개선되었습니다. (긴밀 → 긴밀)"
           }
-        },
-        {
-          "action": {
-            "type": "domestic",
-            "action": "train",
-            "params": {
-              "city": "gangha"
-            }
-          },
-          "result": {
-            "success": true,
-            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
-          }
         }
       ],
       "events": [],
       "battles": [],
       "aiActions": [
-        "강하: 군량이 부족합니다 (생산 400, 소비 602, 잔여 1390)",
+        "강하: 식량 증산 (생산 720, 소비 550, +170)",
         "손권: 동맹 지원으로 군량을 보냈습니다"
       ]
     },
@@ -1050,20 +970,6 @@
         {
           "action": {
             "type": "domestic",
-            "action": "develop",
-            "params": {
-              "city": "hagu",
-              "focus": "agriculture"
-            }
-          },
-          "result": {
-            "success": false,
-            "description": "하구의 농업는 이미 최고 등급입니다."
-          }
-        },
-        {
-          "action": {
-            "type": "domestic",
             "action": "train",
             "params": {
               "city": "gangha"
@@ -1092,7 +998,7 @@
       "events": [],
       "battles": [],
       "aiActions": [
-        "강하: 군량이 부족합니다 (생산 400, 소비 602, 잔여 1188)",
+        "강하: 식량 증산 (생산 720, 소비 550, +170)",
         "손권: 동맹 지원으로 군량을 보냈습니다"
       ]
     }
@@ -1102,7 +1008,7 @@
       {
         "id": "gangha",
         "owner": "유비",
-        "troops": 6027
+        "troops": 5503
       },
       {
         "id": "hagu",
