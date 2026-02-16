@@ -13,6 +13,7 @@ function makeConfig(overrides: Partial<SimConfig> = {}): SimConfig {
     mode: 'A',
     thinking: false,
     model: 'test',
+    provider: 'ollama',
     directOllama: true,
     useLLMFactionAI: false,
     battleAI: 'rule',

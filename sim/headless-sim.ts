@@ -127,6 +127,8 @@ export class HeadlessSimulator {
       mode: this.config.mode,
       thinking: this.config.thinking,
       seed: this.config.seed,
+      provider: this.config.provider,
+      model: this.config.model,
       grade: finalState.result?.grade ?? 'F',
       title: finalState.result?.title ?? '알 수 없음',
       totalTurns: finalState.turn,

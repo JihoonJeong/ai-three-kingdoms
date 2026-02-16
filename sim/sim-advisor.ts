@@ -16,6 +16,9 @@ import {
   type RecommendationContext,
 } from '../core/advisor/action-recommender.js';
 import type { GameState, GameAction, GameLanguage } from '../core/data/types.js';
+import { getProvider } from '../server/providers/registry.js';
+import { collectStreamText } from '../server/providers/stream-utils.js';
+import type { ProviderConfig } from '../server/providers/types.js';
 import type { SimConfig, ChatMessage } from './sim-config.js';
 import type { SimPlayerAI } from './headless-sim.js';
 
@@ -156,12 +159,38 @@ ${actionList}
     return response;
   }
 
-  /** LLM 호출 — 서버 경유 또는 직접 Ollama */
+  /** LLM 호출 — provider에 따라 분기 */
   private async callLLM(system: string, messages: ChatMessage[]): Promise<string> {
+    const provider = this.config.provider;
+    if (provider && provider !== 'ollama') {
+      return this.callProviderDirect(system, messages);
+    }
     if (this.config.directOllama) {
       return this.callOllamaDirect(system, messages);
     }
     return this.callViaServer(system, messages);
+  }
+
+  /** API 제공자 직접 호출 (서버 불필요) */
+  private async callProviderDirect(system: string, messages: ChatMessage[]): Promise<string> {
+    const provider = getProvider(this.config.provider);
+    if (!provider) throw new Error(`Unknown provider: ${this.config.provider}`);
+
+    const providerConfig: ProviderConfig = {
+      provider: this.config.provider,
+      model: this.config.model,
+      apiKey: this.config.apiKey,
+      baseUrl: this.config.baseUrl,
+    };
+
+    const stream = provider.streamChat(
+      system,
+      messages.map(m => ({ role: m.role, content: m.content })),
+      providerConfig,
+      { think: this.config.thinking },
+    );
+
+    return collectStreamText(stream);
   }
 
   private async callOllamaDirect(system: string, messages: ChatMessage[]): Promise<string> {

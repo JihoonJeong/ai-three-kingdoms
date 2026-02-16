@@ -3,6 +3,7 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 import type { GameAction, BattleResult } from '../core/data/types.js';
+import type { ProviderId } from '../server/providers/types.js';
 
 // ── 설정 ──
 
@@ -14,9 +15,15 @@ export interface SimConfig {
   thinking: boolean;          // thinking 모드 ON/OFF
 
   // LLM 설정
-  model: string;              // e.g. 'qwen3:7b'
-  directOllama: boolean;      // true: Ollama 직접 호출, false: 서버 경유
-  ollamaHost?: string;        // e.g. 'http://localhost:11434'
+  model: string;              // e.g. 'qwen3:7b', 'claude-sonnet-4-5-20250929'
+  provider: ProviderId;       // 'ollama' | 'claude' | 'openai' | 'gemini'
+  apiKey?: string;            // API 키 (ollama 외 필수)
+  baseUrl?: string;           // Ollama 커스텀 URL 등
+
+  /** @deprecated provider === 'ollama' 로 대체. 하위 호환용 유지. */
+  directOllama: boolean;
+  /** @deprecated baseUrl로 대체. 하위 호환용 유지. */
+  ollamaHost?: string;
 
   // Faction AI
   useLLMFactionAI: boolean;   // true: LLM, false: 하드코딩 전략
@@ -38,6 +45,8 @@ export interface SimResult {
   mode: 'A' | 'B';
   thinking: boolean;
   seed: number;
+  provider: string;
+  model: string;
   grade: string;              // S/A/B/C/D/F
   title: string;              // 게임 결과 제목
   totalTurns: number;

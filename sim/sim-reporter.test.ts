@@ -12,6 +12,8 @@ function mockResult(overrides: Partial<SimResult> = {}): SimResult {
     mode: 'A',
     thinking: false,
     seed: 42,
+    provider: 'ollama',
+    model: 'test',
     grade: 'B',
     title: '테스트',
     totalTurns: 15,
