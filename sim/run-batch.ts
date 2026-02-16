@@ -49,7 +49,7 @@ function parseArgs() {
 function buildMatrix(opts: ReturnType<typeof parseArgs>): SimConfig[] {
   const configs: SimConfig[] = [];
   const baseConfig = {
-    model: opts.model || 'qwen3:7b',
+    model: opts.model || 'qwen3:8b',
     directOllama: true,
     ollamaHost: opts.host || process.env.OLLAMA_HOST || 'http://localhost:11434',
     useLLMFactionAI: false,    // 하드코딩 전략 사용 (안정성)

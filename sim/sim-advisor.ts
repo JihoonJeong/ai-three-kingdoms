@@ -166,6 +166,14 @@ ${actionList}
 
   private async callOllamaDirect(system: string, messages: ChatMessage[]): Promise<string> {
     const ollamaHost = this.config.ollamaHost || 'http://localhost:11434';
+
+    // qwen3 등은 기본적으로 <think> 출력 — /no_think 으로 제어
+    const mappedMessages = messages.map(m => ({ role: m.role, content: m.content }));
+    if (!this.config.thinking && mappedMessages.length > 0) {
+      const last = mappedMessages[mappedMessages.length - 1];
+      last.content = last.content.trimEnd() + ' /no_think';
+    }
+
     const response = await fetch(`${ollamaHost}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -173,17 +181,19 @@ ${actionList}
         model: this.config.model,
         messages: [
           { role: 'system', content: system },
-          ...messages.map(m => ({ role: m.role, content: m.content })),
+          ...mappedMessages,
         ],
         stream: false,
-        think: this.config.thinking || undefined,
-        options: this.config.thinking
-          ? { num_predict: 16384 }
-          : { num_predict: 4096 },
+        options: {
+          num_predict: this.config.thinking ? 16384 : 4096,
+        },
       }),
     });
 
-    const data = await response.json() as { message: { content: string } };
+    const data = await response.json() as { message?: { content: string }; error?: string };
+    if (data.error || !data.message) {
+      throw new Error(`Ollama error: ${data.error || 'no message in response'}`);
+    }
     return stripThinking(data.message.content);
   }
 
