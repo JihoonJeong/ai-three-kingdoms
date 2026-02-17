@@ -36,6 +36,15 @@ export class TurnManager {
   startTurn(): TurnStartResult {
     const state = this.stateManager.getState();
 
+    // 최대 병력 추적 (peak)
+    const currentTroops = state.cities
+      .filter(c => c.owner === '유비')
+      .reduce((sum, c) => sum + (c.troops?.infantry ?? 0) + (c.troops?.cavalry ?? 0) + (c.troops?.navy ?? 0), 0);
+    const prevMax = typeof state.flags['_maxTroops'] === 'number' ? state.flags['_maxTroops'] as number : 0;
+    if (currentTroops > prevMax) {
+      this.stateManager.setFlag('_maxTroops', currentTroops);
+    }
+
     // 행동 횟수 리셋
     this.stateManager.resetActions();
 

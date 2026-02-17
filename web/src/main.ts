@@ -429,55 +429,28 @@ function startGame(aiEnabled: boolean, modelName?: string | null): void {
   }
 
   // ─── Game Over ─────────────────────────────────────────
-  function showGameOver(result: GameResult): void {
-    layout.showOverlay();
-    const overlay = layout.getOverlayArea();
-    overlay.innerHTML = '';
-    overlay.style.cssText += 'display:flex;align-items:center;justify-content:center;';
+  const gameStartTime = Date.now();
 
-    const panel = document.createElement('div');
-    panel.className = 'panel';
-    panel.style.cssText = 'max-width:500px;text-align:center;';
-    panel.innerHTML = `
-      <h1 style="color:var(--color-gold);font-size:32px;margin-bottom:var(--space-md)">${result.title}</h1>
-      <p style="margin-bottom:var(--space-md)">${result.description}</p>
-      <div style="display:flex;gap:var(--space-lg);justify-content:center;margin-bottom:var(--space-md);font-family:var(--font-data)">
-        <span>등급: <strong>${result.grade}</strong></span>
-        <span>턴: ${result.stats.totalTurns}</span>
-        <span>전투 승: ${result.stats.battlesWon}</span>
-      </div>
-    `;
-
-    const btnWrap = document.createElement('div');
-    btnWrap.style.cssText = 'display:flex;gap:var(--space-sm);justify-content:center;';
-
-    const saveBtn = document.createElement('button');
-    saveBtn.className = 'btn btn-secondary';
-    saveBtn.textContent = '기록 저장';
-    saveBtn.addEventListener('click', () => downloadGameLog(result));
-
-    const restartBtn = document.createElement('button');
-    restartBtn.className = 'btn btn-primary';
-    restartBtn.textContent = '다시 시작';
-    restartBtn.addEventListener('click', () => location.reload());
-
-    btnWrap.append(saveBtn, restartBtn);
-    panel.appendChild(btnWrap);
-    overlay.appendChild(panel);
-  }
-
-  function downloadGameLog(result: GameResult): void {
+  function buildGameResultData(result: GameResult) {
     const state = controller.getState();
-    const log = {
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      result,
-      summary: {
-        turns: state.turn,
-        grade: result.grade,
-        battlesWon: result.stats.battlesWon,
-        battlesLost: result.stats.battlesLost,
+    return {
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      provider: '', // 서버에서 채워짐
+      model: modelName || '',
+      totalTurns: result.stats.totalTurns,
+      duration: Date.now() - gameStartTime,
+      outcome: result.grade === 'F' ? 'defeat' as const : 'victory' as const,
+      grade: result.grade,
+      flags: {
+        chibiVictory: !!state.flags['chibiVictory'],
+        nanjunCaptured: state.cities.find(c => c.id === 'nanjun')?.owner === '유비' || false,
+        allianceFormed: !!state.flags['allianceFormed'] || state.diplomacy.relations.some(
+          r => ((r.factionA === '유비' && r.factionB === '손권') || (r.factionA === '손권' && r.factionB === '유비')) && r.isAlliance
+        ),
+        liuBeiAlive: state.generals.find(g => g.id === 'liubei')?.condition === '양호' || false,
       },
+      result,
       finalState: {
         cities: state.cities.map(c => ({
           id: c.id, name: c.name, owner: c.owner,
@@ -488,17 +461,108 @@ function startGame(aiEnabled: boolean, modelName?: string | null): void {
           id: g.id, name: g.name, faction: g.faction,
           location: g.location, condition: g.condition,
         })),
-        diplomacy: state.diplomacy,
-        flags: state.flags,
       },
       actionLog: state.actionLog,
-      eventLog: logScreen.getEntries(),
     };
+  }
 
-    const blob = new Blob([JSON.stringify(log, null, 2)], { type: 'application/json' });
+  function showGameOver(result: GameResult): void {
+    layout.showOverlay();
+    const overlay = layout.getOverlayArea();
+    overlay.innerHTML = '';
+    overlay.style.cssText += 'display:flex;align-items:center;justify-content:center;overflow-y:auto;';
+
+    const panel = document.createElement('div');
+    panel.className = 'panel';
+    panel.style.cssText = 'max-width:520px;text-align:center;padding:var(--space-xl);';
+
+    // 등급 + 제목 + 설명
+    panel.innerHTML = `
+      <h1 style="color:var(--color-gold);font-size:32px;margin-bottom:var(--space-sm)">${result.title}</h1>
+      <div style="font-size:48px;margin-bottom:var(--space-sm);font-family:var(--font-data)">${result.grade}</div>
+      <p style="margin-bottom:var(--space-lg);line-height:1.6">${result.description}</p>
+    `;
+
+    // ── 상세 전과 ──
+    const statsSection = document.createElement('div');
+    statsSection.style.cssText = 'text-align:left;border-top:1px solid rgba(0,0,0,0.1);padding-top:var(--space-md);margin-bottom:var(--space-lg);';
+    statsSection.innerHTML = `
+      <div style="font-weight:700;margin-bottom:var(--space-sm);text-align:center">전과</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-xs) var(--space-lg);font-size:14px;font-family:var(--font-data)">
+        <span>전투 승리</span><span style="text-align:right"><strong>${result.stats.battlesWon}회</strong></span>
+        <span>도시 점령</span><span style="text-align:right"><strong>${result.stats.citiesCaptured}/3</strong></span>
+        <span>적장 포로</span><span style="text-align:right"><strong>${result.stats.generalsCaptured}명</strong></span>
+        <span>적군 격파</span><span style="text-align:right"><strong>${result.stats.enemiesDefeated.toLocaleString()}명</strong></span>
+        <span>소요 턴</span><span style="text-align:right"><strong>${result.stats.totalTurns}턴</strong></span>
+        <span>최대 병력</span><span style="text-align:right"><strong>${result.stats.maxTroops.toLocaleString()}명</strong></span>
+      </div>
+    `;
+    panel.appendChild(statsSection);
+
+    // ── 공유 섹션 ──
+    const shareSection = document.createElement('div');
+    shareSection.style.cssText = 'border-top:1px solid rgba(0,0,0,0.1);padding-top:var(--space-md);margin-bottom:var(--space-lg);';
+    shareSection.innerHTML = `
+      <div style="font-size:13px;color:var(--color-charcoal);margin-bottom:var(--space-sm);text-align:center">
+        연구에 도움을 주세요! 익명화된 게임 결과를 공유합니다.
+      </div>
+    `;
+
+    const shareBtnWrap = document.createElement('div');
+    shareBtnWrap.style.cssText = 'display:flex;gap:var(--space-sm);justify-content:center;';
+
+    const dlBtn = document.createElement('button');
+    dlBtn.className = 'btn btn-secondary';
+    dlBtn.textContent = '결과 파일 다운로드';
+    dlBtn.addEventListener('click', () => downloadGameLog(result));
+
+    const mailBtn = document.createElement('button');
+    mailBtn.className = 'btn btn-secondary';
+    mailBtn.textContent = '이메일로 전송';
+    mailBtn.addEventListener('click', () => {
+      const subject = encodeURIComponent(`AI 삼국지 결과 — ${result.grade}등급 ${result.stats.totalTurns}턴`);
+      const body = encodeURIComponent(
+        `AI 삼국지 게임 결과를 공유합니다.\n\n` +
+        `등급: ${result.grade}\n턴: ${result.stats.totalTurns}\n전투 승: ${result.stats.battlesWon}\n` +
+        `도시 점령: ${result.stats.citiesCaptured}\n적군 격파: ${result.stats.enemiesDefeated}\n\n` +
+        `(결과 JSON 파일을 다운로드 후 이메일에 첨부해 주세요)`
+      );
+      window.open(`mailto:?subject=${subject}&body=${body}`);
+    });
+
+    shareBtnWrap.append(dlBtn, mailBtn);
+    shareSection.appendChild(shareBtnWrap);
+    panel.appendChild(shareSection);
+
+    // ── 메인 버튼 ──
+    const btnWrap = document.createElement('div');
+    btnWrap.style.cssText = 'display:flex;gap:var(--space-sm);justify-content:center;';
+
+    const restartBtn = document.createElement('button');
+    restartBtn.className = 'btn btn-primary';
+    restartBtn.textContent = '다시 시작';
+    restartBtn.addEventListener('click', () => location.reload());
+
+    btnWrap.append(restartBtn);
+    panel.appendChild(btnWrap);
+    overlay.appendChild(panel);
+
+    // ── 자동 저장 (fire-and-forget) ──
+    const data = buildGameResultData(result);
+    fetch('/api/results', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).catch(() => { /* 저장 실패해도 무시 */ });
+  }
+
+  function downloadGameLog(result: GameResult): void {
+    const data = buildGameResultData(result);
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
+    const state = controller.getState();
     a.download = `삼국지-${result.grade}-턴${state.turn}-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);

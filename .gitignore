@@ -6,3 +6,4 @@ dist-web/
 .env
 .claude/
 sim/results/*.log
+data/results/

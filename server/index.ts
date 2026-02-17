@@ -5,6 +5,9 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { serve } from '@hono/node-server';
+import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { resolve, extname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { filterGameState } from '../core/advisor/state-filter.js';
 import { buildSystemPrompt, buildActionReference } from '../core/advisor/prompts.js';
 import { buildFactionStateView } from '../core/advisor/faction-state-filter.js';
@@ -313,14 +316,93 @@ app.post('/api/chat', async (c) => {
   });
 });
 
-// ─── Start server ───────────────────────────────────────
+// ─── Game result save ────────────────────────────────────
 
-serve({ fetch: app.fetch, port: PORT }, (info) => {
-  console.log(`📜 책사 서버 시작 — http://localhost:${info.port}`);
-  const config = loadConfig();
-  if (config) {
-    console.log(`✅ AI 제공자: ${config.provider} (${config.model})`);
-  } else {
-    console.log('⚙️  AI 미설정 — 브라우저에서 설정 마법사를 실행하세요');
+const __dirname = resolve(fileURLToPath(import.meta.url), '..');
+const RESULTS_DIR = resolve(__dirname, '../data/results');
+
+app.post('/api/results', async (c) => {
+  try {
+    const body = await c.req.json();
+    mkdirSync(RESULTS_DIR, { recursive: true });
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `game-${ts}.json`;
+    writeFileSync(join(RESULTS_DIR, filename), JSON.stringify(body, null, 2));
+    return c.json({ success: true, filename });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : '저장 실패';
+    return c.json({ success: false, error: msg }, 500);
   }
 });
+
+// ─── Static file serving (production) ────────────────────
+
+const DIST_WEB = resolve(__dirname, '../dist-web');
+
+const MIME_TYPES: Record<string, string> = {
+  '.html': 'text/html',
+  '.js': 'application/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+};
+
+app.get('*', (c) => {
+  if (!existsSync(DIST_WEB)) {
+    return c.text('dist-web/ not found. Run "npm run build:web" first.', 500);
+  }
+
+  const urlPath = new URL(c.req.url).pathname;
+  let filePath = resolve(DIST_WEB, '.' + urlPath);
+
+  // 디렉토리 또는 루트 → index.html
+  if (!extname(filePath)) {
+    filePath = resolve(DIST_WEB, 'index.html');
+  }
+
+  if (!existsSync(filePath)) {
+    // SPA fallback
+    filePath = resolve(DIST_WEB, 'index.html');
+  }
+
+  if (!existsSync(filePath)) {
+    return c.text('Not found', 404);
+  }
+
+  const ext = extname(filePath);
+  const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+  const body = readFileSync(filePath);
+  return new Response(body, {
+    headers: { 'Content-Type': contentType },
+  });
+});
+
+// ─── Start server ───────────────────────────────────────
+
+export function startServer(): void {
+  serve({ fetch: app.fetch, port: PORT }, (info) => {
+    console.log(`📜 책사 서버 시작 — http://localhost:${info.port}`);
+    const config = loadConfig();
+    if (config) {
+      console.log(`✅ AI 제공자: ${config.provider} (${config.model})`);
+    } else {
+      console.log('⚙️  AI 미설정 — 브라우저에서 설정 마법사를 실행하세요');
+    }
+  });
+}
+
+// 직접 실행 시 서버 기동
+const isDirectRun = process.argv[1] &&
+  resolve(process.argv[1]).replace(/\.[^.]+$/, '') === resolve(fileURLToPath(import.meta.url)).replace(/\.[^.]+$/, '');
+if (isDirectRun) {
+  startServer();
+}

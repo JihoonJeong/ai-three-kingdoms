@@ -175,7 +175,11 @@ function getLastTurnResults(state: GameState): string[] {
 
   return prevTurnLogs.map(log => {
     const success = log.result.success ? '성공' : '실패';
-    return `[${success}] ${log.result.description}`;
+    // AI 세력 행동 구분
+    const action = log.action;
+    const faction = action.params?.faction;
+    const prefix = faction && faction !== '유비' ? `[${faction}] ` : `[${success}] `;
+    return `${prefix}${log.result.description}`;
   });
 }
 

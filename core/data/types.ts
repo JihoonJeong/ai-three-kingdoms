@@ -332,6 +332,9 @@ export interface GameResult {
     citiesCaptured: number;
     generalsLost: number;
     allianceMaintained: boolean;
+    enemiesDefeated: number;
+    generalsCaptured: number;
+    maxTroops: number;
   };
 }
 

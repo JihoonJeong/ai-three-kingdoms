@@ -46,6 +46,9 @@ export class VictoryJudge {
     const battlesWon = this.countBattlesWon(state);
     const battlesLost = this.countBattlesLost(state);
     const citiesCaptured = this.countCitiesCaptured(state);
+    const enemiesDefeated = this.countEnemiesDefeated(state);
+    const generalsCaptured = this.countGeneralsCaptured(state);
+    const maxTroops = this.getMaxTroops(state);
 
     const stats = {
       totalTurns: state.turn,
@@ -54,6 +57,9 @@ export class VictoryJudge {
       citiesCaptured,
       generalsLost,
       allianceMaintained,
+      enemiesDefeated,
+      generalsCaptured,
+      maxTroops,
     };
 
     // 유비 사망/포로 → F
@@ -100,7 +106,9 @@ export class VictoryJudge {
     } else if (!chibiVictory && liubei?.condition === '양호') {
       grade = 'D';
       title = '패배 속의 생존';
-      description = '적벽에서 패했으나 유비는 살아남았습니다. 다시 일어설 수 있는 기회는 남아있습니다.';
+      description = citiesCaptured >= 3
+        ? '적벽 대전을 거치지 않았으나, 독자적인 길로 천하를 호령했습니다.'
+        : '적벽에서 패했으나 유비는 살아남았습니다. 다시 일어설 수 있는 기회는 남아있습니다.';
     } else {
       grade = 'F';
       title = '완패';
@@ -142,5 +150,50 @@ export class VictoryJudge {
     return state.cities.filter(
       c => c.owner === '유비' && !initialPlayerCities.includes(c.id)
     ).length;
+  }
+
+  /** 격파한 적 병력 총합 (유비가 승리한 전투의 적 피해) */
+  private countEnemiesDefeated(state: GameState): number {
+    let total = 0;
+    for (const log of state.actionLog) {
+      const battle = log.result.battleTriggered;
+      if (!battle?.result || !battle.log) continue;
+      // 유비가 참여한 전투에서의 적 피해만 합산
+      const isAttacker = battle.attackers?.faction === '유비';
+      const isDefender = battle.defenders?.faction === '유비';
+      if (!isAttacker && !isDefender) continue;
+      for (const turnLog of battle.log) {
+        total += isAttacker ? turnLog.defenderCasualties : turnLog.attackerCasualties;
+      }
+    }
+    return total;
+  }
+
+  /** 유비가 포로로 잡은 적장 수 */
+  private countGeneralsCaptured(state: GameState): number {
+    let total = 0;
+    for (const log of state.actionLog) {
+      const battle = log.result.battleTriggered;
+      if (!battle?.result) continue;
+      if (battle.result.winner === '유비' && battle.result.capturedGenerals) {
+        total += battle.result.capturedGenerals.length;
+      }
+    }
+    return total;
+  }
+
+  /** 최대 보유 병력 (flags에 기록된 peak 또는 현재 계산) */
+  private getMaxTroops(state: GameState): number {
+    const peak = typeof state.flags['_maxTroops'] === 'number'
+      ? state.flags['_maxTroops'] as number
+      : 0;
+    const current = this.calcCurrentTroops(state);
+    return Math.max(peak, current);
+  }
+
+  private calcCurrentTroops(state: GameState): number {
+    return state.cities
+      .filter(c => c.owner === '유비')
+      .reduce((sum, c) => sum + (c.troops?.infantry ?? 0) + (c.troops?.cavalry ?? 0) + (c.troops?.navy ?? 0), 0);
   }
 }

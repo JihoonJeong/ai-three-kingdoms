@@ -80,8 +80,8 @@ describe('resolveExpression', () => {
     expect(resolveExpression('zhugeliang', { type: 'advisor_warning' })).toBe('warning');
   });
 
-  it('조조 — 위협 시 오만', () => {
-    expect(resolveExpression('caocao', { type: 'threat' })).toBe('arrogant');
+  it('조조 — 위협 시 책략', () => {
+    expect(resolveExpression('caocao', { type: 'threat' })).toBe('scheming');
   });
 
   it('알 수 없는 장수는 default', () => {

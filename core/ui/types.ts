@@ -8,13 +8,21 @@ import type { FactionId, General, City, BattleState, GameState } from '../data/t
 
 export type Expression =
   | 'default'
+  // 공통
   | 'angry' | 'worried' | 'happy' | 'determined'
   | 'smile' | 'thinking' | 'warning' | 'combat'
   | 'roar' | 'laugh' | 'majestic' | 'tired'
   | 'ambitious' | 'displeased' | 'nervous' | 'scheming'
   | 'fearful' | 'decisive' | 'contemplating'
   | 'confident' | 'strategic' | 'charge' | 'alert'
-  | 'defend' | 'arrogant' | 'sneer';
+  | 'defend' | 'arrogant' | 'sneer'
+  // 캐릭터별 고유 표정
+  | 'battle-cry' | 'proud'           // huangzhong
+  | 'defiant' | 'rage' | 'sinister-smile'  // weiyuan
+  | 'charging' | 'fierce'            // xiahouyuan
+  | 'commanding' | 'stoic'           // caoren, sunquan
+  | 'pleading'                       // caimao
+  | 'panicked' | 'obedient';         // zhangyun
 
 export interface CharacterDisplayState {
   generalId: string;

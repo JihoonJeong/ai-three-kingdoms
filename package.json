@@ -1,10 +1,11 @@
 {
   "name": "ai-three-kingdoms",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "AI 삼국지 — AI 책사와 함께하는 전략 게임",
   "type": "module",
   "main": "dist/core/engine/game-state.js",
   "scripts": {
+    "start": "tsx scripts/start.ts",
     "build": "tsc",
     "dev": "concurrently \"npm run dev:web\" \"npm run dev:server\"",
     "dev:web": "vite --config web/vite.config.ts",

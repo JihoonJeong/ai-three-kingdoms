@@ -55,11 +55,35 @@ const RECOMMENDED_MODELS_BY_LANG: Record<GameLanguage, RecommendedModel[]> = {
   ],
 };
 
+/** 모델별 비용 정보 (제공자+모델 조합) */
+interface ModelOption {
+  providerId: string;
+  modelId: string;
+  displayName: string;
+  cost: string;
+  costLabel: string;
+  description: string;
+}
+
+const RECOMMENDED_OPTIONS: ModelOption[] = [
+  { providerId: 'ollama', modelId: '', displayName: 'Ollama (로컬)', cost: '무료', costLabel: '🆓', description: 'GPU 필요, qwen3:8b 추천' },
+  { providerId: 'gemini', modelId: 'gemini-2.0-flash', displayName: 'Gemini 2.0 Flash', cost: '~$0.01', costLabel: '💰', description: '가장 빠르고 저렴' },
+  { providerId: 'openai', modelId: 'gpt-4o-mini', displayName: 'GPT-4o Mini', cost: '~$0.02', costLabel: '💰', description: 'OpenAI 경량 모델' },
+];
+
+const ADVANCED_OPTIONS: ModelOption[] = [
+  { providerId: 'gemini', modelId: 'gemini-3-flash-preview', displayName: 'Gemini 3 Flash', cost: '~$0.07', costLabel: '💰', description: 'Google 최신 모델' },
+  { providerId: 'claude', modelId: 'claude-haiku-4-5-20251001', displayName: 'Claude Haiku 4.5', cost: '~$0.12', costLabel: '💰', description: 'Anthropic 경량 모델' },
+  { providerId: 'openai', modelId: 'o4-mini', displayName: 'o4-mini', cost: '~$0.33', costLabel: '💰', description: '추론 토큰 과금' },
+  { providerId: 'claude', modelId: 'claude-sonnet-4-5-20250929', displayName: 'Claude Sonnet 4.5', cost: '~$0.36', costLabel: '💰', description: 'Anthropic 고품질 모델' },
+];
+
 export class SetupScreen {
   private overlay: HTMLElement | null = null;
   private step: Step = 'welcome';
   private providers: ProviderInfo[] = [];
   private selectedProvider: ProviderInfo | null = null;
+  private preferredModelId: string | null = null;
   private ollamaModels: ModelInfo[] = [];
   private ollamaAvailable = false;
   private language: GameLanguage = 'ko';
@@ -392,7 +416,49 @@ export class SetupScreen {
     }
   }
 
-  // ─── Step 2: 제공자 선택 ─────────────────────────────
+  // ─── Step 2: 제공자 선택 (비용 안내 + 추천/고급) ─────
+
+  private selectModelOption(opt: ModelOption): void {
+    const provider = this.providers.find(p => p.id === opt.providerId);
+    if (!provider) return;
+
+    if (opt.providerId === 'ollama') {
+      this.selectedProvider = { ...provider, defaultModels: this.ollamaModels };
+      this.preferredModelId = null;
+    } else {
+      this.selectedProvider = provider;
+      this.preferredModelId = opt.modelId;
+    }
+    this.showConfigure();
+  }
+
+  private renderModelCard(opt: ModelOption): HTMLElement {
+    const isOllama = opt.providerId === 'ollama';
+    const disabled = isOllama && !this.ollamaAvailable;
+
+    const card = h('div', {
+      className: `setup-provider-card${disabled ? ' disabled' : ''}`,
+    });
+
+    const nameRow = h('div', { className: 'setup-provider-name' });
+    nameRow.textContent = `${opt.costLabel} ${opt.displayName}`;
+    card.appendChild(nameRow);
+
+    const costBadge = h('div', { className: 'setup-provider-badge' }, opt.cost);
+    card.appendChild(costBadge);
+
+    card.appendChild(h('div', { className: 'setup-provider-desc' }, opt.description));
+
+    if (isOllama && this.ollamaAvailable) {
+      card.appendChild(h('div', { className: 'setup-provider-badge' }, '감지됨'));
+    }
+
+    if (!disabled) {
+      card.addEventListener('click', () => this.selectModelOption(opt));
+    }
+
+    return card;
+  }
 
   private showSelect(): void {
     this.step = 'select';
@@ -406,42 +472,26 @@ export class SetupScreen {
       '게임에서 사용할 AI 서비스를 선택하세요'));
     wizard.appendChild(this.renderSteps());
 
-    // 제공자 카드 그리드
-    const grid = h('div', { className: 'setup-providers' });
-
-    for (const provider of this.providers) {
-      const isOllama = provider.id === 'ollama';
-      const disabled = isOllama && !this.ollamaAvailable;
-
-      const card = h('div', {
-        className: `setup-provider-card${disabled ? ' disabled' : ''}`,
-      });
-
-      card.appendChild(h('div', { className: 'setup-provider-name' }, provider.name));
-      card.appendChild(h('div', { className: 'setup-provider-desc' }, provider.description));
-
-      if (isOllama && this.ollamaAvailable) {
-        card.appendChild(h('div', { className: 'setup-provider-badge' }, '감지됨'));
-      }
-      if (!provider.requiresApiKey) {
-        card.appendChild(h('div', { className: 'setup-provider-badge' }, '무료'));
-      }
-
-      if (!disabled) {
-        card.addEventListener('click', () => {
-          if (isOllama) {
-            this.selectedProvider = { ...provider, defaultModels: this.ollamaModels };
-          } else {
-            this.selectedProvider = provider;
-          }
-          this.showConfigure();
-        });
-      }
-
-      grid.appendChild(card);
+    // ── 추천 섹션 ──
+    wizard.appendChild(h('div', { className: 'setup-section-label' }, '추천 (저비용)'));
+    const recGrid = h('div', { className: 'setup-providers' });
+    for (const opt of RECOMMENDED_OPTIONS) {
+      recGrid.appendChild(this.renderModelCard(opt));
     }
+    wizard.appendChild(recGrid);
 
-    wizard.appendChild(grid);
+    // ── 고급 섹션 ──
+    wizard.appendChild(h('div', { className: 'setup-section-label' }, '다른 모델'));
+    const advGrid = h('div', { className: 'setup-providers' });
+    for (const opt of ADVANCED_OPTIONS) {
+      advGrid.appendChild(this.renderModelCard(opt));
+    }
+    wizard.appendChild(advGrid);
+
+    // ── 비용 경고 ──
+    const warning = h('div', { className: 'setup-cost-warning' });
+    warning.textContent = 'API 사용 시 각 제공자에 의해 비용이 청구됩니다. 위 금액은 20턴 1게임 기준 추정치이며 실제와 다를 수 있습니다. Ollama는 로컬 실행으로 API 비용이 발생하지 않습니다.';
+    wizard.appendChild(warning);
 
     // 뒤로가기
     const actions = h('div', { className: 'setup-actions' });
@@ -539,9 +589,14 @@ export class SetupScreen {
       for (const model of provider.defaultModels) {
         const opt = h('option', { value: model.id }) as HTMLOptionElement;
         opt.textContent = model.name;
+        if (this.preferredModelId && model.id === this.preferredModelId) {
+          opt.selected = true;
+        }
         modelSelect.appendChild(opt);
       }
     }
+    // 선호 모델 사용 후 초기화
+    this.preferredModelId = null;
     modelField.appendChild(modelSelect);
     form.appendChild(modelField);
 
