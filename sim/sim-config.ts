@@ -40,6 +40,9 @@ export interface SimConfig {
   // 난이도 (Phase 3 ICL)
   difficulty?: 'easy' | 'medium' | 'normal' | 'hard' | 'expert';
 
+  // MilestoneCoach 활성화 (기본 true)
+  coaching?: boolean;
+
   // ICL (In-Context Learning) 설정
   icl?: {
     enabled: boolean;

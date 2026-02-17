@@ -58,13 +58,16 @@ export class SimAdvisor implements SimPlayerAI {
   private prevActions: Array<{ description: string; success: boolean }> = [];
   private experienceStore: ExperienceStore | null = null;
   private currentTurnLogs: TurnLog[] = [];
-  private coach = new MilestoneCoach();
+  private coach: MilestoneCoach | null = null;
 
   constructor(
     private config: SimConfig,
     experiences?: ExperienceStore,
   ) {
     this.experienceStore = experiences ?? null;
+    if (config.coaching !== false) {
+      this.coach = new MilestoneCoach();
+    }
   }
 
   /** 지난 턴 행동 결과를 저장 (다음 브리핑에 포함) */
@@ -94,7 +97,9 @@ export class SimAdvisor implements SimPlayerAI {
     // }
 
     // MilestoneCoach: 게임 시작 코칭 (시스템 프롬프트에 1문장)
-    systemPrompt += '\n\n' + this.coach.getStartCoaching();
+    if (this.coach) {
+      systemPrompt += '\n\n' + this.coach.getStartCoaching();
+    }
 
     // Soft Shell 주입 (ICL 경험)
     if (this.experienceStore) {
@@ -113,9 +118,11 @@ export class SimAdvisor implements SimPlayerAI {
     );
 
     // MilestoneCoach: 마일스톤 조건 체크 → user message 앞에 주입
-    const coaching = this.coach.check(state);
-    if (coaching) {
-      briefingMsg = coaching + '\n\n' + briefingMsg;
+    if (this.coach) {
+      const coaching = this.coach.check(state);
+      if (coaching) {
+        briefingMsg = coaching + '\n\n' + briefingMsg;
+      }
     }
 
     const messages: ChatMessage[] = [{ role: 'user', content: briefingMsg }];

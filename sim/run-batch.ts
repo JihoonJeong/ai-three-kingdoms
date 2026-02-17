@@ -52,6 +52,7 @@ function parseArgs() {
     seedLibrary?: string;
     difficulty?: 'easy' | 'medium' | 'normal' | 'hard' | 'expert';
     noIcl?: boolean;
+    noCoach?: boolean;
   } = {};
 
   for (let i = 0; i < args.length; i++) {
@@ -72,6 +73,7 @@ function parseArgs() {
       case '--seed-library': opts.seedLibrary = args[++i]; break;
       case '--difficulty': opts.difficulty = args[++i] as 'easy' | 'medium' | 'normal' | 'hard' | 'expert'; break;
       case '--no-icl': opts.noIcl = true; break;
+      case '--no-coach': opts.noCoach = true; break;
     }
   }
   return opts;
@@ -257,6 +259,7 @@ async function main() {
     battleAI: 'rule' as const,
     verbose: opts.verbose ?? false,
     difficulty: opts.difficulty,
+    coaching: !opts.noCoach,
     icl: opts.sequential ? {
       enabled: !opts.noIcl,
       seedLibrary: opts.seedLibrary,
@@ -272,7 +275,7 @@ async function main() {
     console.log(`\n AI 삼국지 순차학습 시뮬레이션`);
     console.log(`  ${count}게임, 제공자: ${provider}, 모델: ${model}`);
     console.log(`  모드: ${mode}/${thinking ? 'Think' : 'Fast'}, 난이도: ${opts.difficulty || 'normal'}`);
-    console.log(`  ICL: ${opts.noIcl ? 'OFF (대조군)' : 'ON'}`);
+    console.log(`  ICL: ${opts.noIcl ? 'OFF' : 'ON'}, 코칭: ${opts.noCoach ? 'OFF' : 'ON'}`);
     if (opts.seedLibrary) console.log(`  시드: ${opts.seedLibrary}`);
 
     const results = await runSequentialLearning(
