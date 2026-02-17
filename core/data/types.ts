@@ -282,7 +282,8 @@ export type EventEffect =
   | { type: 'tactic_bonus'; tactic: string; bonus: number }
   | { type: 'special_tactic_available'; tactic: string }
   | { type: 'pursuit_opportunity'; target: string; location: string }
-  | { type: 'troop_loss'; target: string; city: string; ratio: number; moralePenalty: number };
+  | { type: 'troop_loss'; target: string; city: string; ratio: number; moralePenalty: number }
+  | { type: 'food_support'; target: string; amount: string };
 
 export interface EventResult {
   eventId: string;

@@ -1,0 +1,779 @@
+{
+  "config": {
+    "maxExperiences": 20,
+    "selectionStrategy": "balanced",
+    "promptBudget": 800
+  },
+  "experiences": [
+    {
+      "gameId": "A-think-1",
+      "gameNumber": 1,
+      "grade": "C",
+      "chibiVictory": true,
+      "totalTurns": 21,
+      "citiesCaptured": [],
+      "allianceMaintained": true,
+      "generalsLost": [
+        "zhangfei"
+      ],
+      "strategyProfile": {
+        "actionCounts": {
+          "develop": 11,
+          "send_envoy": 14,
+          "transfer": 6,
+          "gift": 1,
+          "march": 6,
+          "scout": 2
+        },
+        "phases": [
+          {
+            "name": "domestic",
+            "startTurn": 1,
+            "endTurn": 2,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "domestic",
+            "startTurn": 4,
+            "endTurn": 5,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "domestic",
+            "startTurn": 14,
+            "endTurn": 15,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 18,
+            "endTurn": 20,
+            "dominantActions": [
+              "transfer"
+            ]
+          }
+        ],
+        "criticalActions": [
+          {
+            "turn": 3,
+            "action": "transfer",
+            "description": "gangha → hagu 보급 시작",
+            "impact": "important"
+          },
+          {
+            "turn": 9,
+            "action": "march",
+            "description": "hagu → chibi 진군",
+            "impact": "decisive"
+          }
+        ],
+        "transferPattern": {
+          "totalTransfers": 6,
+          "concentrationTarget": "hagu",
+          "totalTroopsMoved": 0
+        },
+        "firstMarchTurn": 9,
+        "marchTargets": [
+          "chibi",
+          "nanjun"
+        ]
+      },
+      "lessons": [
+        "보급(transfer)으로 hagu에 병력을 집중한 것이 적벽 승리의 핵심이었다."
+      ],
+      "turningPoints": [
+        {
+          "turn": 9,
+          "type": "battle",
+          "description": "chibi 승리",
+          "outcome": "positive"
+        },
+        {
+          "turn": 9,
+          "type": "action",
+          "description": "hagu → chibi 진군",
+          "outcome": "positive"
+        },
+        {
+          "turn": 13,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 13,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        },
+        {
+          "turn": 14,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 14,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        },
+        {
+          "turn": 16,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 16,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        },
+        {
+          "turn": 18,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 18,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        }
+      ]
+    },
+    {
+      "gameId": "A-think-3",
+      "gameNumber": 2,
+      "grade": "C",
+      "chibiVictory": true,
+      "totalTurns": 21,
+      "citiesCaptured": [],
+      "allianceMaintained": true,
+      "generalsLost": [],
+      "strategyProfile": {
+        "actionCounts": {
+          "develop": 14,
+          "send_envoy": 11,
+          "train": 8,
+          "scout": 4,
+          "transfer": 5,
+          "march": 3,
+          "gift": 1,
+          "fortify": 2
+        },
+        "phases": [
+          {
+            "name": "domestic",
+            "startTurn": 1,
+            "endTurn": 7,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "domestic",
+            "startTurn": 10,
+            "endTurn": 11,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "domestic",
+            "startTurn": 13,
+            "endTurn": 14,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 15,
+            "endTurn": 16,
+            "dominantActions": [
+              "transfer"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 18,
+            "endTurn": 19,
+            "dominantActions": [
+              "transfer"
+            ]
+          }
+        ],
+        "criticalActions": [
+          {
+            "turn": 8,
+            "action": "transfer",
+            "description": "gangha → hagu 보급 시작",
+            "impact": "important"
+          },
+          {
+            "turn": 12,
+            "action": "march",
+            "description": "hagu → chibi 진군",
+            "impact": "decisive"
+          }
+        ],
+        "transferPattern": {
+          "totalTransfers": 5,
+          "concentrationTarget": "hagu",
+          "totalTroopsMoved": 0
+        },
+        "firstMarchTurn": 9,
+        "marchTargets": [
+          "chibi",
+          "nanjun"
+        ]
+      },
+      "lessons": [
+        "보급(transfer)으로 hagu에 병력을 집중한 것이 적벽 승리의 핵심이었다."
+      ],
+      "turningPoints": [
+        {
+          "turn": 12,
+          "type": "battle",
+          "description": "chibi 승리",
+          "outcome": "positive"
+        },
+        {
+          "turn": 12,
+          "type": "action",
+          "description": "hagu → chibi 진군",
+          "outcome": "positive"
+        }
+      ]
+    },
+    {
+      "gameId": "seq-1",
+      "gameNumber": 1,
+      "grade": "C",
+      "chibiVictory": true,
+      "totalTurns": 21,
+      "citiesCaptured": [],
+      "allianceMaintained": true,
+      "generalsLost": [
+        "guanyu"
+      ],
+      "strategyProfile": {
+        "actionCounts": {
+          "train": 12,
+          "send_envoy": 4,
+          "transfer": 19,
+          "develop": 10,
+          "conscript": 2,
+          "march": 5,
+          "scout": 5
+        },
+        "phases": [
+          {
+            "name": "domestic",
+            "startTurn": 2,
+            "endTurn": 3,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 8,
+            "endTurn": 18,
+            "dominantActions": [
+              "transfer"
+            ]
+          }
+        ],
+        "criticalActions": [
+          {
+            "turn": 1,
+            "action": "transfer",
+            "description": "gangha → hagu 보급 시작",
+            "impact": "important"
+          },
+          {
+            "turn": 9,
+            "action": "march",
+            "description": "hagu → chibi 진군",
+            "impact": "decisive"
+          }
+        ],
+        "transferPattern": {
+          "totalTransfers": 19,
+          "concentrationTarget": "hagu",
+          "totalTroopsMoved": 0
+        },
+        "firstMarchTurn": 9,
+        "marchTargets": [
+          "chibi",
+          "nanjun"
+        ]
+      },
+      "lessons": [
+        "보급(transfer)으로 hagu에 병력을 집중한 것이 적벽 승리의 핵심이었다."
+      ],
+      "turningPoints": [
+        {
+          "turn": 9,
+          "type": "battle",
+          "description": "chibi 승리",
+          "outcome": "positive"
+        },
+        {
+          "turn": 9,
+          "type": "action",
+          "description": "hagu → chibi 진군",
+          "outcome": "positive"
+        },
+        {
+          "turn": 17,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 17,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        },
+        {
+          "turn": 19,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 19,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        }
+      ]
+    },
+    {
+      "gameId": "seq-2",
+      "gameNumber": 2,
+      "grade": "C",
+      "chibiVictory": true,
+      "totalTurns": 21,
+      "citiesCaptured": [],
+      "allianceMaintained": true,
+      "generalsLost": [],
+      "strategyProfile": {
+        "actionCounts": {
+          "transfer": 20,
+          "send_envoy": 7,
+          "train": 13,
+          "develop": 9,
+          "march": 3,
+          "scout": 7
+        },
+        "phases": [
+          {
+            "name": "consolidation",
+            "startTurn": 1,
+            "endTurn": 2,
+            "dominantActions": [
+              "transfer"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 4,
+            "endTurn": 6,
+            "dominantActions": [
+              "transfer"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 8,
+            "endTurn": 20,
+            "dominantActions": [
+              "transfer"
+            ]
+          }
+        ],
+        "criticalActions": [
+          {
+            "turn": 1,
+            "action": "transfer",
+            "description": "gangha → hagu 보급 시작",
+            "impact": "important"
+          },
+          {
+            "turn": 10,
+            "action": "march",
+            "description": "hagu → chibi 진군",
+            "impact": "decisive"
+          }
+        ],
+        "transferPattern": {
+          "totalTransfers": 20,
+          "concentrationTarget": "hagu",
+          "totalTroopsMoved": 0
+        },
+        "firstMarchTurn": 10,
+        "marchTargets": [
+          "chibi",
+          "nanjun"
+        ]
+      },
+      "lessons": [
+        "보급(transfer)으로 hagu에 병력을 집중한 것이 적벽 승리의 핵심이었다.",
+        "내정과 훈련을 충분히 한 후 턴 10에 진군하여 전투력이 높은 상태에서 교전한 것이 효과적이었다."
+      ],
+      "turningPoints": [
+        {
+          "turn": 3,
+          "type": "event",
+          "description": "노숙이 자발적으로 유비 진영을 방문합니다. 동맹 논의의 기회.",
+          "outcome": "positive"
+        },
+        {
+          "turn": 10,
+          "type": "battle",
+          "description": "chibi 승리",
+          "outcome": "positive"
+        },
+        {
+          "turn": 10,
+          "type": "action",
+          "description": "hagu → chibi 진군",
+          "outcome": "positive"
+        }
+      ]
+    },
+    {
+      "gameId": "seq-3",
+      "gameNumber": 3,
+      "grade": "C",
+      "chibiVictory": true,
+      "totalTurns": 21,
+      "citiesCaptured": [],
+      "allianceMaintained": true,
+      "generalsLost": [],
+      "strategyProfile": {
+        "actionCounts": {
+          "transfer": 21,
+          "train": 15,
+          "send_envoy": 4,
+          "develop": 8,
+          "march": 6,
+          "scout": 5
+        },
+        "phases": [
+          {
+            "name": "consolidation",
+            "startTurn": 1,
+            "endTurn": 2,
+            "dominantActions": [
+              "transfer"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 4,
+            "endTurn": 5,
+            "dominantActions": [
+              "transfer",
+              "train"
+            ]
+          },
+          {
+            "name": "domestic",
+            "startTurn": 8,
+            "endTurn": 9,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 12,
+            "endTurn": 18,
+            "dominantActions": [
+              "transfer"
+            ]
+          }
+        ],
+        "criticalActions": [
+          {
+            "turn": 1,
+            "action": "transfer",
+            "description": "gangha → hagu 보급 시작",
+            "impact": "important"
+          },
+          {
+            "turn": 10,
+            "action": "march",
+            "description": "hagu → chibi 진군",
+            "impact": "decisive"
+          }
+        ],
+        "transferPattern": {
+          "totalTransfers": 21,
+          "concentrationTarget": "hagu",
+          "totalTroopsMoved": 0
+        },
+        "firstMarchTurn": 10,
+        "marchTargets": [
+          "chibi",
+          "nanjun"
+        ]
+      },
+      "lessons": [
+        "보급(transfer)으로 hagu에 병력을 집중한 것이 적벽 승리의 핵심이었다.",
+        "내정과 훈련을 충분히 한 후 턴 10에 진군하여 전투력이 높은 상태에서 교전한 것이 효과적이었다."
+      ],
+      "turningPoints": [
+        {
+          "turn": 10,
+          "type": "battle",
+          "description": "chibi 승리",
+          "outcome": "positive"
+        },
+        {
+          "turn": 10,
+          "type": "action",
+          "description": "hagu → chibi 진군",
+          "outcome": "positive"
+        },
+        {
+          "turn": 15,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 15,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        },
+        {
+          "turn": 19,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 19,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        }
+      ]
+    },
+    {
+      "gameId": "seq-4",
+      "gameNumber": 4,
+      "grade": "F",
+      "chibiVictory": true,
+      "totalTurns": 21,
+      "citiesCaptured": [],
+      "allianceMaintained": true,
+      "generalsLost": [
+        "liubei",
+        "guanyu"
+      ],
+      "strategyProfile": {
+        "actionCounts": {
+          "transfer": 23,
+          "train": 14,
+          "send_envoy": 4,
+          "develop": 10,
+          "march": 3,
+          "scout": 6
+        },
+        "phases": [
+          {
+            "name": "domestic",
+            "startTurn": 2,
+            "endTurn": 3,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 4,
+            "endTurn": 5,
+            "dominantActions": [
+              "transfer"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 7,
+            "endTurn": 20,
+            "dominantActions": [
+              "transfer"
+            ]
+          }
+        ],
+        "criticalActions": [
+          {
+            "turn": 1,
+            "action": "transfer",
+            "description": "gangha → hagu 보급 시작",
+            "impact": "important"
+          },
+          {
+            "turn": 10,
+            "action": "march",
+            "description": "hagu → chibi 진군",
+            "impact": "decisive"
+          }
+        ],
+        "transferPattern": {
+          "totalTransfers": 23,
+          "concentrationTarget": "hagu",
+          "totalTroopsMoved": 0
+        },
+        "firstMarchTurn": 10,
+        "marchTargets": [
+          "chibi",
+          "nanjun"
+        ]
+      },
+      "lessons": [
+        "보급(transfer)으로 hagu에 병력을 집중한 것이 적벽 승리의 핵심이었다.",
+        "내정과 훈련을 충분히 한 후 턴 10에 진군하여 전투력이 높은 상태에서 교전한 것이 효과적이었다."
+      ],
+      "turningPoints": [
+        {
+          "turn": 10,
+          "type": "battle",
+          "description": "chibi 승리",
+          "outcome": "positive"
+        },
+        {
+          "turn": 10,
+          "type": "action",
+          "description": "hagu → chibi 진군",
+          "outcome": "positive"
+        },
+        {
+          "turn": 20,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 20,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        }
+      ]
+    },
+    {
+      "gameId": "seq-5",
+      "gameNumber": 5,
+      "grade": "C",
+      "chibiVictory": true,
+      "totalTurns": 21,
+      "citiesCaptured": [],
+      "allianceMaintained": true,
+      "generalsLost": [],
+      "strategyProfile": {
+        "actionCounts": {
+          "transfer": 16,
+          "send_envoy": 5,
+          "train": 18,
+          "develop": 10,
+          "scout": 3,
+          "march": 3
+        },
+        "phases": [
+          {
+            "name": "domestic",
+            "startTurn": 2,
+            "endTurn": 3,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 4,
+            "endTurn": 7,
+            "dominantActions": [
+              "train",
+              "transfer"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 11,
+            "endTurn": 15,
+            "dominantActions": [
+              "transfer",
+              "train"
+            ]
+          }
+        ],
+        "criticalActions": [
+          {
+            "turn": 1,
+            "action": "transfer",
+            "description": "gangha → hagu 보급 시작",
+            "impact": "important"
+          },
+          {
+            "turn": 17,
+            "action": "march",
+            "description": "hagu → chibi 진군",
+            "impact": "decisive"
+          }
+        ],
+        "transferPattern": {
+          "totalTransfers": 16,
+          "concentrationTarget": "hagu",
+          "totalTroopsMoved": 0
+        },
+        "firstMarchTurn": 17,
+        "marchTargets": [
+          "chibi",
+          "nanjun"
+        ]
+      },
+      "lessons": [
+        "보급(transfer)으로 hagu에 병력을 집중한 것이 적벽 승리의 핵심이었다.",
+        "내정과 훈련을 충분히 한 후 턴 17에 진군하여 전투력이 높은 상태에서 교전한 것이 효과적이었다."
+      ],
+      "turningPoints": [
+        {
+          "turn": 14,
+          "type": "battle",
+          "description": "gangha 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 17,
+          "type": "battle",
+          "description": "chibi 승리",
+          "outcome": "positive"
+        },
+        {
+          "turn": 17,
+          "type": "action",
+          "description": "hagu → chibi 진군",
+          "outcome": "positive"
+        }
+      ]
+    }
+  ]
+}

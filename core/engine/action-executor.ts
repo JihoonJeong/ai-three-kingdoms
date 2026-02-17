@@ -365,6 +365,11 @@ export class ActionExecutor {
       const cavalryMoved = Math.floor(fromCity.troops.cavalry * ratio);
       const navyMoved = Math.floor(fromCity.troops.navy * ratio);
 
+      const actualMoved = infantryMoved + cavalryMoved + navyMoved;
+      if (actualMoved <= 0) {
+        return this.fail('보급할 병력이 없습니다. 출발 도시에 병력이 부족합니다.');
+      }
+
       this.stateManager.addCityTroops(fromId, 'infantry', -infantryMoved);
       this.stateManager.addCityTroops(fromId, 'cavalry', -cavalryMoved);
       this.stateManager.addCityTroops(fromId, 'navy', -navyMoved);
@@ -373,7 +378,6 @@ export class ActionExecutor {
       this.stateManager.addCityTroops(toId, 'cavalry', cavalryMoved);
       this.stateManager.addCityTroops(toId, 'navy', navyMoved);
 
-      const actualMoved = infantryMoved + cavalryMoved + navyMoved;
       return {
         success: true,
         description: `${fromCity.name}에서 ${toCity.name}(으)로 병력 ${actualMoved.toLocaleString()}명을 보급했습니다. (${scaleNames[scale]})`,
@@ -586,8 +590,9 @@ export class ActionExecutor {
     const scaleRatio = troopsScale === 'main' ? 0.7 : troopsScale === 'medium' ? 0.5 : 0.3;
     const marchTroops = Math.floor(totalTroops * scaleRatio);
 
-    if (marchTroops <= 0) {
-      return this.fail('진군할 병력이 없습니다.');
+    const MIN_MARCH_TROOPS = 100;
+    if (marchTroops < MIN_MARCH_TROOPS) {
+      return this.fail(`진군 병력이 너무 적습니다 (${marchTroops}명). 최소 ${MIN_MARCH_TROOPS}명이 필요합니다.`);
     }
 
     // 병력 차감 (비례적으로)
@@ -606,6 +611,17 @@ export class ActionExecutor {
     }
 
     const actualMarchTroops = infantryMoved + cavalryMoved + navyMoved;
+
+    if (actualMarchTroops <= 0) {
+      // 병력/장수 복원
+      this.stateManager.addCityTroops(from, 'infantry', infantryMoved);
+      this.stateManager.addCityTroops(from, 'cavalry', cavalryMoved);
+      this.stateManager.addCityTroops(from, 'navy', navyMoved);
+      for (const g of generals) {
+        this.stateManager.updateGeneral(g!.id, { location: from });
+      }
+      return this.fail('진군할 병력이 너무 적습니다.');
+    }
 
     // 동맹 체크 헬퍼
     const isAllyOf = (other: FactionId) => {

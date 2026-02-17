@@ -160,24 +160,39 @@ export class EventSystem {
       case 'troop_loss': {
         const city = stateManager.getCity(effect.city);
         if (city && city.owner === effect.target as any) {
-          const remaining = Math.floor(
-            (city.troops.infantry + city.troops.cavalry + city.troops.navy) * (1 - effect.ratio)
-          );
+          // 난이도 flags가 있으면 우선 적용
+          const collapseRatio = (stateManager.getFlag('nanjunCollapseRatio') as number | undefined)
+            ?? effect.ratio;
+          const moralePenalty = (stateManager.getFlag('nanjunMoralePenalty') as number | undefined)
+            ?? effect.moralePenalty;
+
           const total = city.troops.infantry + city.troops.cavalry + city.troops.navy;
           if (total > 0) {
-            const ratio = remaining / total;
+            const keepRatio = 1 - collapseRatio;
             stateManager.updateCity(effect.city, {
               troops: {
-                infantry: Math.floor(city.troops.infantry * ratio),
-                cavalry: Math.floor(city.troops.cavalry * ratio),
-                navy: Math.floor(city.troops.navy * ratio),
+                infantry: Math.floor(city.troops.infantry * keepRatio),
+                cavalry: Math.floor(city.troops.cavalry * keepRatio),
+                navy: Math.floor(city.troops.navy * keepRatio),
               },
-              morale: Math.max(0, city.morale + effect.moralePenalty),
+              morale: Math.max(0, city.morale + moralePenalty),
             });
           }
         }
         const lostPercent = Math.round(effect.ratio * 100);
         return `${effect.target} ${city?.name ?? effect.city} 병력 ${lostPercent}% 손실`;
+      }
+
+      case 'food_support': {
+        const amount = (stateManager.getFlag('sunQuanFoodSupport') as number | undefined) ?? 0;
+        if (amount <= 0) return '식량 지원 없음';
+
+        // 하구에 식량 지급 (적벽에 가장 가까운 유비 도시)
+        const hagu = stateManager.getCity('hagu');
+        if (hagu && hagu.owner === effect.target as any) {
+          stateManager.updateCity('hagu', { food: hagu.food + amount });
+        }
+        return `${effect.target}에게 군량 ${amount} 지원`;
       }
 
       default:
@@ -231,6 +246,9 @@ export class EventSystem {
     }
     if (types.includes('pursuit_opportunity')) {
       return '추격 기회';
+    }
+    if (types.includes('food_support')) {
+      return '보급 지원';
     }
     return '정보 갱신';
   }

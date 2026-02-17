@@ -109,4 +109,37 @@ export class SimReporter {
       console.log(`  Think: 승률 ${(stats.thinkingComparison.think.winRate * 100).toFixed(1)}%`);
     }
   }
+
+  /** 순차학습 결과의 학습 곡선 출력 */
+  static printLearningCurve(results: SimResult[]): void {
+    if (results.length === 0) return;
+
+    console.log('\n── 학습 곡선 ──');
+    for (let i = 0; i < results.length; i++) {
+      const r = results[i];
+      const score = GRADE_SCORES[r.grade] || 0;
+      const bar = '#'.repeat(score);
+      const marker = r.flags['chibiVictory'] ? ' ★' : '';
+      console.log(`  ${String(i + 1).padStart(3)}. ${r.grade} ${bar.padEnd(6)}${marker} ${r.title}`);
+    }
+
+    // 이동평균 (window=3)
+    const scores = results.map(r => GRADE_SCORES[r.grade] || 0);
+    const movingAvg = scores.map((_, i) => {
+      const window = scores.slice(Math.max(0, i - 2), i + 1);
+      return window.reduce((a, b) => a + b, 0) / window.length;
+    });
+    console.log(`\n  이동평균: ${movingAvg.map(v => v.toFixed(1)).join(' → ')}`);
+
+    // 첫 승리
+    const firstWin = results.findIndex(r => r.flags['chibiVictory']);
+    console.log(`  첫 승리: ${firstWin >= 0 ? `Game ${firstWin + 1}` : '없음'}`);
+
+    // 승률 개선 (초반5 vs 후반5)
+    const earlyCount = Math.min(5, results.length);
+    const lateStart = Math.max(0, results.length - 5);
+    const first5 = results.slice(0, earlyCount).filter(r => r.flags['chibiVictory']).length / earlyCount;
+    const last5 = results.slice(lateStart).filter(r => r.flags['chibiVictory']).length / Math.min(5, results.length - lateStart);
+    console.log(`  승률: 초반${earlyCount} ${(first5 * 100).toFixed(0)}% → 후반${Math.min(5, results.length - lateStart)} ${(last5 * 100).toFixed(0)}%`);
+  }
 }

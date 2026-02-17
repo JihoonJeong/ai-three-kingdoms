@@ -435,6 +435,14 @@ const EVENTS: ScenarioEvent[] = [
       { type: 'troop_loss', target: '조조', city: 'nanjun', ratio: 0.5, moralePenalty: -25 },
     ],
   },
+  {
+    id: 'sun_quan_food_support',
+    trigger: { type: 'condition', condition: 'chibi_victory' },
+    description: '손권이 동맹의 승리를 축하하며 군량을 보내왔습니다.',
+    effects: [
+      { type: 'food_support', target: '유비', amount: 'from_flags' },
+    ],
+  },
 ];
 
 // ─── 시나리오 생성 함수 ────────────────────────────────

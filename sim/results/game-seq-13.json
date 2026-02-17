@@ -1,0 +1,1333 @@
+{
+  "gameId": "seq-13",
+  "mode": "A",
+  "thinking": false,
+  "seed": 12000,
+  "provider": "gemini",
+  "model": "gemini-3-flash-preview",
+  "grade": "C",
+  "title": "아쉬운 승리",
+  "totalTurns": 21,
+  "duration": 81345,
+  "flags": {
+    "allianceStarted": true,
+    "intel_reliability": "대략적",
+    "urgency": 1,
+    "cao_m_conscript1": true,
+    "allianceStrong": true,
+    "debuff_조조_morale": -15,
+    "intel_weakness": "질병",
+    "knowledge_cao_cao_navy_weakness": true,
+    "cao_m_caoren": true,
+    "cao_m_conscript2": true,
+    "enemy_formation": "연환진",
+    "tactic_bonus_화공": 2,
+    "knowledge_fire_attack_tactics": true,
+    "cao_chibi_deployed": true,
+    "special_tactic_거짓투항_화공": true,
+    "cao_m_march_south": true,
+    "chibiVictory": true,
+    "diplomacy_bonus": 50,
+    "knowledge_jingzhou_politics": true,
+    "pursuit_target": "조조",
+    "pursuit_location": "화용도",
+    "sun_chibi_support": true,
+    "weather": "동남풍",
+    "tactic_power_화공": 52,
+    "knowledge_southeast_wind": true,
+    "scouted_nanjun": true
+  },
+  "turnLogs": [
+    {
+      "turn": 1,
+      "phase": "preparation",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "gangha"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 60 → 79."
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "develop",
+            "params": {
+              "city": "hagu",
+              "focus": "agriculture"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 농업이(가) C에서 B로 발전했습니다."
+          }
+        },
+        {
+          "action": {
+            "type": "diplomacy",
+            "action": "send_envoy",
+            "params": {
+              "target": "손권",
+              "purpose": "우호 증진"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "손권에 사절을 보냈습니다. 관계가 개선되었습니다. (중립 → 중립)"
+          }
+        }
+      ],
+      "events": [],
+      "battles": [],
+      "aiActions": []
+    },
+    {
+      "turn": 2,
+      "phase": "preparation",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "develop",
+            "params": {
+              "city": "hagu",
+              "focus": "agriculture"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 농업 개발을 시도했으나 아직 성과가 나지 않았습니다. (B 유지)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "gangha"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 79 → 98."
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "hagu"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 부대를 훈련시켰습니다. 훈련도: 45 → 63."
+          }
+        }
+      ],
+      "events": [
+        "조조의 선봉이 당양을 통과했다는 보고가 들어왔습니다."
+      ],
+      "battles": [],
+      "aiActions": []
+    },
+    {
+      "turn": 3,
+      "phase": "preparation",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "develop",
+            "params": {
+              "city": "hagu",
+              "focus": "agriculture"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 농업 개발을 시도했으나 아직 성과가 나지 않았습니다. (B 유지)"
+          }
+        },
+        {
+          "action": {
+            "type": "diplomacy",
+            "action": "send_envoy",
+            "params": {
+              "target": "손권",
+              "purpose": "우호 증진"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "손권에 사절을 보냈습니다. 관계가 개선되었습니다. (우호 → 우호)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "hagu"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 부대를 훈련시켰습니다. 훈련도: 63 → 81."
+          }
+        }
+      ],
+      "events": [],
+      "battles": [],
+      "aiActions": [
+        "남군에서 대규모 징병을 실시했습니다. 보병 +5000.",
+        "조조: 남군에서 대규모 징집이 이루어지고 있습니다"
+      ]
+    },
+    {
+      "turn": 4,
+      "phase": "preparation",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "develop",
+            "params": {
+              "city": "hagu",
+              "focus": "agriculture"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 농업 개발을 시도했으나 아직 성과가 나지 않았습니다. (B 유지)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 4,000명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "gangha"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 98 → 100."
+          }
+        }
+      ],
+      "events": [],
+      "battles": [],
+      "aiActions": [
+        "하구: 군량이 부족합니다 (생산 200, 소비 900, 잔여 2400)"
+      ]
+    },
+    {
+      "turn": 5,
+      "phase": "preparation",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "develop",
+            "params": {
+              "city": "hagu",
+              "focus": "agriculture"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 농업이(가) B에서 A로 발전했습니다."
+          }
+        },
+        {
+          "action": {
+            "type": "diplomacy",
+            "action": "send_envoy",
+            "params": {
+              "target": "손권",
+              "purpose": "우호 증진"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "손권과(와) 동맹이 체결되었습니다!"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 2,000명을 보급했습니다. (중규모)"
+          }
+        }
+      ],
+      "events": [
+        "조조 진영에 수토불복으로 전염병이 돌고 있다는 첩보."
+      ],
+      "battles": [],
+      "aiActions": [
+        "강하: 식량 증산 (생산 400, 소비 200, +200)",
+        "하구: 군량이 부족합니다 (생산 280, 소비 1100, 잔여 1580)",
+        "조인을(를) 장릉에서 남군(으)로 배치했습니다.",
+        "정찰 보고: 조인 장군이 장릉에서 남군으로 이동했습니다"
+      ]
+    },
+    {
+      "turn": 6,
+      "phase": "preparation",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 1,000명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "gangha"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "hagu"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 부대를 훈련시켰습니다. 훈련도: 81 → 99."
+          }
+        }
+      ],
+      "events": [],
+      "battles": [],
+      "aiActions": [
+        "강하: 식량 증산 (생산 400, 소비 100, +300)",
+        "하구: 군량이 부족합니다 (생산 280, 소비 1200, 잔여 660)",
+        "남군에서 중규모 징병을 실시했습니다. 보병 +2500.",
+        "정찰 보고: 조조군이 강하 방면으로 병력을 이동시키고 있습니다",
+        "유비에게 군량 1000을(를) 선물했습니다. 관계가 개선되었습니다.",
+        "손권: 동맹 지원으로 군량을 보냈습니다"
+      ]
+    },
+    {
+      "turn": 7,
+      "phase": "preparation",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 499명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 249명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "develop",
+            "params": {
+              "city": "hagu",
+              "focus": "agriculture"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 농업 개발을 시도했으나 아직 성과가 나지 않았습니다. (A 유지)"
+          }
+        }
+      ],
+      "events": [
+        "조조가 채모의 건의를 받아 연환진을 펼쳤습니다."
+      ],
+      "battles": [],
+      "aiActions": [
+        "강하: 식량 증산 (생산 400, 소비 25, +375)",
+        "하구: 군량이 부족합니다 (생산 280, 소비 1274, 잔여 666)",
+        "정찰 보고: 동맹 체결에 반응하여 조조가 적벽 배치를 가속하고 있습니다!",
+        "유비에게 군량 1000을(를) 선물했습니다. 관계가 개선되었습니다.",
+        "손권: 동맹 지원으로 군량을 보냈습니다"
+      ]
+    },
+    {
+      "turn": 8,
+      "phase": "preparation",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 125명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "develop",
+            "params": {
+              "city": "hagu",
+              "focus": "agriculture"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 농업 개발을 시도했으나 아직 성과가 나지 않았습니다. (A 유지)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "hagu"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 부대를 훈련시켰습니다. 훈련도: 99 → 100."
+          }
+        }
+      ],
+      "events": [
+        "황개가 거짓 투항 계책을 제안해왔습니다."
+      ],
+      "battles": [],
+      "aiActions": [
+        "강하: 식량 증산 (생산 400, 소비 12, +388)",
+        "하구: 군량이 부족합니다 (생산 280, 소비 1287, 잔여 659)",
+        "정찰 보고: 조조의 대군이 수군을 이끌고 장강을 따라 남하하고 있습니다!",
+        "유비에게 군량 1000을(를) 선물했습니다. 관계가 개선되었습니다.",
+        "손권: 동맹 지원으로 군량을 보냈습니다"
+      ]
+    },
+    {
+      "turn": 9,
+      "phase": "battle",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 63명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 32명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "hagu"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+          }
+        }
+      ],
+      "events": [],
+      "battles": [],
+      "aiActions": [
+        "강하: 식량 증산 (생산 400, 소비 3, +397)",
+        "하구: 군량이 부족합니다 (생산 280, 소비 1296, 잔여 643)",
+        "손권: 동맹 지원으로 군량을 보냈습니다"
+      ]
+    },
+    {
+      "turn": 10,
+      "phase": "battle",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 16명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "military",
+            "action": "march",
+            "params": {
+              "from": "hagu",
+              "to": "chibi",
+              "generals": [
+                "weiyuan"
+              ],
+              "troopsScale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구에서 적벽(으)로 진군합니다. 적과 조우! 전투가 시작됩니다!"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "hagu"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+          }
+        }
+      ],
+      "events": [
+        "적벽 대승 소식에 형주 4군의 태수들이 동요합니다.",
+        "조조가 화용도를 통해 퇴각하고 있습니다!",
+        "적벽 대패 소식에 남군 수비병이 크게 동요합니다. 탈영과 항복이 잇따르고 있습니다."
+      ],
+      "battles": [
+        {
+          "location": "chibi",
+          "attacker": "유비",
+          "defender": "조조",
+          "turns": [
+            {
+              "tacticUsed": "fire_attack",
+              "attackerTroops": 5687,
+              "defenderTroops": 11254
+            },
+            {
+              "tacticUsed": "fire_attack",
+              "attackerTroops": 5170,
+              "defenderTroops": 9692
+            },
+            {
+              "tacticUsed": "fire_attack",
+              "attackerTroops": 4904,
+              "defenderTroops": 8417
+            }
+          ],
+          "result": {
+            "winner": "유비",
+            "loser": "조조",
+            "capturedGenerals": [
+              "caimao",
+              "zhangyun"
+            ],
+            "spoils": [
+              "잔여 병력 8417명 확보"
+            ],
+            "territoryChange": null
+          }
+        }
+      ],
+      "aiActions": [
+        "강하: 식량 증산 (생산 400, 소비 1, +399)",
+        "하구: 군량 고갈! 병사 444명 탈영, 민심 급락",
+        "손권: \"주유 도독이 적벽 방면으로 출진합니다!\"",
+        "손권: 동맹 지원으로 군량을 보냈습니다"
+      ]
+    },
+    {
+      "turn": 11,
+      "phase": "battle",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "develop",
+            "params": {
+              "city": "hagu",
+              "focus": "agriculture"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 농업이(가) A에서 S로 발전했습니다."
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "hagu",
+              "to": "gangha",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구에서 강하(으)로 병력 5,475명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "gangha"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+          }
+        }
+      ],
+      "events": [
+        "동남풍이 불기 시작합니다!"
+      ],
+      "battles": [],
+      "aiActions": [
+        "하구: 군량 고갈! 병사 211명 탈영, 민심 급락",
+        "손권: 동맹 지원으로 군량을 보냈습니다"
+      ]
+    },
+    {
+      "turn": 12,
+      "phase": "battle",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 2,745명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "hagu"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+          }
+        }
+      ],
+      "events": [],
+      "battles": [],
+      "aiActions": [
+        "강하: 식량 증산 (생산 400, 소비 274, +126)",
+        "하구: 군량 고갈! 병사 306명 탈영, 민심 급락",
+        "손권: 동맹 지원으로 군량을 보냈습니다"
+      ]
+    },
+    {
+      "turn": 13,
+      "phase": "battle",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 1,372명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "hagu"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+          }
+        },
+        {
+          "action": {
+            "type": "military",
+            "action": "scout",
+            "params": {
+              "target": "nanjun"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "정찰을 시도했으나 유의미한 정보를 얻지 못했습니다."
+          }
+        }
+      ],
+      "events": [],
+      "battles": [],
+      "aiActions": [
+        "강하: 식량 증산 (생산 400, 소비 137, +263)",
+        "하구: 군량 고갈! 병사 344명 탈영, 민심 급락",
+        "손권: 동맹 지원으로 군량을 보냈습니다"
+      ]
+    },
+    {
+      "turn": 14,
+      "phase": "aftermath",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 687명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "hagu"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+          }
+        },
+        {
+          "action": {
+            "type": "military",
+            "action": "scout",
+            "params": {
+              "target": "nanjun"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "남군에 대한 정찰에 성공했습니다. 병력 규모: 압도적. 확인된 장수: 조조, 하후연, 조인"
+          }
+        }
+      ],
+      "events": [],
+      "battles": [],
+      "aiActions": [
+        "강하: 식량 증산 (생산 400, 소비 68, +332)",
+        "하구: 군량 고갈! 병사 353명 탈영, 민심 급락",
+        "손권: 동맹 지원으로 군량을 보냈습니다"
+      ]
+    },
+    {
+      "turn": 15,
+      "phase": "aftermath",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 343명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 171명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "hagu"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+          }
+        }
+      ],
+      "events": [],
+      "battles": [],
+      "aiActions": [
+        "강하: 식량 증산 (생산 400, 소비 17, +383)",
+        "하구: 군량 고갈! 병사 355명 탈영, 민심 급락",
+        "손권: 동맹 지원으로 군량을 보냈습니다"
+      ]
+    },
+    {
+      "turn": 16,
+      "phase": "aftermath",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "develop",
+            "params": {
+              "city": "hagu",
+              "focus": "agriculture"
+            }
+          },
+          "result": {
+            "success": false,
+            "description": "하구의 농업는 이미 최고 등급입니다."
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 86명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "hagu"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+          }
+        }
+      ],
+      "events": [],
+      "battles": [],
+      "aiActions": [
+        "강하: 식량 증산 (생산 400, 소비 8, +392)",
+        "하구: 군량 고갈! 병사 341명 탈영, 민심 급락",
+        "손권: 동맹 지원으로 군량을 보냈습니다"
+      ]
+    },
+    {
+      "turn": 17,
+      "phase": "aftermath",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 43명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "hagu"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+          }
+        }
+      ],
+      "events": [],
+      "battles": [],
+      "aiActions": [
+        "강하: 식량 증산 (생산 400, 소비 4, +396)",
+        "하구: 군량 고갈! 병사 326명 탈영, 민심 급락",
+        "손권: 동맹 지원으로 군량을 보냈습니다"
+      ]
+    },
+    {
+      "turn": 18,
+      "phase": "aftermath",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 21명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "military",
+            "action": "march",
+            "params": {
+              "from": "hagu",
+              "to": "nanjun",
+              "generals": [
+                "weiyuan"
+              ],
+              "troopsScale": "medium"
+            }
+          },
+          "result": {
+            "success": false,
+            "description": "하구에서 남군(으)로 직접 진군할 수 없습니다."
+          }
+        },
+        {
+          "action": {
+            "type": "military",
+            "action": "scout",
+            "params": {
+              "target": "nanjun"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "남군에 대한 정찰에 성공했습니다. 병력 규모: 압도적. 확인된 장수: 조조, 하후연, 조인"
+          }
+        }
+      ],
+      "events": [],
+      "battles": [],
+      "aiActions": [
+        "강하: 식량 증산 (생산 400, 소비 2, +398)",
+        "하구: 군량 고갈! 병사 310명 탈영, 민심 급락",
+        "손권: 동맹 지원으로 군량을 보냈습니다"
+      ]
+    },
+    {
+      "turn": 19,
+      "phase": "aftermath",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 11명을 보급했습니다. (중규모)"
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "hagu"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+          }
+        },
+        {
+          "action": {
+            "type": "military",
+            "action": "march",
+            "params": {
+              "from": "gangha",
+              "to": "nanjun",
+              "generals": [
+                "liubei",
+                "guanyu",
+                "zhangfei"
+              ],
+              "troopsScale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 남군(으)로 진군합니다. 적과 조우! 전투가 시작됩니다!"
+          }
+        }
+      ],
+      "events": [],
+      "battles": [
+        {
+          "location": "nanjun",
+          "attacker": "유비",
+          "defender": "조조",
+          "turns": [
+            {
+              "tacticUsed": "ambush",
+              "attackerTroops": 0,
+              "defenderTroops": 15249
+            }
+          ],
+          "result": {
+            "winner": "조조",
+            "loser": "유비",
+            "capturedGenerals": [],
+            "spoils": [],
+            "territoryChange": null
+          }
+        }
+      ],
+      "aiActions": [
+        "강하: 식량 증산 (생산 400, 소비 0, +400)",
+        "하구: 군량 고갈! 병사 295명 탈영, 민심 급락",
+        "손권: 동맹 지원으로 군량을 보냈습니다"
+      ]
+    },
+    {
+      "turn": 20,
+      "phase": "aftermath",
+      "actions": [
+        {
+          "action": {
+            "type": "domestic",
+            "action": "develop",
+            "params": {
+              "city": "hagu",
+              "focus": "agriculture"
+            }
+          },
+          "result": {
+            "success": false,
+            "description": "하구의 농업는 이미 최고 등급입니다."
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "train",
+            "params": {
+              "city": "hagu"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "하구의 부대를 훈련시켰습니다. 훈련도: 100 → 100."
+          }
+        },
+        {
+          "action": {
+            "type": "domestic",
+            "action": "transfer",
+            "params": {
+              "from": "gangha",
+              "to": "hagu",
+              "transferType": "troops",
+              "scale": "medium"
+            }
+          },
+          "result": {
+            "success": true,
+            "description": "강하에서 하구(으)로 병력 2명을 보급했습니다. (중규모)"
+          }
+        }
+      ],
+      "events": [],
+      "battles": [],
+      "aiActions": [
+        "강하: 식량 증산 (생산 400, 소비 0, +400)",
+        "하구: 군량 고갈! 병사 280명 탈영, 민심 급락",
+        "손권: 동맹 지원으로 군량을 보냈습니다"
+      ]
+    }
+  ],
+  "finalState": {
+    "cities": [
+      {
+        "id": "gangha",
+        "owner": "유비",
+        "troops": 5
+      },
+      {
+        "id": "hagu",
+        "owner": "유비",
+        "troops": 7837
+      },
+      {
+        "id": "sishang",
+        "owner": "손권",
+        "troops": 15000
+      },
+      {
+        "id": "nanjun",
+        "owner": "조조",
+        "troops": 15247
+      },
+      {
+        "id": "jiangling",
+        "owner": "조조",
+        "troops": 12000
+      }
+    ],
+    "generals": [
+      {
+        "id": "liubei",
+        "faction": "유비",
+        "condition": "양호",
+        "location": "gangha"
+      },
+      {
+        "id": "guanyu",
+        "faction": "유비",
+        "condition": "양호",
+        "location": "gangha"
+      },
+      {
+        "id": "zhangfei",
+        "faction": "유비",
+        "condition": "양호",
+        "location": "gangha"
+      },
+      {
+        "id": "zhaoyun",
+        "faction": "유비",
+        "condition": "양호",
+        "location": "gangha"
+      },
+      {
+        "id": "zhugeliang",
+        "faction": "유비",
+        "condition": "양호",
+        "location": "gangha"
+      },
+      {
+        "id": "huangzhong",
+        "faction": "유비",
+        "condition": "양호",
+        "location": "gangha"
+      },
+      {
+        "id": "weiyuan",
+        "faction": "유비",
+        "condition": "양호",
+        "location": "hagu"
+      },
+      {
+        "id": "jianshou",
+        "faction": "유비",
+        "condition": "양호",
+        "location": "gangha"
+      },
+      {
+        "id": "caocao",
+        "faction": "조조",
+        "condition": "양호",
+        "location": "nanjun"
+      },
+      {
+        "id": "xiahouyuan",
+        "faction": "조조",
+        "condition": "양호",
+        "location": "nanjun"
+      },
+      {
+        "id": "caoren",
+        "faction": "조조",
+        "condition": "양호",
+        "location": "nanjun"
+      },
+      {
+        "id": "caimao",
+        "faction": "조조",
+        "condition": "포로",
+        "location": "chibi"
+      },
+      {
+        "id": "zhangyun",
+        "faction": "조조",
+        "condition": "포로",
+        "location": "chibi"
+      },
+      {
+        "id": "sunquan",
+        "faction": "손권",
+        "condition": "양호",
+        "location": "sishang"
+      },
+      {
+        "id": "zhouyu",
+        "faction": "손권",
+        "condition": "양호",
+        "location": "chibi"
+      }
+    ]
+  }
+}

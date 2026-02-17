@@ -30,7 +30,7 @@ describe('적벽대전 시나리오 데이터', () => {
 
   it('이벤트가 9개이다', () => {
     const events = getScenarioEvents();
-    expect(events).toHaveLength(9);
+    expect(events).toHaveLength(10);
   });
 
   it('도시 인접 관계가 유효하다', () => {

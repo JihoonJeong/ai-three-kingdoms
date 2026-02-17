@@ -19,8 +19,11 @@ import type { GameState, GameAction, GameLanguage } from '../core/data/types.js'
 import { getProvider } from '../server/providers/registry.js';
 import { collectStreamText } from '../server/providers/stream-utils.js';
 import type { ProviderConfig } from '../server/providers/types.js';
-import type { SimConfig, ChatMessage } from './sim-config.js';
+import type { SimConfig, ChatMessage, TurnLog } from './sim-config.js';
 import type { SimPlayerAI } from './headless-sim.js';
+import { ExperienceStore } from './icl/experience-store.js';
+import { SoftShellBuilder, EASY_STRATEGY_GUIDE } from './icl/soft-shell-builder.js';
+import { MilestoneCoach } from './icl/milestone-coach.js';
 
 /** thinking 태그 제거 */
 function stripThinking(text: string): string {
@@ -53,12 +56,25 @@ function buildContext(state: GameState): RecommendationContext {
 export class SimAdvisor implements SimPlayerAI {
   private language: GameLanguage = 'ko';
   private prevActions: Array<{ description: string; success: boolean }> = [];
+  private experienceStore: ExperienceStore | null = null;
+  private currentTurnLogs: TurnLog[] = [];
+  private coach = new MilestoneCoach();
 
-  constructor(private config: SimConfig) {}
+  constructor(
+    private config: SimConfig,
+    experiences?: ExperienceStore,
+  ) {
+    this.experienceStore = experiences ?? null;
+  }
 
   /** 지난 턴 행동 결과를 저장 (다음 브리핑에 포함) */
   recordActions(actions: Array<{ description: string; success: boolean }>): void {
     this.prevActions = actions;
+  }
+
+  /** 턴 로그를 누적 기록 (중간 반성용) */
+  recordTurnLog(turnLog: TurnLog): void {
+    this.currentTurnLogs.push(turnLog);
   }
 
   async planTurn(state: GameState, config: SimConfig): Promise<{
@@ -68,16 +84,40 @@ export class SimAdvisor implements SimPlayerAI {
     // 1. 상태 → AdvisorView
     const advisorView = filterGameState(state);
 
-    // 2. 시스템 프롬프트
-    const systemPrompt = buildSystemPrompt(advisorView, this.language)
+    // 2. 시스템 프롬프트 + Soft Shell
+    let systemPrompt = buildSystemPrompt(advisorView, this.language)
       + buildActionReference(state);
 
+    // Easy 모드: 전략 가이드 추가 (현재 비활성화 — 프롬프트 과부하 방지)
+    // if (this.config.difficulty === 'easy') {
+    //   systemPrompt += '\n\n' + EASY_STRATEGY_GUIDE;
+    // }
+
+    // MilestoneCoach: 게임 시작 코칭 (시스템 프롬프트에 1문장)
+    systemPrompt += '\n\n' + this.coach.getStartCoaching();
+
+    // Soft Shell 주입 (ICL 경험)
+    if (this.experienceStore) {
+      const selected = this.experienceStore.selectForPrompt();
+      const softShell = SoftShellBuilder.build(selected);
+      if (softShell) {
+        systemPrompt += '\n\n' + softShell;
+      }
+    }
+
     // 3. 브리핑 요청 메시지
-    const briefingMsg = buildBriefingUserMessage(
+    let briefingMsg = buildBriefingUserMessage(
       state.turn,
       this.language,
       this.prevActions.length > 0 ? this.prevActions : undefined,
     );
+
+    // MilestoneCoach: 마일스톤 조건 체크 → user message 앞에 주입
+    const coaching = this.coach.check(state);
+    if (coaching) {
+      briefingMsg = coaching + '\n\n' + briefingMsg;
+    }
+
     const messages: ChatMessage[] = [{ role: 'user', content: briefingMsg }];
 
     // 4. LLM 호출

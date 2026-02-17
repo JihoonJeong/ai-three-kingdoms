@@ -13,6 +13,7 @@ import { EventSystem } from '../core/engine/event-system.js';
 import { VictoryJudge } from '../core/engine/victory-judge.js';
 import { executeBattleTurn, processBattleResult } from '../core/engine/battle-resolver.js';
 import { createRedCliffsScenario, getScenarioEvents } from '../core/data/scenarios/red-cliffs.js';
+import { applyDifficultyModifier } from './difficulty-modifier.js';
 import { createSeededRng } from './seeded-rng.js';
 import { selectTacticByRule } from './sim-battle-ai.js';
 import type { SimConfig, SimResult, TurnLog, BattleLog } from './sim-config.js';
@@ -23,6 +24,10 @@ export interface SimPlayerAI {
   planTurn(state: import('../core/data/types.js').GameState, config: SimConfig): Promise<{
     actions: GameAction[];
   }>;
+  /** 턴 로그를 누적 기록 (ICL 중간 반성용, optional) */
+  recordTurnLog?(turnLog: TurnLog): void;
+  /** 지난 턴 행동 결과를 저장 (optional) */
+  recordActions?(actions: Array<{ description: string; success: boolean }>): void;
 }
 
 export class HeadlessSimulator {
@@ -49,6 +54,12 @@ export class HeadlessSimulator {
     // 1. 초기화 (RNG는 seed 기반 결정적)
     const rng = createSeededRng(this.config.seed);
     const scenario = createRedCliffsScenario(`sim-${this.config.gameId}`);
+
+    // 난이도 적용 (모든 프리셋에 비기본 값이 있으므로 항상 적용)
+    if (this.config.difficulty) {
+      applyDifficultyModifier(scenario, this.config.difficulty);
+    }
+
     this.stateManager = new GameStateManager(scenario);
     this.battleEngine = new BattleEngine(rng);
     this.actionExecutor = new ActionExecutor(this.stateManager, this.battleEngine, rng);
@@ -107,6 +118,11 @@ export class HeadlessSimulator {
       }
 
       this.turnLogs.push(turnLog);
+
+      // ICL: 턴 로그를 playerAI에 전달 (중간 반성용)
+      if (this.playerAI?.recordTurnLog) {
+        this.playerAI.recordTurnLog(turnLog);
+      }
 
       if (this.config.verbose) {
         const grade = endResult.result?.grade ?? '—';

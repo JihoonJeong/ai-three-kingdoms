@@ -1,0 +1,873 @@
+{
+  "config": {
+    "maxExperiences": 20,
+    "selectionStrategy": "balanced",
+    "promptBudget": 800
+  },
+  "experiences": [
+    {
+      "gameId": "A-think-1",
+      "gameNumber": 1,
+      "grade": "C",
+      "chibiVictory": true,
+      "totalTurns": 21,
+      "citiesCaptured": [],
+      "allianceMaintained": true,
+      "generalsLost": [
+        "zhangfei"
+      ],
+      "strategyProfile": {
+        "actionCounts": {
+          "develop": 11,
+          "send_envoy": 14,
+          "transfer": 6,
+          "gift": 1,
+          "march": 6,
+          "scout": 2
+        },
+        "phases": [
+          {
+            "name": "domestic",
+            "startTurn": 1,
+            "endTurn": 2,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "domestic",
+            "startTurn": 4,
+            "endTurn": 5,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "domestic",
+            "startTurn": 14,
+            "endTurn": 15,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 18,
+            "endTurn": 20,
+            "dominantActions": [
+              "transfer"
+            ]
+          }
+        ],
+        "criticalActions": [
+          {
+            "turn": 3,
+            "action": "transfer",
+            "description": "gangha → hagu 보급 시작",
+            "impact": "important"
+          },
+          {
+            "turn": 9,
+            "action": "march",
+            "description": "hagu → chibi 진군",
+            "impact": "decisive"
+          }
+        ],
+        "transferPattern": {
+          "totalTransfers": 6,
+          "concentrationTarget": "hagu",
+          "totalTroopsMoved": 0
+        },
+        "firstMarchTurn": 9,
+        "marchTargets": [
+          "chibi",
+          "nanjun"
+        ]
+      },
+      "lessons": [
+        "보급(transfer)으로 hagu에 병력을 집중한 것이 적벽 승리의 핵심이었다.",
+        "적벽 승리 후 남군을 점령해야 B등급 이상 — 보급 방향 전환 필수"
+      ],
+      "turningPoints": [
+        {
+          "turn": 9,
+          "type": "battle",
+          "description": "chibi 승리",
+          "outcome": "positive"
+        },
+        {
+          "turn": 9,
+          "type": "action",
+          "description": "hagu → chibi 진군",
+          "outcome": "positive"
+        },
+        {
+          "turn": 13,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 13,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        },
+        {
+          "turn": 14,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 14,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        },
+        {
+          "turn": 16,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 16,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        },
+        {
+          "turn": 18,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 18,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        }
+      ]
+    },
+    {
+      "gameId": "A-think-3",
+      "gameNumber": 2,
+      "grade": "C",
+      "chibiVictory": true,
+      "totalTurns": 21,
+      "citiesCaptured": [],
+      "allianceMaintained": true,
+      "generalsLost": [],
+      "strategyProfile": {
+        "actionCounts": {
+          "develop": 14,
+          "send_envoy": 11,
+          "train": 8,
+          "scout": 4,
+          "transfer": 5,
+          "march": 3,
+          "gift": 1,
+          "fortify": 2
+        },
+        "phases": [
+          {
+            "name": "domestic",
+            "startTurn": 1,
+            "endTurn": 7,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "domestic",
+            "startTurn": 10,
+            "endTurn": 11,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "domestic",
+            "startTurn": 13,
+            "endTurn": 14,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 15,
+            "endTurn": 16,
+            "dominantActions": [
+              "transfer"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 18,
+            "endTurn": 19,
+            "dominantActions": [
+              "transfer"
+            ]
+          }
+        ],
+        "criticalActions": [
+          {
+            "turn": 8,
+            "action": "transfer",
+            "description": "gangha → hagu 보급 시작",
+            "impact": "important"
+          },
+          {
+            "turn": 12,
+            "action": "march",
+            "description": "hagu → chibi 진군",
+            "impact": "decisive"
+          }
+        ],
+        "transferPattern": {
+          "totalTransfers": 5,
+          "concentrationTarget": "hagu",
+          "totalTroopsMoved": 0
+        },
+        "firstMarchTurn": 9,
+        "marchTargets": [
+          "chibi",
+          "nanjun"
+        ]
+      },
+      "lessons": [
+        "보급(transfer)으로 hagu에 병력을 집중한 것이 적벽 승리의 핵심이었다.",
+        "적벽 승리 후 남군을 점령해야 B등급 이상 — 보급 방향 전환 필수"
+      ],
+      "turningPoints": [
+        {
+          "turn": 12,
+          "type": "battle",
+          "description": "chibi 승리",
+          "outcome": "positive"
+        },
+        {
+          "turn": 12,
+          "type": "action",
+          "description": "hagu → chibi 진군",
+          "outcome": "positive"
+        }
+      ]
+    },
+    {
+      "gameId": "synthetic-B-1",
+      "gameNumber": 0,
+      "grade": "B",
+      "chibiVictory": true,
+      "totalTurns": 21,
+      "citiesCaptured": [
+        "nanjun"
+      ],
+      "allianceMaintained": true,
+      "generalsLost": [],
+      "strategyProfile": {
+        "actionCounts": {
+          "train": 6,
+          "transfer": 10,
+          "send_envoy": 2,
+          "scout": 2,
+          "march": 4,
+          "develop": 2
+        },
+        "phases": [
+          {
+            "name": "내정기",
+            "startTurn": 1,
+            "endTurn": 7,
+            "dominantActions": [
+              "train",
+              "send_envoy",
+              "develop"
+            ]
+          },
+          {
+            "name": "집결기",
+            "startTurn": 8,
+            "endTurn": 12,
+            "dominantActions": [
+              "transfer",
+              "train"
+            ]
+          },
+          {
+            "name": "적벽전",
+            "startTurn": 13,
+            "endTurn": 16,
+            "dominantActions": [
+              "scout",
+              "march"
+            ]
+          },
+          {
+            "name": "형주공략",
+            "startTurn": 17,
+            "endTurn": 21,
+            "dominantActions": [
+              "transfer",
+              "march"
+            ]
+          }
+        ],
+        "criticalActions": [
+          {
+            "turn": 3,
+            "action": "transfer(gangha→hagu)",
+            "description": "강하 병력을 하구에 집결",
+            "impact": "important"
+          },
+          {
+            "turn": 10,
+            "action": "march(hagu→chibi)",
+            "description": "적벽으로 주력 진군",
+            "impact": "decisive"
+          },
+          {
+            "turn": 17,
+            "action": "transfer(hagu→gangha)",
+            "description": "적벽 후 보급 방향 전환 — 하구에서 강하로",
+            "impact": "decisive"
+          },
+          {
+            "turn": 19,
+            "action": "march(gangha→nanjun)",
+            "description": "충분한 병력으로 남군 진군",
+            "impact": "decisive"
+          }
+        ],
+        "transferPattern": {
+          "totalTransfers": 10,
+          "concentrationTarget": "hagu→gangha (적벽 후 역전)",
+          "totalTroopsMoved": 12000
+        },
+        "firstMarchTurn": 10,
+        "marchTargets": [
+          "chibi",
+          "nanjun"
+        ]
+      },
+      "lessons": [
+        "적벽 승리 후 보급 방향을 역전하라: 하구→강하로 병력 이동",
+        "남군 진군 전 최소 2000명 이상 집결 필수",
+        "유비는 남군 진군에 포함시키지 않는다 — 포로 위험"
+      ],
+      "turningPoints": [
+        {
+          "turn": 10,
+          "type": "battle",
+          "description": "적벽 화공으로 조조군 대파",
+          "outcome": "positive"
+        },
+        {
+          "turn": 17,
+          "type": "action",
+          "description": "보급 방향 전환 (하구→강하)",
+          "outcome": "positive"
+        },
+        {
+          "turn": 19,
+          "type": "battle",
+          "description": "충분한 병력으로 남군 점령 성공",
+          "outcome": "positive"
+        }
+      ]
+    },
+    {
+      "gameId": "seq-1",
+      "gameNumber": 1,
+      "grade": "D",
+      "chibiVictory": false,
+      "totalTurns": 21,
+      "citiesCaptured": [],
+      "allianceMaintained": true,
+      "generalsLost": [
+        "guanyu"
+      ],
+      "strategyProfile": {
+        "actionCounts": {
+          "send_envoy": 4,
+          "develop": 13,
+          "train": 16,
+          "transfer": 16,
+          "march": 1
+        },
+        "phases": [
+          {
+            "name": "diplomacy",
+            "startTurn": 1,
+            "endTurn": 2,
+            "dominantActions": [
+              "send_envoy"
+            ]
+          },
+          {
+            "name": "domestic",
+            "startTurn": 8,
+            "endTurn": 10,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 17,
+            "endTurn": 20,
+            "dominantActions": [
+              "transfer"
+            ]
+          }
+        ],
+        "criticalActions": [
+          {
+            "turn": 3,
+            "action": "transfer",
+            "description": "gangha → hagu 보급 시작",
+            "impact": "important"
+          },
+          {
+            "turn": 18,
+            "action": "march",
+            "description": "gangha → nanjun 진군",
+            "impact": "decisive"
+          }
+        ],
+        "transferPattern": {
+          "totalTransfers": 16,
+          "concentrationTarget": "hagu",
+          "totalTroopsMoved": 0
+        },
+        "firstMarchTurn": 18,
+        "marchTargets": [
+          "nanjun"
+        ]
+      },
+      "lessons": [
+        "개발(develop)에 13회를 사용하여 군사 준비 시간이 부족했다. 내정은 최소화하고 군비에 집중해야 한다."
+      ],
+      "turningPoints": [
+        {
+          "turn": 14,
+          "type": "battle",
+          "description": "gangha 승리",
+          "outcome": "positive"
+        },
+        {
+          "turn": 18,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 18,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        }
+      ]
+    },
+    {
+      "gameId": "seq-2",
+      "gameNumber": 2,
+      "grade": "D",
+      "chibiVictory": false,
+      "totalTurns": 21,
+      "citiesCaptured": [],
+      "allianceMaintained": true,
+      "generalsLost": [
+        "zhangfei"
+      ],
+      "strategyProfile": {
+        "actionCounts": {
+          "send_envoy": 6,
+          "train": 14,
+          "develop": 13,
+          "transfer": 14,
+          "scout": 2,
+          "march": 1,
+          "fortify": 1
+        },
+        "phases": [
+          {
+            "name": "diplomacy",
+            "startTurn": 1,
+            "endTurn": 2,
+            "dominantActions": [
+              "send_envoy"
+            ]
+          },
+          {
+            "name": "domestic",
+            "startTurn": 3,
+            "endTurn": 4,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "domestic",
+            "startTurn": 6,
+            "endTurn": 7,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 16,
+            "endTurn": 19,
+            "dominantActions": [
+              "transfer"
+            ]
+          }
+        ],
+        "criticalActions": [
+          {
+            "turn": 4,
+            "action": "transfer",
+            "description": "gangha → hagu 보급 시작",
+            "impact": "important"
+          },
+          {
+            "turn": 19,
+            "action": "march",
+            "description": "gangha → nanjun 진군",
+            "impact": "decisive"
+          }
+        ],
+        "transferPattern": {
+          "totalTransfers": 14,
+          "concentrationTarget": "hagu",
+          "totalTroopsMoved": 0
+        },
+        "firstMarchTurn": 19,
+        "marchTargets": [
+          "nanjun"
+        ]
+      },
+      "lessons": [
+        "개발(develop)에 13회를 사용하여 군사 준비 시간이 부족했다. 내정은 최소화하고 군비에 집중해야 한다.",
+        "외교에 과도한 행동을 소비했다. 동맹은 1~2회 사신으로 충분하며, 나머지는 군사 준비에 투자해야 한다."
+      ],
+      "turningPoints": [
+        {
+          "turn": 14,
+          "type": "battle",
+          "description": "gangha 승리",
+          "outcome": "positive"
+        },
+        {
+          "turn": 19,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 19,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        }
+      ]
+    },
+    {
+      "gameId": "seq-3",
+      "gameNumber": 3,
+      "grade": "D",
+      "chibiVictory": false,
+      "totalTurns": 21,
+      "citiesCaptured": [],
+      "allianceMaintained": true,
+      "generalsLost": [],
+      "strategyProfile": {
+        "actionCounts": {
+          "send_envoy": 5,
+          "train": 17,
+          "develop": 9,
+          "transfer": 14,
+          "scout": 4,
+          "march": 1
+        },
+        "phases": [
+          {
+            "name": "diplomacy",
+            "startTurn": 1,
+            "endTurn": 2,
+            "dominantActions": [
+              "send_envoy"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 6,
+            "endTurn": 15,
+            "dominantActions": [
+              "train",
+              "transfer"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 17,
+            "endTurn": 20,
+            "dominantActions": [
+              "transfer"
+            ]
+          }
+        ],
+        "criticalActions": [
+          {
+            "turn": 7,
+            "action": "transfer",
+            "description": "gangha → hagu 보급 시작",
+            "impact": "important"
+          },
+          {
+            "turn": 20,
+            "action": "march",
+            "description": "gangha → nanjun 진군",
+            "impact": "decisive"
+          }
+        ],
+        "transferPattern": {
+          "totalTransfers": 14,
+          "concentrationTarget": "gangha",
+          "totalTroopsMoved": 0
+        },
+        "firstMarchTurn": 20,
+        "marchTargets": [
+          "nanjun"
+        ]
+      },
+      "lessons": [
+        "개발(develop)에 9회를 사용하여 군사 준비 시간이 부족했다. 내정은 최소화하고 군비에 집중해야 한다."
+      ],
+      "turningPoints": [
+        {
+          "turn": 14,
+          "type": "battle",
+          "description": "gangha 승리",
+          "outcome": "positive"
+        },
+        {
+          "turn": 20,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 20,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        }
+      ]
+    },
+    {
+      "gameId": "seq-4",
+      "gameNumber": 4,
+      "grade": "D",
+      "chibiVictory": false,
+      "totalTurns": 21,
+      "citiesCaptured": [],
+      "allianceMaintained": true,
+      "generalsLost": [],
+      "strategyProfile": {
+        "actionCounts": {
+          "send_envoy": 5,
+          "train": 17,
+          "develop": 11,
+          "transfer": 12,
+          "scout": 5
+        },
+        "phases": [
+          {
+            "name": "diplomacy",
+            "startTurn": 1,
+            "endTurn": 2,
+            "dominantActions": [
+              "send_envoy"
+            ]
+          },
+          {
+            "name": "domestic",
+            "startTurn": 5,
+            "endTurn": 6,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 7,
+            "endTurn": 10,
+            "dominantActions": [
+              "transfer",
+              "train"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 14,
+            "endTurn": 18,
+            "dominantActions": [
+              "transfer"
+            ]
+          }
+        ],
+        "criticalActions": [
+          {
+            "turn": 3,
+            "action": "transfer",
+            "description": "gangha → hagu 보급 시작",
+            "impact": "important"
+          }
+        ],
+        "transferPattern": {
+          "totalTransfers": 12,
+          "concentrationTarget": "hagu",
+          "totalTroopsMoved": 0
+        },
+        "firstMarchTurn": null,
+        "marchTargets": []
+      },
+      "lessons": [
+        "한 번도 진군(march)하지 않아 적벽 전투에 참여하지 못했다. 턴 10~14 사이에 적벽으로 진군해야 한다.",
+        "개발(develop)에 11회를 사용하여 군사 준비 시간이 부족했다. 내정은 최소화하고 군비에 집중해야 한다."
+      ],
+      "turningPoints": [
+        {
+          "turn": 14,
+          "type": "battle",
+          "description": "gangha 승리",
+          "outcome": "positive"
+        }
+      ]
+    },
+    {
+      "gameId": "seq-5",
+      "gameNumber": 5,
+      "grade": "D",
+      "chibiVictory": false,
+      "totalTurns": 21,
+      "citiesCaptured": [],
+      "allianceMaintained": true,
+      "generalsLost": [
+        "zhangfei"
+      ],
+      "strategyProfile": {
+        "actionCounts": {
+          "train": 14,
+          "send_envoy": 5,
+          "develop": 10,
+          "transfer": 10,
+          "march": 5
+        },
+        "phases": [
+          {
+            "name": "domestic",
+            "startTurn": 7,
+            "endTurn": 9,
+            "dominantActions": [
+              "develop"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 10,
+            "endTurn": 11,
+            "dominantActions": [
+              "transfer"
+            ]
+          },
+          {
+            "name": "consolidation",
+            "startTurn": 14,
+            "endTurn": 20,
+            "dominantActions": [
+              "transfer",
+              "train"
+            ]
+          }
+        ],
+        "criticalActions": [
+          {
+            "turn": 8,
+            "action": "transfer",
+            "description": "gangha → hagu 보급 시작",
+            "impact": "important"
+          },
+          {
+            "turn": 15,
+            "action": "march",
+            "description": "gangha → nanjun 진군",
+            "impact": "decisive"
+          }
+        ],
+        "transferPattern": {
+          "totalTransfers": 10,
+          "concentrationTarget": "gangha",
+          "totalTroopsMoved": 0
+        },
+        "firstMarchTurn": 10,
+        "marchTargets": [
+          "chibi",
+          "nanjun"
+        ]
+      },
+      "lessons": [
+        "개발(develop)에 10회를 사용하여 군사 준비 시간이 부족했다. 내정은 최소화하고 군비에 집중해야 한다."
+      ],
+      "turningPoints": [
+        {
+          "turn": 11,
+          "type": "battle",
+          "description": "gangha 승리",
+          "outcome": "positive"
+        },
+        {
+          "turn": 15,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 15,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        },
+        {
+          "turn": 17,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 17,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        },
+        {
+          "turn": 20,
+          "type": "battle",
+          "description": "nanjun 패배",
+          "outcome": "negative"
+        },
+        {
+          "turn": 20,
+          "type": "action",
+          "description": "gangha → nanjun 진군",
+          "outcome": "positive"
+        }
+      ]
+    }
+  ]
+}

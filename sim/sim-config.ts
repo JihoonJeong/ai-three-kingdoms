@@ -36,6 +36,17 @@ export interface SimConfig {
 
   // 로깅
   verbose: boolean;           // 상세 로그 출력
+
+  // 난이도 (Phase 3 ICL)
+  difficulty?: 'easy' | 'medium' | 'normal' | 'hard' | 'expert';
+
+  // ICL (In-Context Learning) 설정
+  icl?: {
+    enabled: boolean;
+    seedLibrary?: string;      // 시드 전략 라이브러리 경로
+    maxExperiences?: number;
+    selectionStrategy?: 'recent' | 'best' | 'diverse' | 'balanced';
+  };
 }
 
 // ── 결과 ──
