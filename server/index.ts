@@ -400,9 +400,9 @@ export function startServer(): void {
   });
 }
 
-// 직접 실행 시 서버 기동
+// 직접 실행 시 서버 기동 (번들에서는 __BUNDLED 플래그로 비활성화)
 const isDirectRun = process.argv[1] &&
   resolve(process.argv[1]).replace(/\.[^.]+$/, '') === resolve(fileURLToPath(import.meta.url)).replace(/\.[^.]+$/, '');
-if (isDirectRun) {
+if (isDirectRun && !(globalThis as any).__BUNDLED) {
   startServer();
 }
