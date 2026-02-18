@@ -14,8 +14,9 @@ const info: ProviderInfo = {
   description: 'OpenAI GPT 모델 — ChatGPT와 동일',
   requiresApiKey: true,
   defaultModels: [
-    { id: 'gpt-4o', name: 'GPT-4o' },
     { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
+    { id: 'gpt-4o', name: 'GPT-4o' },
+    { id: 'o4-mini', name: 'o4-mini' },
     { id: 'gpt-5.2', name: 'GPT-5.2' },
   ],
 };

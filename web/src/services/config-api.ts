@@ -2,6 +2,8 @@
 // 설정 API 클라이언트
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+import { t } from '../../../core/i18n/index.js';
+
 export interface ConfigStatus {
   configured: boolean;
   provider: string | null;
@@ -84,14 +86,14 @@ export async function pullOllamaModel(
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: '알 수 없는 오류' })) as { error?: string };
+    const err = await res.json().catch(() => ({ error: t('알 수 없는 오류') })) as { error?: string };
     onProgress({ type: 'error', error: err.error || `HTTP ${res.status}` });
     return;
   }
 
   const reader = res.body?.getReader();
   if (!reader) {
-    onProgress({ type: 'error', error: '스트림을 읽을 수 없습니다' });
+    onProgress({ type: 'error', error: t('스트림을 읽을 수 없습니다') });
     return;
   }
 

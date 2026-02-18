@@ -1,9 +1,10 @@
 import { h } from './renderer.js';
+import { t } from '../../core/i18n/index.js';
 import type { GameState } from '../../core/data/types.js';
 
 export type TabId = 'map' | 'city' | 'general' | 'diplomacy' | 'log' | 'advisor';
 
-const TAB_LABELS: Record<TabId, string> = {
+const TAB_KEYS: Record<TabId, string> = {
   map: '전략 맵',
   city: '도시',
   general: '장수',
@@ -30,13 +31,13 @@ export class Layout {
     root.innerHTML = '';
 
     const header = h('div', { className: 'header' });
-    const title = h('div', { className: 'header-title' }, 'AI 삼국지 — 적벽대전');
+    const title = h('div', { className: 'header-title' }, t('AI 삼국지 — 적벽대전'));
     this.headerInfo = h('div', { className: 'header-info' });
     header.append(title, this.headerInfo);
 
     const tabBar = h('div', { className: 'tab-bar' });
-    for (const id of Object.keys(TAB_LABELS) as TabId[]) {
-      const btn = h('button', { className: `tab-btn${id === 'map' ? ' active' : ''}` }, TAB_LABELS[id]);
+    for (const id of Object.keys(TAB_KEYS) as TabId[]) {
+      const btn = h('button', { className: `tab-btn${id === 'map' ? ' active' : ''}` }, t(TAB_KEYS[id]));
       btn.dataset.tab = id;
       btn.addEventListener('click', () => this.setActiveTab(id));
       this.tabButtons.set(id, btn);
@@ -85,9 +86,9 @@ export class Layout {
   updateHeader(turn: number, maxTurns: number, season: string, actions: number): void {
     this.headerInfo.innerHTML = '';
     this.headerInfo.append(
-      h('span', {}, season),
-      h('span', {}, `턴 ${turn}/${maxTurns}`),
-      h('span', {}, `행동 ${actions}/3`),
+      h('span', {}, t(season)),
+      h('span', {}, `${t('턴')} ${turn}/${maxTurns}`),
+      h('span', {}, `${t('행동')} ${actions}/3`),
     );
   }
 
@@ -101,10 +102,10 @@ export class Layout {
     const generalCount = state.generals.filter(g => g.faction === playerFaction).length;
 
     this.footerResources.append(
-      h('span', {}, `병력: ${totalTroops.toLocaleString()}`),
-      h('span', {}, `식량: ${totalFood.toLocaleString()}`),
-      h('span', {}, `장수: ${generalCount}명`),
-      h('span', {}, `도시: ${playerCities.length}개`),
+      h('span', {}, `${t('병력')}: ${totalTroops.toLocaleString()}`),
+      h('span', {}, `${t('식량')}: ${totalFood.toLocaleString()}`),
+      h('span', {}, `${t('장수')}: ${generalCount}${t('명')}`),
+      h('span', {}, `${t('도시')}: ${playerCities.length}${t('개')}`),
     );
   }
 }

@@ -2,6 +2,7 @@ import { h, assetUrl, createGauge } from '../renderer.js';
 import { BattleView } from '../../../core/ui/battle-view.js';
 import { getCharacterAssetPath, getBattleBgPath } from '../../../core/ui/types.js';
 import { resolveExpression } from '../../../core/ui/character-display.js';
+import { t } from '../../../core/i18n/index.js';
 import type { BattleState, General, BattleTurnLog } from '../../../core/data/types.js';
 
 export class BattleScreen {
@@ -39,12 +40,12 @@ export class BattleScreen {
 
     // ─── Header ──────────────────────────────────────
     const header = h('div', { className: 'battle-header' });
-    header.appendChild(h('div', { className: 'battle-title' }, `전투: ${this.locationName}`));
+    header.appendChild(h('div', { className: 'battle-title' }, `${t('전투')}: ${t(this.locationName)}`));
     const info = h('div', { className: 'battle-info' });
     info.append(
-      h('span', {}, `지형: ${battle.terrain}`),
-      h('span', {}, `날씨: ${battle.weather}`),
-      h('span', {}, `전투턴: ${battle.battleTurn}/${battle.maxBattleTurns}`),
+      h('span', {}, `${t('지형')}: ${t(battle.terrain)}`),
+      h('span', {}, `${t('날씨')}: ${t(battle.weather)}`),
+      h('span', {}, `${t('전투턴')}: ${battle.battleTurn}/${battle.maxBattleTurns}`),
     );
     header.appendChild(info);
     screen.appendChild(header);
@@ -54,19 +55,19 @@ export class BattleScreen {
     const isPlayerAttacker = battle.attackers.faction === playerFaction;
 
     main.appendChild(this.renderSide(
-      isPlayerAttacker ? '아군 (공격)' : '적군 (공격)',
+      isPlayerAttacker ? t('아군 (공격)') : t('적군 (공격)'),
       battle.attackers.faction, battle.attackers, generals,
     ));
 
     const center = h('div', { className: 'battle-center' });
     center.appendChild(h('div', { className: 'battle-vs' }, 'VS'));
     const weather = h('div', { className: 'battle-weather' });
-    weather.textContent = `${battle.weather} · ${battle.terrain}`;
+    weather.textContent = `${t(battle.weather)} · ${t(battle.terrain)}`;
     center.appendChild(weather);
     main.appendChild(center);
 
     main.appendChild(this.renderSide(
-      isPlayerAttacker ? '적군 (방어)' : '아군 (방어)',
+      isPlayerAttacker ? t('적군 (방어)') : t('아군 (방어)'),
       battle.defenders.faction, battle.defenders, generals,
     ));
     screen.appendChild(main);
@@ -74,12 +75,12 @@ export class BattleScreen {
     // ─── Guide + Execute button (같은 줄) ─────────────
     const guideBar = h('div', { className: 'battle-guide' });
     const guideText = h('span', { className: 'battle-guide-text' });
-    guideText.textContent = '전술 카드를 선택한 후 \'전술 실행\'을 눌러주세요';
+    guideText.textContent = t('전술 카드를 선택한 후 \'전술 실행\'을 눌러주세요');
     this.guideEl = guideText;
     guideBar.appendChild(guideText);
 
     const execBtn = h('button', { className: 'btn btn-primary btn-execute disabled' });
-    execBtn.textContent = '전술 실행';
+    execBtn.textContent = t('전술 실행');
     execBtn.disabled = true;
     execBtn.addEventListener('click', () => {
       if (this.selectedTacticId) {
@@ -100,7 +101,7 @@ export class BattleScreen {
       el.dataset.tacticId = card.tactic.id;
 
       // 선택 배지
-      el.appendChild(h('div', { className: 'tactic-selected-badge' }, '✓ 선택'));
+      el.appendChild(h('div', { className: 'tactic-selected-badge' }, t('✓ 선택')));
 
       // 이미지
       const imgWrap = h('div', { className: 'tactic-card-img' });
@@ -118,20 +119,20 @@ export class BattleScreen {
       el.appendChild(imgWrap);
 
       // 이름
-      el.appendChild(h('div', { className: 'tactic-card-name' }, card.tactic.name));
+      el.appendChild(h('div', { className: 'tactic-card-name' }, t(card.tactic.name)));
 
       // 위험도
       const riskClass = card.tactic.risk === '낮음' ? 'low' : card.tactic.risk === '보통' ? 'mid' : 'high';
-      el.appendChild(h('div', { className: `tactic-card-risk ${riskClass}` }, `위험: ${card.tactic.risk}`));
+      el.appendChild(h('div', { className: `tactic-card-risk ${riskClass}` }, `${t('위험')}: ${t(card.tactic.risk)}`));
 
       // 설명
       if (card.tactic.description) {
-        el.appendChild(h('div', { className: 'tactic-card-desc' }, card.tactic.description));
+        el.appendChild(h('div', { className: 'tactic-card-desc' }, t(card.tactic.description)));
       }
 
       // 조건
       if (card.tactic.requirements) {
-        el.appendChild(h('div', { className: 'tactic-card-req' }, card.tactic.requirements));
+        el.appendChild(h('div', { className: 'tactic-card-req' }, t(card.tactic.requirements)));
       }
 
       // 클릭 → 선택
@@ -143,7 +144,7 @@ export class BattleScreen {
         }
         // 안내 문구 갱신
         if (this.guideEl) {
-          this.guideEl.textContent = `'${card.tactic.name}' 선택됨 — 전술 실행을 눌러 실행하세요`;
+          this.guideEl.textContent = `'${t(card.tactic.name)}' ${t('선택됨 — 전술 실행을 눌러 실행하세요')}`;
           this.guideEl.classList.add('active');
         }
         // 실행 버튼 활성화
@@ -197,7 +198,7 @@ export class BattleScreen {
         const fb = h('div');
         const fColor = faction === '유비' ? '#2d6a4f' : faction === '조조' ? '#1b1b3a' : '#c9184a';
         fb.style.cssText = `width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${fColor};color:#f5f0e8;font-size:14px;font-weight:700;`;
-        fb.textContent = gen?.name ?? genId;
+        fb.textContent = t(gen?.name ?? genId);
         imgContainer.appendChild(fb);
       };
       imgContainer.appendChild(img);
@@ -205,14 +206,14 @@ export class BattleScreen {
 
       // 이름 + 능력치
       const info = h('div', { className: 'battle-portrait-info' });
-      info.appendChild(h('div', { className: 'battle-portrait-name' }, gen?.name ?? genId));
+      info.appendChild(h('div', { className: 'battle-portrait-name' }, t(gen?.name ?? genId)));
       if (gen) {
         info.appendChild(h('div', { className: 'battle-portrait-stats' },
-          `통${gen.abilities.command} 무${gen.abilities.martial}`));
+          `${t('통')}${gen.abilities.command} ${t('무')}${gen.abilities.martial}`));
         const battleSkills = gen.skills.filter(s =>
           ['수전', '기략', '기습', '화공', '철벽', '돌격', '궁술'].includes(s));
         if (battleSkills.length > 0) {
-          info.appendChild(h('div', { className: 'battle-portrait-skills' }, battleSkills.join(' ')));
+          info.appendChild(h('div', { className: 'battle-portrait-skills' }, battleSkills.map(s => t(s)).join(' ')));
         }
       }
       wrap.appendChild(info);
@@ -226,7 +227,7 @@ export class BattleScreen {
     const troopPct = force.initialTroops > 0
       ? Math.round((force.troops / force.initialTroops) * 100) : 0;
     const troopRow = h('div', { className: 'battle-stat-row' });
-    troopRow.appendChild(h('span', { className: 'battle-stat-label' }, '병력'));
+    troopRow.appendChild(h('span', { className: 'battle-stat-label' }, t('병력')));
     const troopBar = h('div', { className: 'battle-stat-bar' });
     troopBar.appendChild(createGauge(
       force.troops, force.initialTroops,
@@ -237,7 +238,7 @@ export class BattleScreen {
     stats.appendChild(troopRow);
 
     const moraleRow = h('div', { className: 'battle-stat-row' });
-    moraleRow.appendChild(h('span', { className: 'battle-stat-label' }, '사기'));
+    moraleRow.appendChild(h('span', { className: 'battle-stat-label' }, t('사기')));
     const moraleBar = h('div', { className: 'battle-stat-bar' });
     moraleBar.appendChild(createGauge(
       force.morale, 100,
@@ -250,7 +251,7 @@ export class BattleScreen {
     if (force.formation) {
       const formRow = h('div');
       formRow.style.cssText = 'font-size:11px;color:var(--color-hanji);text-align:center;margin-top:var(--space-xs);';
-      formRow.textContent = `진형: ${force.formation}`;
+      formRow.textContent = `${t('진형')}: ${t(force.formation)}`;
       stats.appendChild(formRow);
     }
 
@@ -267,13 +268,13 @@ export class BattleScreen {
 
     const el = h('div', { className: 'battle-log-entry' });
     el.append(
-      h('span', { className: 'log-turn' }, `[턴${entry.battleTurn}] `),
-      h('span', { className: 'log-tactics' }, `아군: ${allyTactic} vs 적군: ${enemyTactic} `),
+      h('span', { className: 'log-turn' }, `[${t('턴')}${entry.battleTurn}] `),
+      h('span', { className: 'log-tactics' }, `${t('아군')}: ${t(allyTactic)} vs ${t('적군')}: ${t(enemyTactic)} `),
     );
     const dmg = h('div', { className: 'log-damage' });
     dmg.append(
-      h('span', { className: 'dmg-enemy' }, `적 -${enemyCasualties.toLocaleString()}`),
-      h('span', { className: 'dmg-ally' }, `아군 -${allyCasualties.toLocaleString()}`),
+      h('span', { className: 'dmg-enemy' }, `${t('적')} -${enemyCasualties.toLocaleString()}`),
+      h('span', { className: 'dmg-ally' }, `${t('아군')} -${allyCasualties.toLocaleString()}`),
     );
     el.appendChild(dmg);
     return el;
@@ -300,11 +301,11 @@ export class BattleScreen {
 
     // 타이틀
     overlay.appendChild(h('div', { className: 'turn-result-title' },
-      `◆ 제 ${lastLog.battleTurn} 전투턴 결과 ◆`));
+      `◆ ${t('제')} ${lastLog.battleTurn} ${t('전투턴 결과')} ◆`));
 
     // 전술 대결
     overlay.appendChild(h('div', { className: 'turn-result-tactics' },
-      `아군: ${allyTactic}  ⚔  적군: ${enemyTactic}`));
+      `${t('아군')}: ${t(allyTactic)}  ⚔  ${t('적군')}: ${t(enemyTactic)}`));
 
     // 서술
     const desc = h('div', { className: 'turn-result-desc' });
@@ -317,27 +318,27 @@ export class BattleScreen {
     // 적군 피해
     const enemyStat = h('div', { className: 'turn-result-stat enemy' });
     enemyStat.append(
-      h('div', { className: 'stat-label' }, '적군 피해'),
-      h('div', { className: 'stat-value' }, `-${enemyCasualties.toLocaleString()}명`),
+      h('div', { className: 'stat-label' }, t('적군 피해')),
+      h('div', { className: 'stat-value' }, `-${enemyCasualties.toLocaleString()}${t('명')}`),
       h('div', { className: `stat-morale ${enemyMorale >= 0 ? 'positive' : 'negative'}` },
-        `사기 ${enemyMorale >= 0 ? '+' : ''}${enemyMorale}`),
+        `${t('사기')} ${enemyMorale >= 0 ? '+' : ''}${enemyMorale}`),
     );
     statsGrid.appendChild(enemyStat);
 
     // 아군 피해
     const allyStat = h('div', { className: 'turn-result-stat ally' });
     allyStat.append(
-      h('div', { className: 'stat-label' }, '아군 피해'),
-      h('div', { className: 'stat-value' }, `-${allyCasualties.toLocaleString()}명`),
+      h('div', { className: 'stat-label' }, t('아군 피해')),
+      h('div', { className: 'stat-value' }, `-${allyCasualties.toLocaleString()}${t('명')}`),
       h('div', { className: `stat-morale ${allyMorale >= 0 ? 'positive' : 'negative'}` },
-        `사기 ${allyMorale >= 0 ? '+' : ''}${allyMorale}`),
+        `${t('사기')} ${allyMorale >= 0 ? '+' : ''}${allyMorale}`),
     );
     statsGrid.appendChild(allyStat);
 
     overlay.appendChild(statsGrid);
 
     // 계속 버튼
-    const btn = h('button', { className: 'btn btn-primary' }, '다음 전술 선택');
+    const btn = h('button', { className: 'btn btn-primary' }, t('다음 전술 선택'));
     btn.addEventListener('click', () => {
       this.render(this.container!, battle, generals, this.playerFaction);
     });
@@ -361,7 +362,7 @@ export class BattleScreen {
     const overlay = h('div', { className: 'battle-result' });
 
     // 승패 텍스트
-    const resultText = won ? '승리!' : isDraw ? '무승부' : '패배...';
+    const resultText = won ? t('승리!') : isDraw ? t('무승부') : t('패배...');
     const resultClass = won ? 'battle-result-win' : isDraw ? 'battle-result-draw' : 'battle-result-lose';
     overlay.appendChild(h('div', {
       className: `battle-result-text ${resultClass}`,
@@ -375,10 +376,10 @@ export class BattleScreen {
 
     const statsDiv = h('div', { className: 'battle-result-stats' });
     statsDiv.append(
-      h('div', {}, `소요 턴: ${battle.log.length}`),
-      h('div', {}, `아군 잔여 병력: ${allyForce.troops.toLocaleString()}명`),
-      h('div', {}, `아군 총 피해: ${totalAllyCasualties.toLocaleString()}명`),
-      h('div', {}, `적군 총 피해: ${totalEnemyCasualties.toLocaleString()}명`),
+      h('div', {}, `${t('소요 턴')}: ${battle.log.length}`),
+      h('div', {}, `${t('아군 잔여 병력')}: ${allyForce.troops.toLocaleString()}${t('명')}`),
+      h('div', {}, `${t('아군 총 피해')}: ${totalAllyCasualties.toLocaleString()}${t('명')}`),
+      h('div', {}, `${t('적군 총 피해')}: ${totalEnemyCasualties.toLocaleString()}${t('명')}`),
     );
     overlay.appendChild(statsDiv);
 
@@ -386,14 +387,14 @@ export class BattleScreen {
     if (battle.result?.capturedGenerals && battle.result.capturedGenerals.length > 0) {
       const names = battle.result.capturedGenerals.map(id => {
         const gen = this.lastGenerals.find(g => g.id === id);
-        return gen?.name ?? id;
+        return t(gen?.name ?? id);
       });
       overlay.appendChild(h('div', { className: 'battle-result-captured' },
-        `포로: ${names.join(', ')}`));
+        `${t('포로')}: ${names.join(', ')}`));
     }
 
     // 확인 버튼
-    const closeBtn = h('button', { className: 'btn' }, '확인');
+    const closeBtn = h('button', { className: 'btn' }, t('확인'));
     closeBtn.style.marginTop = 'var(--space-md)';
     closeBtn.addEventListener('click', () => this.onRetreat?.());
     overlay.appendChild(closeBtn);

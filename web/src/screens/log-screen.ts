@@ -1,4 +1,5 @@
 import { h } from '../renderer.js';
+import { t } from '../../../core/i18n/index.js';
 import type { GameState } from '../../../core/data/types.js';
 
 export class LogScreen {
@@ -20,7 +21,7 @@ export class LogScreen {
     const wrap = h('div');
     wrap.style.padding = 'var(--space-md)';
 
-    wrap.appendChild(h('div', { className: 'panel-header' }, '행동 · 이벤트 기록'));
+    wrap.appendChild(h('div', { className: 'panel-header' }, t('행동 · 이벤트 기록')));
 
     // Action log from game state
     const panel = h('div', { className: 'panel' });
@@ -31,7 +32,7 @@ export class LogScreen {
     const allEntries: Array<{ turn: number; text: string; type: string }> = [];
 
     for (const entry of state.actionLog) {
-      const actionDesc = `[행동] ${entry.action.type}/${(entry.action as Record<string, unknown>).action} → ${entry.result.description}`;
+      const actionDesc = `[${t('행동')}] ${entry.action.type}/${(entry.action as Record<string, unknown>).action} → ${entry.result.description}`;
       allEntries.push({ turn: entry.turn, text: actionDesc, type: 'action' });
     }
 
@@ -43,7 +44,7 @@ export class LogScreen {
     allEntries.sort((a, b) => b.turn - a.turn);
 
     if (allEntries.length === 0) {
-      panel.appendChild(h('div', { className: 'stat-row' }, '아직 기록이 없습니다.'));
+      panel.appendChild(h('div', { className: 'stat-row' }, t('아직 기록이 없습니다.')));
     }
 
     let lastTurn = -1;
@@ -52,7 +53,7 @@ export class LogScreen {
         const divider = h('div', { className: 'ink-divider' });
         const turnLabel = h('div');
         turnLabel.style.cssText = 'font-size:12px;font-weight:700;color:var(--color-gold);padding:var(--space-xs) 0;';
-        turnLabel.textContent = `── 턴 ${entry.turn} ──`;
+        turnLabel.textContent = `── ${t('턴')} ${entry.turn} ──`;
         panel.append(divider, turnLabel);
         lastTurn = entry.turn;
       }

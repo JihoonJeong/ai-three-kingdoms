@@ -483,19 +483,19 @@ describe('parseRecommendations', () => {
     expect(result.recommendations[0]).toEqual({
       action: { type: 'domestic', action: 'conscript', params: { city: 'gangha', scale: 'medium' } },
       confidence: 75,
-      description: '강하 징병',
+      description: '강하 중규모 징병',
     });
 
     expect(result.recommendations[1]).toEqual({
       action: { type: 'domestic', action: 'train', params: { city: 'hagu' } },
       confidence: 60,
-      description: '하구 훈련',
+      description: '하구 병사 훈련',
     });
 
     expect(result.recommendations[2]).toEqual({
       action: { type: 'diplomacy', action: 'send_envoy', params: { target: '손권', purpose: '우호 증진' } },
       confidence: 90,
-      description: '사신 파견',
+      description: '손권에게 사신 파견',
     });
   });
 

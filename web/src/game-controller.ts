@@ -6,6 +6,7 @@ import { EventSystem } from '../../core/engine/event-system.js';
 import { VictoryJudge } from '../../core/engine/victory-judge.js';
 import { executeBattleTurn, processBattleResult } from '../../core/engine/battle-resolver.js';
 import { createRedCliffsScenario, getScenarioEvents } from '../../core/data/scenarios/red-cliffs.js';
+import { applyDifficultyModifier } from '../../sim/difficulty-modifier.js';
 import type { FactionLLMClient } from '../../core/advisor/faction-llm-client.js';
 import type {
   GameState, GameAction, ActionResult, BattleState,
@@ -41,8 +42,9 @@ export class GameController {
     this.callbacks[event] = cb;
   }
 
-  startGame(): TurnStartResult {
+  startGame(difficulty: string = 'normal'): TurnStartResult {
     const scenario = createRedCliffsScenario('play-' + Date.now());
+    applyDifficultyModifier(scenario, difficulty as 'easy' | 'medium' | 'normal' | 'hard' | 'expert');
     this.stateManager = new GameStateManager(scenario);
     this.battleEngine = new BattleEngine(() => this.rng());
     this.actionExecutor = new ActionExecutor(this.stateManager, this.battleEngine, () => this.rng());

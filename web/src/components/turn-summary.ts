@@ -1,4 +1,5 @@
 import { h } from '../renderer.js';
+import { t } from '../../../core/i18n/index.js';
 import type { GameState, TurnEndResult, City } from '../../../core/data/types.js';
 
 interface CitySnapshot {
@@ -58,18 +59,18 @@ export class TurnSummary {
 
     // ─── Title ───
     const title = h('div', { className: 'turn-summary-title' });
-    title.innerHTML = `<span class="turn-number">턴 ${completedTurn}</span> 종료 보고`;
+    title.innerHTML = `<span class="turn-number">${t('턴')} ${completedTurn}</span> ${t('종료 보고')}`;
     modal.appendChild(title);
 
     // ─── Events ───
     if (turnResult.events.length > 0) {
-      const evtSection = this.createSection('발생한 사건', 'var(--color-warn)');
+      const evtSection = this.createSection(t('발생한 사건'), 'var(--color-warn)');
       for (const evt of turnResult.events) {
         const row = h('div', { className: 'turn-summary-event' });
-        row.innerHTML = `<strong>${evt.eventId}</strong>: ${evt.description}`;
+        row.innerHTML = `<strong>${evt.eventId}</strong>: ${t(evt.description)}`;
         if (evt.appliedEffects.length > 0) {
           const fx = h('div', { className: 'turn-summary-effects' });
-          fx.textContent = evt.appliedEffects.join(' / ');
+          fx.textContent = evt.appliedEffects.map(e => t(e)).join(' / ');
           row.appendChild(fx);
         }
         evtSection.appendChild(row);
@@ -80,20 +81,20 @@ export class TurnSummary {
     // ─── Player City Changes ───
     const playerCities = afterSnapshot.filter(c => c.owner === '유비');
     if (playerCities.length > 0) {
-      const citySection = this.createSection('아군 도시 변동', 'var(--color-liu)');
+      const citySection = this.createSection(t('아군 도시 변동'), 'var(--color-liu)');
       for (const after of playerCities) {
         const before = this.beforeSnapshot.find(b => b.id === after.id);
         if (!before) continue;
 
         const row = h('div', { className: 'turn-summary-city' });
-        const header = h('div', { className: 'turn-summary-city-name' }, after.name);
+        const header = h('div', { className: 'turn-summary-city-name' }, t(after.name));
         row.appendChild(header);
 
         const stats = h('div', { className: 'turn-summary-stats' });
-        stats.appendChild(this.statChip('식량', before.food, after.food));
-        stats.appendChild(this.statChip('병력', before.troops, after.troops));
-        stats.appendChild(this.statChip('사기', before.morale, after.morale));
-        stats.appendChild(this.statChip('훈련', before.training, after.training));
+        stats.appendChild(this.statChip(t('식량'), before.food, after.food));
+        stats.appendChild(this.statChip(t('병력'), before.troops, after.troops));
+        stats.appendChild(this.statChip(t('사기'), before.morale, after.morale));
+        stats.appendChild(this.statChip(t('훈련'), before.training, after.training));
         row.appendChild(stats);
         citySection.appendChild(row);
       }
@@ -101,7 +102,7 @@ export class TurnSummary {
     }
 
     // ─── Enemy Activity ───
-    const enemySection = this.createSection('적군 동태', 'var(--color-cao)');
+    const enemySection = this.createSection(t('적군 동태'), 'var(--color-cao)');
     const caoCities = afterSnapshot.filter(c => c.owner === '조조');
     let enemyChanges = false;
     for (const after of caoCities) {
@@ -111,29 +112,29 @@ export class TurnSummary {
       enemyChanges = true;
       const row = h('div', { className: 'turn-summary-enemy-row' });
       const parts: string[] = [];
-      if (after.food !== before.food) parts.push(`군량 확보 중`);
-      if (after.training > before.training) parts.push(`훈련 강화 (+${after.training - before.training})`);
-      row.textContent = `${after.name}: ${parts.join(', ')}`;
+      if (after.food !== before.food) parts.push(t('군량 확보 중'));
+      if (after.training > before.training) parts.push(`${t('훈련 강화')} (+${after.training - before.training})`);
+      row.textContent = `${t(after.name)}: ${parts.join(', ')}`;
       enemySection.appendChild(row);
     }
     if (!enemyChanges) {
-      enemySection.appendChild(h('div', { className: 'turn-summary-quiet' }, '특이 동향 없음'));
+      enemySection.appendChild(h('div', { className: 'turn-summary-quiet' }, t('특이 동향 없음')));
     }
     modal.appendChild(enemySection);
 
     // ─── Alliance Status ───
     const sunCities = afterSnapshot.filter(c => c.owner === '손권');
     if (sunCities.length > 0) {
-      const allySection = this.createSection('동맹군 (손권)', 'var(--color-sun)');
+      const allySection = this.createSection(t('동맹군 (손권)'), 'var(--color-sun)');
       for (const after of sunCities) {
         const before = this.beforeSnapshot.find(b => b.id === after.id);
         if (!before) continue;
         const parts: string[] = [];
-        if (after.training > before.training) parts.push(`훈련 강화 (+${after.training - before.training})`);
+        if (after.training > before.training) parts.push(`${t('훈련 강화')} (+${after.training - before.training})`);
         if (parts.length > 0) {
-          allySection.appendChild(h('div', {}, `${after.name}: ${parts.join(', ')}`));
+          allySection.appendChild(h('div', {}, `${t(after.name)}: ${parts.join(', ')}`));
         } else {
-          allySection.appendChild(h('div', { className: 'turn-summary-quiet' }, `${after.name}: 관망 중`));
+          allySection.appendChild(h('div', { className: 'turn-summary-quiet' }, `${t(after.name)}: ${t('관망 중')}`));
         }
       }
       modal.appendChild(allySection);
@@ -141,10 +142,10 @@ export class TurnSummary {
 
     // ─── State Changes (engine) ───
     if (turnResult.stateChanges.length > 0) {
-      const changeSection = this.createSection('경고', 'var(--color-fail)');
+      const changeSection = this.createSection(t('경고'), 'var(--color-fail)');
       for (const change of turnResult.stateChanges) {
         const row = h('div', { className: 'turn-summary-warning' });
-        row.textContent = change;
+        row.textContent = t(change);
         changeSection.appendChild(row);
       }
       modal.appendChild(changeSection);
@@ -152,12 +153,12 @@ export class TurnSummary {
 
     // ─── Next Turn Preview ───
     const preview = h('div', { className: 'turn-summary-preview' });
-    preview.textContent = turnResult.nextTurnPreview;
+    preview.textContent = t(turnResult.nextTurnPreview);
     modal.appendChild(preview);
 
     // ─── Dismiss Button ───
     const footer = h('div', { className: 'turn-summary-footer' });
-    const btn = h('button', { className: 'btn btn-primary' }, '다음 턴 시작');
+    const btn = h('button', { className: 'btn btn-primary' }, t('다음 턴 시작'));
     btn.addEventListener('click', () => {
       backdrop.remove();
       this.onDismissCb?.();

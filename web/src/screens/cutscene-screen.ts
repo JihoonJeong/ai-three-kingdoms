@@ -1,4 +1,5 @@
 import { h, assetUrl, typeText } from '../renderer.js';
+import { t } from '../../../core/i18n/index.js';
 import { EventCutscene } from '../../../core/ui/event-cutscene.js';
 
 export class CutsceneScreen {
@@ -39,7 +40,7 @@ export class CutsceneScreen {
     }
 
     // Skip button
-    const skipBtn = h('button', { className: 'btn btn-sm cutscene-skip' }, '건너뛰기');
+    const skipBtn = h('button', { className: 'btn btn-sm cutscene-skip' }, t('건너뛰기'));
     skipBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       this.cutscene.skip();
@@ -73,7 +74,7 @@ export class CutsceneScreen {
     screen.appendChild(content);
 
     // Hint
-    screen.appendChild(h('div', { className: 'cutscene-hint' }, '클릭하여 계속'));
+    screen.appendChild(h('div', { className: 'cutscene-hint' }, t('클릭하여 계속')));
 
     // Click to advance
     screen.addEventListener('click', () => this.advance());
@@ -81,7 +82,7 @@ export class CutsceneScreen {
     this.container.appendChild(screen);
 
     // Type the text
-    const text = this.cutscene.getCurrentText();
+    const text = t(this.cutscene.getCurrentText());
     typeText(this.textEl, text, 25);
   }
 
@@ -92,7 +93,7 @@ export class CutsceneScreen {
       this.finish();
     } else if (wasTyping && this.textEl) {
       // 타이핑 중 클릭 → 텍스트 즉시 완성 (재렌더 없음)
-      this.textEl.textContent = this.cutscene.getCurrentText();
+      this.textEl.textContent = t(this.cutscene.getCurrentText());
     } else {
       // 다음 스텝으로 진행
       this.renderCurrentStep();

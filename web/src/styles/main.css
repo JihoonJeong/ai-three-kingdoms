@@ -160,6 +160,14 @@ body {
 .footer .btn-primary,
 .overlay .btn-primary { background: var(--color-cinnabar); border-color: var(--color-cinnabar); }
 
+/* Secondary buttons in panels (e.g. game over screen) — ensure readability */
+.panel .btn-secondary {
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-charcoal);
+  color: var(--color-ink);
+}
+.panel .btn-secondary:hover { background: rgba(0, 0, 0, 0.12); }
+
 /* ─── Panels ────────────────────────────────────────── */
 .panel {
   background: rgba(245, 240, 232, 0.95);

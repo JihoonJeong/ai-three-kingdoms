@@ -548,6 +548,51 @@
   letter-spacing: 0.5px;
 }
 
+/* ─── 난이도 선택 ──────────────────────────────────── */
+
+.difficulty-option {
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: var(--space-sm) var(--space-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  background: #fff;
+}
+
+.difficulty-option:hover {
+  border-color: var(--color-gold);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.difficulty-option.selected {
+  border-color: var(--color-gold);
+  background: rgba(212, 160, 23, 0.06);
+}
+
+.difficulty-option-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 15px;
+  color: var(--color-ink);
+}
+
+.difficulty-option-desc {
+  font-size: 12px;
+  color: var(--color-charcoal);
+  margin-top: 2px;
+}
+
+.difficulty-recommended {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--color-success);
+  color: #fff;
+  font-weight: 600;
+}
+
 /* ─── 비용 경고 ────────────────────────────────────── */
 
 .setup-cost-warning {
@@ -558,4 +603,165 @@
   padding: var(--space-sm) var(--space-md);
   border-top: 1px solid rgba(0, 0, 0, 0.08);
   margin-top: var(--space-md);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* 오프닝 시퀀스                                           */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* ─── 페이지 인디케이터 ──────────────────────────────── */
+
+.opening-indicators {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xl);
+}
+
+.opening-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-charcoal);
+  opacity: 0.25;
+  transition: all var(--transition-fast);
+}
+
+.opening-dot.active {
+  opacity: 1;
+  background: var(--color-gold);
+  transform: scale(1.4);
+}
+
+/* ─── 오프닝 본문 ────────────────────────────────────── */
+
+.opening-body {
+  text-align: center;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-bottom: var(--space-lg);
+}
+
+.opening-body h2 {
+  font-size: 22px;
+  color: var(--color-ink);
+  margin-bottom: var(--space-md);
+  line-height: 1.4;
+}
+
+.opening-body p {
+  font-size: 14px;
+  color: var(--color-charcoal);
+  line-height: 1.7;
+  margin-bottom: var(--space-sm);
+}
+
+.opening-credit {
+  font-size: 12px;
+  color: var(--color-charcoal);
+  opacity: 0.7;
+  margin-top: var(--space-md);
+}
+
+.opening-quote {
+  font-size: 16px;
+  font-style: italic;
+  color: var(--color-ink);
+  line-height: 1.8;
+  margin-bottom: var(--space-sm);
+}
+
+.opening-quote-author {
+  font-size: 13px;
+  color: var(--color-charcoal);
+}
+
+/* ─── 토글 스위치 ────────────────────────────────────── */
+
+.opening-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  margin: var(--space-lg) 0;
+  padding: var(--space-md);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.opening-toggle-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.opening-toggle {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.opening-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.opening-toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--color-charcoal);
+  opacity: 0.3;
+  border-radius: 13px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.opening-toggle input:checked + .opening-toggle-track {
+  background: var(--color-liu);
+  opacity: 1;
+}
+
+.opening-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform var(--transition-fast);
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.opening-toggle input:checked ~ .opening-toggle-thumb {
+  transform: translateX(22px);
+}
+
+.opening-toggle-desc {
+  font-size: 12px;
+  color: var(--color-charcoal);
+  max-width: 200px;
+}
+
+/* ─── "다시 보지 않기" 체크박스 ──────────────────────── */
+
+.opening-skip-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  margin-top: var(--space-md);
+  font-size: 12px;
+  color: var(--color-charcoal);
+  cursor: pointer;
+}
+
+.opening-skip-check input {
+  accent-color: var(--color-charcoal);
 }

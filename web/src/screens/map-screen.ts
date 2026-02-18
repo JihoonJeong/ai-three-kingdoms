@@ -1,4 +1,5 @@
 import { h, assetUrl } from '../renderer.js';
+import { t } from '../../../core/i18n/index.js';
 import { StrategyMap } from '../../../core/ui/strategy-map.js';
 import type { GameState, FactionId } from '../../../core/data/types.js';
 
@@ -22,7 +23,7 @@ export class MapScreen {
     // Map background
     const bg = h('img') as HTMLImageElement;
     bg.src = assetUrl('assets/map/background.webp');
-    bg.alt = '전략 맵';
+    bg.alt = t('전략 맵');
     bg.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
     bg.onerror = () => {
       wrapper.style.background = 'linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%)';
@@ -65,7 +66,7 @@ export class MapScreen {
         label.setAttribute('stroke', '#1a1a2e');
         label.setAttribute('stroke-width', '0.4');
         label.setAttribute('paint-order', 'stroke');
-        label.textContent = marker.label;
+        label.textContent = t(marker.label);
 
         g.append(circle, label);
         g.addEventListener('click', () => this.onCitySelectCb?.(marker.id));
@@ -89,7 +90,7 @@ export class MapScreen {
         label.setAttribute('stroke', '#1a1a2e');
         label.setAttribute('stroke-width', '0.4');
         label.setAttribute('paint-order', 'stroke');
-        label.textContent = marker.label;
+        label.textContent = t(marker.label);
 
         g.append(diamond, label);
       }

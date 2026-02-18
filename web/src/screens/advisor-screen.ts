@@ -17,6 +17,8 @@ import {
 } from '../../../core/advisor/action-recommender.js';
 import type { GameState, GameAction } from '../../../core/data/types.js';
 import type { ChatMessage, AdvisorExpression } from '../../../core/advisor/types.js';
+import { t, tf, getLanguage } from '../../../core/i18n/index.js';
+import { MilestoneCoach } from '../../../sim/icl/milestone-coach.js';
 
 const MAX_HISTORY = 20;
 const LONG_RESPONSE_THRESHOLD = 300;
@@ -55,6 +57,8 @@ export class AdvisorScreen {
   private pendingActions: Array<{ description: string; success: boolean }> = [];
   private thinkMode = false;  // 신중한 답변 모드 (thinking)
   private thinkToggleEl: HTMLElement | null = null;
+  private coach: MilestoneCoach | null = null;
+  private coachStartInjected = false;
 
   /** AI 활성화 상태 설정 */
   setAiEnabled(enabled: boolean): void {
@@ -64,6 +68,12 @@ export class AdvisorScreen {
   /** 모델명 설정 */
   setModelName(name: string): void {
     this.modelName = name;
+  }
+
+  /** 전략 길잡이(MilestoneCoach) 활성화/비활성화 */
+  setCoaching(enabled: boolean): void {
+    this.coach = enabled ? new MilestoneCoach() : null;
+    this.coachStartInjected = false;
   }
 
   /** 설정 버튼 클릭 콜백 */
@@ -105,7 +115,7 @@ export class AdvisorScreen {
     // 설정 버튼
     const settingsBtn = h('button', { className: 'advisor-settings-btn' });
     settingsBtn.innerHTML = '&#9881;';  // gear icon
-    settingsBtn.title = 'AI 설정';
+    settingsBtn.title = t('AI 설정');
     settingsBtn.addEventListener('click', () => this.settingsClickCb?.());
     screen.appendChild(settingsBtn);
 
@@ -113,10 +123,10 @@ export class AdvisorScreen {
     if (!this.aiEnabled) {
       const banner = h('div', { className: 'advisor-offline-banner' });
       banner.innerHTML = `
-        <p>AI 책사가 연결되지 않았습니다.</p>
-        <p>설정에서 AI 제공자를 구성하면<br>제갈량의 전략 조언을 받을 수 있습니다.</p>
+        <p>${t('AI 책사가 연결되지 않았습니다.')}</p>
+        <p>${t('설정에서 AI 제공자를 구성하면')}<br>${t('제갈량의 전략 조언을 받을 수 있습니다.')}</p>
       `;
-      const configBtn = h('button', {}, 'AI 설정하기');
+      const configBtn = h('button', {}, t('AI 설정하기'));
       configBtn.addEventListener('click', () => this.settingsClickCb?.());
       banner.appendChild(configBtn);
       screen.appendChild(banner);
@@ -139,7 +149,7 @@ export class AdvisorScreen {
     this.inputEl = h('input', {
       className: 'advisor-input',
       type: 'text',
-      placeholder: '제갈량에게 질문하세요...',
+      placeholder: t('제갈량에게 질문하세요...'),
     }) as HTMLInputElement;
 
     this.inputEl.addEventListener('keydown', (e) => {
@@ -152,7 +162,7 @@ export class AdvisorScreen {
       }
     });
 
-    this.sendBtn = h('button', { className: 'advisor-send-btn' }, '전송') as HTMLButtonElement;
+    this.sendBtn = h('button', { className: 'advisor-send-btn' }, t('전송')) as HTMLButtonElement;
     this.sendBtn.addEventListener('click', () => {
       if (this.isStreaming) {
         this.stopStreaming();
@@ -164,7 +174,7 @@ export class AdvisorScreen {
     // thinking 모드 토글
     this.thinkToggleEl = h('button', {
       className: `advisor-think-toggle${this.thinkMode ? ' active' : ''}`,
-      title: this.thinkMode ? '신중한 답변 (느림)' : '빠른 응답',
+      title: this.thinkMode ? t('신중한 답변 (느림)') : t('빠른 응답'),
     }) as HTMLElement;
     this.thinkToggleEl.innerHTML = this.thinkMode ? '🧠' : '⚡';
     this.thinkToggleEl.addEventListener('click', () => {
@@ -172,7 +182,7 @@ export class AdvisorScreen {
       if (this.thinkToggleEl) {
         this.thinkToggleEl.innerHTML = this.thinkMode ? '🧠' : '⚡';
         this.thinkToggleEl.className = `advisor-think-toggle${this.thinkMode ? ' active' : ''}`;
-        this.thinkToggleEl.title = this.thinkMode ? '신중한 답변 (느림)' : '빠른 응답';
+        this.thinkToggleEl.title = this.thinkMode ? t('신중한 답변 (느림)') : t('빠른 응답');
       }
     });
 
@@ -221,8 +231,23 @@ export class AdvisorScreen {
     const prevActions = this.pendingActions.length > 0 ? [...this.pendingActions] : undefined;
     this.pendingActions = [];
 
-    const userMsg = buildBriefingUserMessage(state.turn, 'ko', prevActions);
-    this.addSystemMessage(`── 턴 ${state.turn} 시작 ──`);
+    let userMsg = buildBriefingUserMessage(state.turn, getLanguage(), prevActions);
+
+    // MilestoneCoach 주입 (AI에게만 전달, UI 미표시)
+    if (this.coach) {
+      // 첫 브리핑: 게임 시작 코칭
+      if (!this.coachStartInjected) {
+        this.coachStartInjected = true;
+        userMsg = this.coach.getStartCoaching() + '\n\n' + userMsg;
+      }
+      // 매 턴: 마일스톤 체크
+      const coaching = this.coach.check(state);
+      if (coaching) {
+        userMsg = coaching + '\n\n' + userMsg;
+      }
+    }
+
+    this.addSystemMessage(tf('── 턴 {turn} 시작 ──', { turn: state.turn }));
     await this.sendMessage(userMsg, true);
   }
 
@@ -403,13 +428,13 @@ export class AdvisorScreen {
       } catch { /* ignore */ }
 
       if (!health.hasApiKey) {
-        this.addSystemMessage('⚠ AI 제공자 미설정 — ⚙ 버튼을 눌러 설정하세요');
+        this.addSystemMessage(t('⚠ AI 제공자 미설정 — ⚙ 버튼을 눌러 설정하세요'));
       } else {
-        this.addSystemMessage('제갈량 공명이 대기 중입니다. 무엇이든 물어보십시오.');
+        this.addSystemMessage(t('제갈량 공명이 대기 중입니다. 무엇이든 물어보십시오.'));
       }
     } catch {
       this.serverAvailable = false;
-      this.addSystemMessage('⚠ 서버 연결 불가 — npm run dev 로 서버를 시작하세요');
+      this.addSystemMessage(t('⚠ 서버 연결 불가 — npm run dev 로 서버를 시작하세요'));
     }
   }
 
@@ -508,7 +533,7 @@ export class AdvisorScreen {
         this.longResponsePromptShown = false;
         this.updateSendButton();
       },
-    }, this.abortController.signal, 'ko', { think: this.thinkMode });
+    }, this.abortController.signal, getLanguage(), { think: this.thinkMode });
 
     // abort로 종료된 경우 (onComplete 안 불림)
     if (this.isStreaming) {
@@ -524,11 +549,11 @@ export class AdvisorScreen {
     this.recommendPanel.innerHTML = '';
     this.recommendPanel.style.display = '';
 
-    const title = h('div', { className: 'advisor-recommend-title' }, '제갈량의 추천');
+    const title = h('div', { className: 'advisor-recommend-title' }, t('제갈량의 추천'));
     this.recommendPanel.appendChild(title);
 
     const loading = h('div', { className: 'advisor-recommend-loading' });
-    loading.innerHTML = '<span class="advisor-thinking-dots"><span></span><span></span><span></span></span> <span>추천 행동 분석 중…</span>';
+    loading.innerHTML = `<span class="advisor-thinking-dots"><span></span><span></span><span></span></span> <span>${t('추천 행동 분석 중…')}</span>`;
     this.recommendPanel.appendChild(loading);
   }
 
@@ -544,7 +569,7 @@ export class AdvisorScreen {
 
     this.recommendPanel.style.display = '';
 
-    const title = h('div', { className: 'advisor-recommend-title' }, '제갈량의 추천');
+    const title = h('div', { className: 'advisor-recommend-title' }, t('제갈량의 추천'));
     this.recommendPanel.appendChild(title);
 
     const actionsRemaining = this.currentState?.actionsRemaining ?? 0;
@@ -579,13 +604,13 @@ export class AdvisorScreen {
       if (!isPass) {
         const btn = h('button', { className: 'advisor-recommend-btn' }) as HTMLButtonElement;
         if (isExecuted) {
-          btn.textContent = '완료';
+          btn.textContent = t('완료');
           btn.disabled = true;
         } else if (actionsRemaining <= 0) {
-          btn.textContent = '실행';
+          btn.textContent = t('실행');
           btn.disabled = true;
         } else {
-          btn.textContent = '실행';
+          btn.textContent = t('실행');
           btn.addEventListener('click', () => {
             if (rec.action && this.executeActionCb) {
               const success = this.executeActionCb(rec.action);
@@ -598,7 +623,7 @@ export class AdvisorScreen {
         }
         card.appendChild(btn);
       } else {
-        const label = h('span', { className: 'advisor-recommend-pass-label' }, '행동 안 함');
+        const label = h('span', { className: 'advisor-recommend-pass-label' }, t('행동 안 함'));
         card.appendChild(label);
       }
 
@@ -626,7 +651,7 @@ export class AdvisorScreen {
       if (thinkingEl) {
         const textEl = thinkingEl.querySelector('.advisor-thinking-text');
         if (textEl) {
-          textEl.textContent = `공명이 생각 중입니다… (${elapsed}초)`;
+          textEl.textContent = `${t('공명이 생각 중입니다…')} (${elapsed}${t('초')})`;
         }
       }
     }, 1000);
@@ -646,12 +671,12 @@ export class AdvisorScreen {
 
     const prompt = h('div', { className: 'advisor-long-prompt' });
 
-    const stopBtn = h('button', { className: 'advisor-long-btn stop' }, '충분합니다');
+    const stopBtn = h('button', { className: 'advisor-long-btn stop' }, t('충분합니다'));
     stopBtn.addEventListener('click', () => {
       this.stopStreaming();
     });
 
-    const continueBtn = h('button', { className: 'advisor-long-btn continue' }, '계속');
+    const continueBtn = h('button', { className: 'advisor-long-btn continue' }, t('계속'));
     continueBtn.addEventListener('click', () => {
       this.removeLongResponsePrompt();
     });
@@ -703,7 +728,7 @@ export class AdvisorScreen {
     const portrait = h('div', { className: 'advisor-portrait' });
     const img = h('img') as HTMLImageElement;
     img.src = assetUrl(getCharacterAssetPath('zhugeliang', 'thinking'));
-    img.alt = '제갈량';
+    img.alt = t('제갈량');
     img.onerror = () => {
       portrait.innerHTML = '';
       portrait.appendChild(h('div', { className: 'advisor-portrait-fallback' }, '亮'));
@@ -719,7 +744,7 @@ export class AdvisorScreen {
     // Bubble — 첫 토큰 전까지 "생각 중" 표시
     const bubble = h('div', { className: 'advisor-bubble' });
     const thinking = h('div', { className: 'advisor-thinking-inline' });
-    thinking.innerHTML = '<span class="advisor-thinking-dots"><span></span><span></span><span></span></span> <span class="advisor-thinking-text">공명이 생각 중입니다…</span>';
+    thinking.innerHTML = `<span class="advisor-thinking-dots"><span></span><span></span><span></span></span> <span class="advisor-thinking-text">${t('공명이 생각 중입니다…')}</span>`;
     bubble.appendChild(thinking);
     wrapper.appendChild(bubble);
 
@@ -766,10 +791,10 @@ export class AdvisorScreen {
     if (this.sendBtn) {
       this.sendBtn.disabled = false;
       if (this.isStreaming) {
-        this.sendBtn.textContent = '중단';
+        this.sendBtn.textContent = t('중단');
         this.sendBtn.className = 'advisor-send-btn streaming';
       } else {
-        this.sendBtn.textContent = '전송';
+        this.sendBtn.textContent = t('전송');
         this.sendBtn.className = 'advisor-send-btn';
       }
     }
@@ -798,7 +823,7 @@ export class AdvisorScreen {
         const portrait = h('div', { className: 'advisor-portrait' });
         const img = h('img') as HTMLImageElement;
         img.src = assetUrl(getCharacterAssetPath('zhugeliang', this.currentExpression));
-        img.alt = '제갈량';
+        img.alt = t('제갈량');
         img.onerror = () => {
           portrait.innerHTML = '';
           portrait.appendChild(h('div', { className: 'advisor-portrait-fallback' }, '亮'));

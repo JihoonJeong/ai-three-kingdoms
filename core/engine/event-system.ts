@@ -6,6 +6,7 @@ import type {
   ScenarioEvent, EventResult, EventEffect, GameState,
 } from '../data/types.js';
 import { GameStateManager } from './game-state.js';
+import { t, tf } from '../i18n/index.js';
 
 export class EventSystem {
   constructor(
@@ -94,19 +95,21 @@ export class EventSystem {
         for (const [key, value] of Object.entries(effect.data)) {
           stateManager.setFlag(`intel_${key}`, value);
         }
-        return `적 정보 갱신: ${JSON.stringify(effect.data)}`;
+        return tf('적 정보 갱신: {data}', { data: JSON.stringify(effect.data) });
       }
 
       case 'urgency_increase': {
         const current = stateManager.getFlag<number>('urgency') ?? 0;
         stateManager.setFlag('urgency', current + 1);
-        return '위기감 증가';
+        return t('위기감 증가');
       }
 
       case 'diplomacy_opportunity': {
         const current = stateManager.getFlag<number>('diplomacy_bonus') ?? 0;
         stateManager.setFlag('diplomacy_bonus', current + effect.bonus);
-        return `${effect.target}과(와)의 외교 기회 발생 (보너스 +${effect.bonus})`;
+        return tf('{target}과(와)의 외교 기회 발생 (보너스 +{bonus})', {
+          target: t(effect.target), bonus: effect.bonus,
+        });
       }
 
       case 'enemy_debuff': {
@@ -122,39 +125,47 @@ export class EventSystem {
           }
         }
         stateManager.setFlag(`debuff_${effect.target}_${effect.stat}`, effect.amount);
-        return `${effect.target} 진영 ${effect.stat} ${effect.amount}`;
+        return tf('{target} 진영 {stat} {amount}', {
+          target: t(effect.target), stat: t(effect.stat), amount: effect.amount,
+        });
       }
 
       case 'enemy_formation': {
         stateManager.setFlag('enemy_formation', effect.formation);
-        return `적 진형 변경: ${effect.formation}`;
+        return tf('적 진형 변경: {formation}', { formation: t(effect.formation) });
       }
 
       case 'unlock_tactic': {
         stateManager.setFlag(`tactic_bonus_${effect.tactic}`, effect.bonusMultiplier);
-        return `전술 해금: ${effect.tactic} (배율 x${effect.bonusMultiplier})`;
+        return tf('전술 해금: {tactic} (배율 x{multiplier})', {
+          tactic: t(effect.tactic), multiplier: effect.bonusMultiplier,
+        });
       }
 
       case 'weather_change': {
         stateManager.setFlag('weather', effect.weather);
-        return `날씨 변화: ${effect.weather}`;
+        return tf('날씨 변화: {weather}', { weather: t(effect.weather) });
       }
 
       case 'tactic_bonus': {
         const currentBonus = stateManager.getFlag<number>(`tactic_bonus_${effect.tactic}`) ?? 0;
         stateManager.setFlag(`tactic_power_${effect.tactic}`, currentBonus + effect.bonus);
-        return `${effect.tactic} 전술 효과 +${effect.bonus}%`;
+        return tf('{tactic} 전술 효과 +{bonus}%', {
+          tactic: t(effect.tactic), bonus: effect.bonus,
+        });
       }
 
       case 'special_tactic_available': {
         stateManager.setFlag(`special_tactic_${effect.tactic}`, true);
-        return `특수 전술 사용 가능: ${effect.tactic}`;
+        return tf('특수 전술 사용 가능: {tactic}', { tactic: t(effect.tactic) });
       }
 
       case 'pursuit_opportunity': {
         stateManager.setFlag('pursuit_target', effect.target);
         stateManager.setFlag('pursuit_location', effect.location);
-        return `추격 기회: ${effect.target} (${effect.location})`;
+        return tf('추격 기회: {target} ({location})', {
+          target: t(effect.target), location: t(effect.location),
+        });
       }
 
       case 'troop_loss': {
@@ -180,23 +191,27 @@ export class EventSystem {
           }
         }
         const lostPercent = Math.round(effect.ratio * 100);
-        return `${effect.target} ${city?.name ?? effect.city} 병력 ${lostPercent}% 손실`;
+        return tf('{target} {city} 병력 {percent}% 손실', {
+          target: t(effect.target), city: city ? t(city.name) : effect.city, percent: lostPercent,
+        });
       }
 
       case 'food_support': {
         const amount = (stateManager.getFlag('sunQuanFoodSupport') as number | undefined) ?? 0;
-        if (amount <= 0) return '식량 지원 없음';
+        if (amount <= 0) return t('식량 지원 없음');
 
         // 하구에 식량 지급 (적벽에 가장 가까운 유비 도시)
         const hagu = stateManager.getCity('hagu');
         if (hagu && hagu.owner === effect.target as any) {
           stateManager.updateCity('hagu', { food: hagu.food + amount });
         }
-        return `${effect.target}에게 군량 ${amount} 지원`;
+        return tf('{target}에게 군량 {amount} 지원', {
+          target: t(effect.target), amount,
+        });
       }
 
       default:
-        return '알 수 없는 효과';
+        return t('알 수 없는 효과');
     }
   }
 
@@ -230,26 +245,26 @@ export class EventSystem {
   private categorizeImpact(effects: EventEffect[]): string {
     const types = effects.map(e => e.type);
     if (types.includes('weather_change') || types.includes('enemy_formation')) {
-      return '전략적 변화';
+      return t('전략적 변화');
     }
     if (types.includes('diplomacy_opportunity')) {
-      return '외교 기회';
+      return t('외교 기회');
     }
     if (types.includes('enemy_debuff')) {
-      return '적 약화';
+      return t('적 약화');
     }
     if (types.includes('urgency_increase') || types.includes('enemy_intel_update')) {
-      return '위협 증가';
+      return t('위협 증가');
     }
     if (types.includes('special_tactic_available') || types.includes('unlock_tactic')) {
-      return '전술 기회';
+      return t('전술 기회');
     }
     if (types.includes('pursuit_opportunity')) {
-      return '추격 기회';
+      return t('추격 기회');
     }
     if (types.includes('food_support')) {
-      return '보급 지원';
+      return t('보급 지원');
     }
-    return '정보 갱신';
+    return t('정보 갱신');
   }
 }

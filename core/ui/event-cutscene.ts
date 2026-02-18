@@ -5,6 +5,7 @@
 
 import type { Expression, CutsceneStep, CutsceneState } from './types.js';
 import { getEventAssetPath, getCharacterAssetPath } from './types.js';
+import { t } from '../i18n/index.js';
 
 // ─── 이벤트별 컷신 데이터 ────────────────────────────
 
@@ -208,7 +209,7 @@ export class EventCutscene {
   /** 현재 텍스트. */
   getCurrentText(): string {
     if (!this.state) return '';
-    return this.state.steps[this.state.currentStep].text;
+    return t(this.state.steps[this.state.currentStep].text);
   }
 
   /** 현재 스텝의 자동 진행 시간 (ms). */

@@ -8,6 +8,7 @@
 
 import type { GameState, GameAction, FactionId } from '../data/types.js';
 import { getTotalTroopsOfCity } from '../data/types.js';
+import { t, tf } from '../i18n/index.js';
 
 // ─── 타입 정의 ─────────────────────────────────────────
 
@@ -81,7 +82,7 @@ const CAO_MILESTONES: MilestoneDefinition[] = [
     flag: 'cao_m_conscript1',
     promptInstruction: '남군에서 대규모 징집을 실시하라 (conscript, city: nanjun, scale: large)',
     actions: [{ type: 'domestic', action: 'conscript', params: { city: 'nanjun', scale: 'large' } }],
-    messages: ['조조: 남군에서 대규모 징집이 이루어지고 있습니다'],
+    messages: [t('조조: 남군에서 대규모 징집이 이루어지고 있습니다')],
     isSatisfied: (actions) => actions.some(
       a => a.action === 'conscript' && 'city' in a.params && a.params.city === 'nanjun',
     ),
@@ -100,7 +101,7 @@ const CAO_MILESTONES: MilestoneDefinition[] = [
         return {
           actions: [{ type: 'domestic', action: 'assign', params: { general: 'caoren', destination: 'nanjun' } }],
           deployments: [],
-          messages: ['정찰 보고: 조인 장군이 장릉에서 남군으로 이동했습니다'],
+          messages: [t('정찰 보고: 조인 장군이 장릉에서 남군으로 이동했습니다')],
         };
       }
       return { actions: [], deployments: [], messages: [] };
@@ -116,7 +117,7 @@ const CAO_MILESTONES: MilestoneDefinition[] = [
     flag: 'cao_m_conscript2',
     promptInstruction: '남군 병력을 보충하라 (conscript, city: nanjun, scale: medium)',
     actions: [{ type: 'domestic', action: 'conscript', params: { city: 'nanjun', scale: 'medium' } }],
-    messages: ['정찰 보고: 조조군이 강하 방면으로 병력을 이동시키고 있습니다'],
+    messages: [t('정찰 보고: 조조군이 강하 방면으로 병력을 이동시키고 있습니다')],
     isSatisfied: (actions) => actions.some(
       a => a.action === 'conscript' && 'city' in a.params && a.params.city === 'nanjun',
     ),
@@ -128,7 +129,7 @@ const CAO_MILESTONES: MilestoneDefinition[] = [
     flag: 'cao_m_march_south',
     promptInstruction: '수군을 이끌고 남하를 준비하라',
     // 메시지만 — 행동 없음
-    messages: ['정찰 보고: 조조의 대군이 수군을 이끌고 장강을 따라 남하하고 있습니다!'],
+    messages: [t('정찰 보고: 조조의 대군이 수군을 이끌고 장강을 따라 남하하고 있습니다!')],
   },
   {
     id: 'cao_chibi_deployed',
@@ -149,7 +150,7 @@ const CAO_MILESTONES: MilestoneDefinition[] = [
       return {
         actions: [],
         deployments,
-        messages: ['정찰 보고: 조조의 수군 도독 채모·장윤이 대함대를 이끌고 적벽에 진출했습니다!'],
+        messages: [t('정찰 보고: 조조의 수군 도독 채모·장윤이 대함대를 이끌고 적벽에 진출했습니다!')],
       };
     },
     isSatisfied: (_actions, deployments) => deployments.some(
@@ -172,7 +173,7 @@ const CAO_MILESTONES: MilestoneDefinition[] = [
       return {
         actions: [],
         deployments: [{ generalId: reinforcement.id, destination: 'chibi' }],
-        messages: [`정찰 보고: ${reinforcement.name}이(가) 적벽으로 합류했습니다. 조조군이 증강되고 있습니다!`],
+        messages: [tf('정찰 보고: {name}이(가) 적벽으로 합류했습니다. 조조군이 증강되고 있습니다!', { name: reinforcement.name })],
       };
     },
     isSatisfied: (_actions, deployments) => deployments.some(
@@ -204,7 +205,7 @@ const CAO_ADAPTIVE_RULES: AdaptiveRuleDefinition[] = [
       return {
         actions: [],
         deployments,
-        messages: ['정찰 보고: 동맹 체결에 반응하여 조조가 적벽 배치를 가속하고 있습니다!'],
+        messages: [t('정찰 보고: 동맹 체결에 반응하여 조조가 적벽 배치를 가속하고 있습니다!')],
       };
     },
     isSatisfied: (_actions, deployments) => deployments.some(
@@ -221,7 +222,7 @@ const CAO_ADAPTIVE_RULES: AdaptiveRuleDefinition[] = [
       state.turn >= 11 && state.turn <= 12,
     flagsToSet: {},
     promptInstruction: '적벽에서 연환진 배치를 유지하라',
-    messages: ['정찰 보고: 적벽의 조조 수군이 연환진을 펼치고 있습니다. 적벽으로의 진군을 서두르십시오!'],
+    messages: [t('정찰 보고: 적벽의 조조 수군이 연환진을 펼치고 있습니다. 적벽으로의 진군을 서두르십시오!')],
   },
   // 80: 강하 견제 공격 (Turn 14+, 4턴 쿨다운)
   {
@@ -253,7 +254,7 @@ const CAO_ADAPTIVE_RULES: AdaptiveRuleDefinition[] = [
           },
         }],
         deployments: [],
-        messages: ['조조군이 후방 견제를 위해 강하를 공격합니다! 적벽 결전을 서두르십시오!'],
+        messages: [t('조조군이 후방 견제를 위해 강하를 공격합니다! 적벽 결전을 서두르십시오!')],
       };
     },
     isSatisfied: (actions) => actions.some(a => a.action === 'march'),
@@ -302,7 +303,7 @@ const CAO_ADAPTIVE_RULES: AdaptiveRuleDefinition[] = [
           },
         }],
         deployments: [],
-        messages: ['정찰 보고: 조조군이 하구의 빈 틈을 노리고 강하를 공격합니다!'],
+        messages: [t('정찰 보고: 조조군이 하구의 빈 틈을 노리고 강하를 공격합니다!')],
       };
     },
     isSatisfied: (actions) => actions.some(a => a.action === 'march'),
@@ -343,7 +344,7 @@ const SUN_MILESTONES: MilestoneDefinition[] = [
       return {
         actions: [],
         deployments: [{ generalId: 'zhouyu', destination: 'chibi' }],
-        messages: ['손권: "주유 도독이 적벽 방면으로 출진합니다!"'],
+        messages: [t('손권: "주유 도독이 적벽 방면으로 출진합니다!"')],
       };
     },
     isSatisfied: (_actions, deployments) => deployments.some(
@@ -364,16 +365,18 @@ const SUN_ADAPTIVE_RULES: AdaptiveRuleDefinition[] = [
       if (!isFactionAlliedWithPlayer(state, '손권') || state.turn < 6) return false;
       const hagu = state.cities.find(c => c.id === 'hagu');
       if (!hagu || hagu.owner !== '유비' || hagu.food >= 6000) return false;
-      // 손권 자신의 식량이 충분할 때만 지원
+      // 손권 자신의 식량이 충분할 때만 지원 (난이도별 임계값)
       const sunFood = state.cities
         .filter(c => c.owner === '손권')
         .reduce((sum, c) => sum + c.food, 0);
-      return sunFood >= 5000;
+      const floor = typeof state.flags['sunQuanSupportFloor'] === 'number'
+        ? state.flags['sunQuanSupportFloor'] as number : 5000;
+      return sunFood >= floor;
     },
     flagsToSet: {},
     promptInstruction: '동맹 지원으로 유비에게 군량을 보내라 (gift, target: 유비, amount: 1000)',
     actions: [{ type: 'diplomacy', action: 'gift', params: { target: '유비', amount: 1000 } }],
-    messages: ['손권: 동맹 지원으로 군량을 보냈습니다'],
+    messages: [t('손권: 동맹 지원으로 군량을 보냈습니다')],
     isSatisfied: (actions) => actions.some(a => a.action === 'gift'),
   },
   // 40: 동맹 시 시상 훈련

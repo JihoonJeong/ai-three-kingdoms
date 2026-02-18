@@ -16,6 +16,7 @@ import { FactionAIEngine } from './faction-ai.js';
 import type { FactionLLMClient } from '../advisor/faction-llm-client.js';
 import type { BattleEngine } from './battle-engine.js';
 import type { ActionExecutor } from './action-executor.js';
+import { t, tf } from '../i18n/index.js';
 
 export class TurnManager {
   private llmClient?: FactionLLMClient;
@@ -95,7 +96,7 @@ export class TurnManager {
       return {
         events: eventResults,
         stateChanges,
-        nextTurnPreview: `게임 종료: ${gameOverCheck.reason}`,
+        nextTurnPreview: tf('게임 종료: {reason}', { reason: t(gameOverCheck.reason ?? '') }),
         gameOver: true,
         result,
       };
@@ -104,7 +105,9 @@ export class TurnManager {
     return {
       events: eventResults,
       stateChanges,
-      nextTurnPreview: `다음 턴은 ${nextSeason}입니다 (턴 ${nextState.turn}/${nextState.maxTurns})`,
+      nextTurnPreview: tf('다음 턴은 {season}입니다 (턴 {turn}/{max})', {
+        season: t(nextSeason), turn: nextState.turn, max: nextState.maxTurns,
+      }),
       gameOver: false,
       aiInitiatedBattle: aiResult.battle,
     };
@@ -119,11 +122,11 @@ export class TurnManager {
   private calculateSeason(turn: number): string {
     // 건안 13년 기준
     // 턴 1-4: 가을, 5-8: 초겨울, 9-13: 겨울, 14-17: 초봄, 18-20: 봄
-    if (turn <= 4) return '건안 13년 가을';
-    if (turn <= 8) return '건안 13년 초겨울';
-    if (turn <= 13) return '건안 13년 겨울';
-    if (turn <= 17) return '건안 14년 초봄';
-    return '건안 14년 봄';
+    if (turn <= 4) return t('건안 13년 가을');
+    if (turn <= 8) return t('건안 13년 초겨울');
+    if (turn <= 13) return t('건안 13년 겨울');
+    if (turn <= 17) return t('건안 14년 초봄');
+    return t('건안 14년 봄');
   }
 
   private consumeFood(): string[] {
@@ -155,11 +158,17 @@ export class TurnManager {
         this.stateManager.updateCity(city.id, {
           morale: Math.max(0, city.morale - 15),
         });
-        changes.push(`${city.name}: 군량 고갈! 병사 ${desertedInfantry}명 탈영, 민심 급락`);
+        changes.push(tf('{city}: 군량 고갈! 병사 {troops}명 탈영, 민심 급락', {
+          city: t(city.name), troops: desertedInfantry,
+        }));
       } else if (net < 0 && newFood < consumption * 3) {
-        changes.push(`${city.name}: 군량이 부족합니다 (생산 ${production}, 소비 ${consumption}, 잔여 ${newFood})`);
+        changes.push(tf('{city}: 군량이 부족합니다 (생산 {production}, 소비 {consumption}, 잔여 {remaining})', {
+          city: t(city.name), production, consumption, remaining: newFood,
+        }));
       } else if (net > 0) {
-        changes.push(`${city.name}: 식량 증산 (생산 ${production}, 소비 ${consumption}, +${net})`);
+        changes.push(tf('{city}: 식량 증산 (생산 {production}, 소비 {consumption}, +{net})', {
+          city: t(city.name), production, consumption, net,
+        }));
       }
     }
 

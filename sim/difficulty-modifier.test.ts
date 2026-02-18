@@ -75,7 +75,7 @@ describe('DifficultyModifier', () => {
     expect(state.flags['sunQuanFoodSupport']).toBe(0);
   });
 
-  it('expert: 남군 병력 120%, 유비 식량 80% (구 hard)', () => {
+  it('expert: 남군 병력 120%, 유비 식량 기본 (구 hard)', () => {
     const state = createRedCliffsScenario('test-expert');
     const nanjun = state.cities.find(c => c.id === 'nanjun')!;
     const origInfantry = nanjun.troops.infantry;
@@ -85,7 +85,7 @@ describe('DifficultyModifier', () => {
     applyDifficultyModifier(state, 'expert');
 
     expect(nanjun.troops.infantry).toBe(Math.floor(origInfantry * 1.2));
-    expect(gangha.food).toBe(Math.floor(origFood * 0.8));
+    expect(gangha.food).toBe(origFood);  // playerFoodMultiplier 1.0
     expect(state.flags['nanjunCollapseRatio']).toBe(0.3);
   });
 

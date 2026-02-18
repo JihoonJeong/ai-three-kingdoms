@@ -2,6 +2,7 @@ import { h, assetUrl, typeText } from '../renderer.js';
 import { getCharacterAssetPath } from '../../../core/ui/types.js';
 import { resolveExpression } from '../../../core/ui/character-display.js';
 import type { GameState } from '../../../core/data/types.js';
+import { t } from '../../../core/i18n/index.js';
 
 const BRIEFINGS: Record<string, string[]> = {
   preparation: [
@@ -17,6 +18,7 @@ const BRIEFINGS: Record<string, string[]> = {
     '승리 후에도 방심은 금물입니다. 형주의 안정이 우선입니다.',
   ],
 };
+// Note: BRIEFINGS values are used as t() keys at display time below
 
 export class AdvisorPanel {
   private visible = false;
@@ -28,7 +30,7 @@ export class AdvisorPanel {
     // Pick briefing
     const phase = state.phase ?? 'preparation';
     const pool = BRIEFINGS[phase] ?? BRIEFINGS.preparation;
-    const text = pool[Math.floor(Math.random() * pool.length)];
+    const text = t(pool[Math.floor(Math.random() * pool.length)]);
 
     // Determine expression
     const expression = resolveExpression('zhugeliang', {
@@ -42,16 +44,16 @@ export class AdvisorPanel {
     const portrait = h('div', { className: 'advisor-portrait' });
     const img = h('img') as HTMLImageElement;
     img.src = assetUrl(getCharacterAssetPath('zhugeliang', expression));
-    img.alt = '제갈량';
+    img.alt = t('제갈량');
     img.onerror = () => {
       portrait.style.cssText += 'background:#2d6a4f;display:flex;align-items:center;justify-content:center;';
-      portrait.innerHTML = '<span style="color:#f5f0e8;font-weight:700;">공명</span>';
+      portrait.innerHTML = `<span style="color:#f5f0e8;font-weight:700;">${t('공명')}</span>`;
     };
     portrait.appendChild(img);
 
     // Body
     const body = h('div', { className: 'advisor-body' });
-    body.appendChild(h('div', { className: 'advisor-name' }, '제갈량 (공명)'));
+    body.appendChild(h('div', { className: 'advisor-name' }, t('제갈량 (공명)')));
     const textEl = h('div', { className: 'advisor-text' });
     body.appendChild(textEl);
 

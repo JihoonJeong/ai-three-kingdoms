@@ -1,4 +1,5 @@
 import { h, assetUrl, createImg } from '../renderer.js';
+import { t } from '../../../core/i18n/index.js';
 import { getCharacterAssetPath } from '../../../core/ui/types.js';
 import type { GameState, General, FactionId, Grade } from '../../../core/data/types.js';
 
@@ -34,10 +35,10 @@ export class GeneralScreen {
     const filterBar = h('div');
     filterBar.style.cssText = 'display:flex;gap:var(--space-sm);padding:var(--space-md);border-bottom:1px solid rgba(0,0,0,0.1);';
 
-    for (const [value, label] of [['all', '전체'], ['유비', '유비군'], ['조조', '조조군'], ['손권', '손권군']] as const) {
+    for (const [value, label] of [['all', '전체'], ['유비', '유비군'], ['조조', '조조군'], ['손권', '손권군']] as [string, string][]) {
       const btn = h('button', {
         className: `btn btn-sm ${this.filterFaction === value ? 'btn-primary' : ''}`,
-      }, label);
+      }, t(label));
       btn.addEventListener('click', () => {
         this.filterFaction = value as FactionId | 'all';
         this.render(container, state);
@@ -83,26 +84,26 @@ export class GeneralScreen {
     const nameRow = h('div');
     nameRow.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-xs);';
     nameRow.append(
-      h('strong', {}, `${gen.name}`),
-      h('span', { className: `badge ${FACTION_BADGE[gen.faction] ?? ''}` }, gen.faction),
+      h('strong', {}, `${t(gen.name)}`),
+      h('span', { className: `badge ${FACTION_BADGE[gen.faction] ?? ''}` }, t(gen.faction)),
     );
     card.appendChild(nameRow);
 
     // Role + condition
     const metaRow = h('div');
     metaRow.style.cssText = 'font-size:12px;color:var(--color-charcoal);margin-bottom:var(--space-sm);';
-    metaRow.textContent = `${gen.role} · ${gen.courtesyName} · ${gen.condition}`;
+    metaRow.textContent = `${t(gen.role)} · ${t(gen.courtesyName)} · ${t(gen.condition)}`;
     card.appendChild(metaRow);
 
     // Abilities
     const abilGrid = h('div');
     abilGrid.style.cssText = 'display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-bottom:var(--space-sm);';
     abilGrid.append(
-      abilityCell('통솔', gen.abilities.command),
-      abilityCell('무력', gen.abilities.martial),
-      abilityCell('지력', gen.abilities.intellect),
-      abilityCell('정치', gen.abilities.politics),
-      abilityCell('매력', gen.abilities.charisma),
+      abilityCell(t('통솔'), gen.abilities.command),
+      abilityCell(t('무력'), gen.abilities.martial),
+      abilityCell(t('지력'), gen.abilities.intellect),
+      abilityCell(t('정치'), gen.abilities.politics),
+      abilityCell(t('매력'), gen.abilities.charisma),
     );
     card.appendChild(abilGrid);
 
@@ -110,7 +111,7 @@ export class GeneralScreen {
     if (gen.skills.length > 0) {
       const skillRow = h('div');
       skillRow.style.cssText = 'font-size:11px;color:var(--color-charcoal);';
-      skillRow.textContent = gen.skills.join(', ');
+      skillRow.textContent = gen.skills.map(s => t(s)).join(', ');
       card.appendChild(skillRow);
     }
 
@@ -119,7 +120,7 @@ export class GeneralScreen {
     if (loc) {
       const locRow = h('div');
       locRow.style.cssText = 'font-size:11px;margin-top:var(--space-xs);color:var(--color-info);';
-      locRow.textContent = `주둔: ${loc.name}`;
+      locRow.textContent = `${t('주둔:')} ${t(loc.name)}`;
       card.appendChild(locRow);
     }
 

@@ -3,6 +3,7 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 import type { GameState, GameResult, GameOverCheck, VictoryGrade } from '../data/types.js';
+import { t } from '../i18n/index.js';
 
 export class VictoryJudge {
   checkGameOver(state: GameState): GameOverCheck {
@@ -12,8 +13,8 @@ export class VictoryJudge {
       return {
         isOver: true,
         reason: liubei.condition === '사망'
-          ? '유비가 전사했습니다. 게임 오버.'
-          : '유비가 포로가 되었습니다. 게임 오버.',
+          ? t('유비가 전사했습니다. 게임 오버.')
+          : t('유비가 포로가 되었습니다. 게임 오버.'),
       };
     }
 
@@ -22,7 +23,7 @@ export class VictoryJudge {
     if (playerCities.length === 0) {
       return {
         isOver: true,
-        reason: '모든 거점을 잃었습니다. 게임 오버.',
+        reason: t('모든 거점을 잃었습니다. 게임 오버.'),
       };
     }
 
@@ -30,7 +31,7 @@ export class VictoryJudge {
     if (state.turn >= state.maxTurns) {
       return {
         isOver: true,
-        reason: '최대 턴에 도달했습니다. 게임 종료.',
+        reason: t('최대 턴에 도달했습니다. 게임 종료.'),
       };
     }
 
@@ -67,8 +68,8 @@ export class VictoryJudge {
     if (liubei && (liubei.condition === '사망' || liubei.condition === '포로')) {
       return {
         grade: 'F',
-        title: '패망',
-        description: '유비가 쓰러졌습니다. 한실 부흥의 꿈은 여기서 끝입니다.',
+        title: t('패망'),
+        description: t('유비가 쓰러졌습니다. 한실 부흥의 꿈은 여기서 끝입니다.'),
         stats,
       };
     }
@@ -77,8 +78,8 @@ export class VictoryJudge {
     if (state.cities.filter(c => c.owner === '유비').length === 0) {
       return {
         grade: 'F',
-        title: '항복',
-        description: '모든 거점을 잃었습니다. 유비군은 역사 속으로 사라집니다.',
+        title: t('항복'),
+        description: t('모든 거점을 잃었습니다. 유비군은 역사 속으로 사라집니다.'),
         stats,
       };
     }
@@ -89,30 +90,30 @@ export class VictoryJudge {
 
     if (chibiVictory && nanjunCaptured && jianglingCaptured && allianceMaintained && generalsLost === 0) {
       grade = 'S';
-      title = '천하삼분의 기틀';
-      description = '적벽 대승, 형주 완전 장악, 동맹 건재, 장수 무손실. 천하삼분지계의 완벽한 첫 걸음입니다.';
+      title = t('천하삼분의 기틀');
+      description = t('적벽 대승, 형주 완전 장악, 동맹 건재, 장수 무손실. 천하삼분지계의 완벽한 첫 걸음입니다.');
     } else if (chibiVictory && nanjunCaptured && allianceMaintained) {
       grade = 'A';
-      title = '형주의 주인';
-      description = '적벽에서 승리하고 남군을 확보했습니다. 손권과의 동맹도 유지됩니다. 훌륭한 성과입니다.';
+      title = t('형주의 주인');
+      description = t('적벽에서 승리하고 남군을 확보했습니다. 손권과의 동맹도 유지됩니다. 훌륭한 성과입니다.');
     } else if (chibiVictory && citiesCaptured > 0) {
       grade = 'B';
-      title = '적벽의 영웅';
-      description = '적벽에서 승리하고 영토를 일부 확보했습니다. 더 많은 것을 얻을 수 있었지만, 나쁘지 않습니다.';
+      title = t('적벽의 영웅');
+      description = t('적벽에서 승리하고 영토를 일부 확보했습니다. 더 많은 것을 얻을 수 있었지만, 나쁘지 않습니다.');
     } else if (chibiVictory) {
       grade = 'C';
-      title = '아쉬운 승리';
-      description = '적벽에서 승리했으나 후속 영토 확보에 실패했습니다. 전쟁은 이겼으나 평화의 과실을 놓쳤습니다.';
+      title = t('아쉬운 승리');
+      description = t('적벽에서 승리했으나 후속 영토 확보에 실패했습니다. 전쟁은 이겼으나 평화의 과실을 놓쳤습니다.');
     } else if (!chibiVictory && liubei?.condition === '양호') {
       grade = 'D';
-      title = '패배 속의 생존';
+      title = t('패배 속의 생존');
       description = citiesCaptured >= 3
-        ? '적벽 대전을 거치지 않았으나, 독자적인 길로 천하를 호령했습니다.'
-        : '적벽에서 패했으나 유비는 살아남았습니다. 다시 일어설 수 있는 기회는 남아있습니다.';
+        ? t('적벽 대전을 거치지 않았으나, 독자적인 길로 천하를 호령했습니다.')
+        : t('적벽에서 패했으나 유비는 살아남았습니다. 다시 일어설 수 있는 기회는 남아있습니다.');
     } else {
       grade = 'F';
-      title = '완패';
-      description = '전쟁에 패하고 유비군은 와해되었습니다.';
+      title = t('완패');
+      description = t('전쟁에 패하고 유비군은 와해되었습니다.');
     }
 
     return { grade, title, description, stats };

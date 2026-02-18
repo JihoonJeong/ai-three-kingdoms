@@ -10,6 +10,7 @@ import {
   GRADE_VALUES, TACTIC_DATA, BATTLE_DEFEAT_TROOP_RATIO,
   BATTLE_DEFEAT_MORALE, MAX_BATTLE_TURNS,
 } from '../data/types.js';
+import { t, tf } from '../i18n/index.js';
 
 export interface BattleTurnResult {
   log: BattleTurnLog;
@@ -269,7 +270,7 @@ export class BattleEngine {
         name: TACTIC_DATA['fire_attack']!.name,
         description: TACTIC_DATA['fire_attack']!.description,
         risk: TACTIC_DATA['fire_attack']!.risk,
-        requirements: battle.weather === '동남풍' ? null : '동남풍 시 효과 극대화',
+        requirements: battle.weather === '동남풍' ? null : t('동남풍 시 효과 극대화'),
       });
     }
 
@@ -280,7 +281,7 @@ export class BattleEngine {
       name: TACTIC_DATA['ambush']!.name,
       description: TACTIC_DATA['ambush']!.description,
       risk: TACTIC_DATA['ambush']!.risk,
-      requirements: '사전 매복 배치 시 효과 증가',
+      requirements: t('사전 매복 배치 시 효과 증가'),
     });
 
     // 수성: 방어 시
@@ -298,7 +299,7 @@ export class BattleEngine {
       name: TACTIC_DATA['feigned_retreat']!.name,
       description: TACTIC_DATA['feigned_retreat']!.description,
       risk: TACTIC_DATA['feigned_retreat']!.risk,
-      requirements: '지략 B 이상 장수 필요',
+      requirements: t('지략 B 이상 장수 필요'),
     });
 
     // 돌격: 무력 A 이상
@@ -307,7 +308,7 @@ export class BattleEngine {
       name: TACTIC_DATA['charge']!.name,
       description: TACTIC_DATA['charge']!.description,
       risk: TACTIC_DATA['charge']!.risk,
-      requirements: '무력 A 이상 장수 필요',
+      requirements: t('무력 A 이상 장수 필요'),
     });
 
     // 화선: 수상전
@@ -317,7 +318,7 @@ export class BattleEngine {
         name: TACTIC_DATA['fire_ships']!.name,
         description: TACTIC_DATA['fire_ships']!.description,
         risk: TACTIC_DATA['fire_ships']!.risk,
-        requirements: battle.weather === '동남풍' ? null : '동남풍 시 효과 극대화',
+        requirements: battle.weather === '동남풍' ? null : t('동남풍 시 효과 극대화'),
       });
     }
 
@@ -397,7 +398,7 @@ export class BattleEngine {
       winner: winner.faction,
       loser: loser.faction,
       capturedGenerals: captured,
-      spoils: loser.troops > 0 ? [`잔여 병력 ${loser.troops}명 확보`] : [],
+      spoils: loser.troops > 0 ? [tf('잔여 병력 {troops}명 확보', { troops: loser.troops })] : [],
       territoryChange: null, // 호출자가 설정
     };
   }
@@ -409,16 +410,19 @@ export class BattleEngine {
     defenderCasualties: number,
     attackerWinning: boolean,
   ): string {
+    const aTactic = t(attackerTactic);
+    const dTactic = t(defenderTactic);
+
     if (attackerTactic === '화공' || attackerTactic === '화선') {
       if (attackerWinning) {
-        return `${attackerTactic}이(가) 적진을 휩쓸었습니다! 방어측 피해 ${defenderCasualties}명.`;
+        return tf('{tactic}이(가) 적진을 휩쓸었습니다! 방어측 피해 {casualties}명.', { tactic: aTactic, casualties: defenderCasualties });
       }
-      return `${attackerTactic}을(를) 시도했으나 효과가 미미합니다. 공격측 피해 ${attackerCasualties}명.`;
+      return tf('{tactic}을(를) 시도했으나 효과가 미미합니다. 공격측 피해 {casualties}명.', { tactic: aTactic, casualties: attackerCasualties });
     }
 
     if (attackerWinning) {
-      return `공격측의 ${attackerTactic}이(가) 방어측의 ${defenderTactic}을(를) 제압했습니다. 방어측 -${defenderCasualties}명, 공격측 -${attackerCasualties}명.`;
+      return tf('공격측의 {aTactic}이(가) 방어측의 {dTactic}을(를) 제압했습니다. 방어측 -{dCas}명, 공격측 -{aCas}명.', { aTactic, dTactic, dCas: defenderCasualties, aCas: attackerCasualties });
     }
-    return `방어측의 ${defenderTactic}이(가) 공격측의 ${attackerTactic}을(를) 막아냈습니다. 공격측 -${attackerCasualties}명, 방어측 -${defenderCasualties}명.`;
+    return tf('방어측의 {dTactic}이(가) 공격측의 {aTactic}을(를) 막아냈습니다. 공격측 -{aCas}명, 방어측 -{dCas}명.', { dTactic, aTactic, aCas: attackerCasualties, dCas: defenderCasualties });
   }
 }

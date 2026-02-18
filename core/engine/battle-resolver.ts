@@ -8,6 +8,7 @@
 import type { BattleState, FactionId } from '../data/types.js';
 import type { GameStateManager } from './game-state.js';
 import type { BattleEngine } from './battle-engine.js';
+import { tf } from '../i18n/index.js';
 
 /**
  * 전투 턴 1회 실행.
@@ -157,10 +158,10 @@ export function processBattleResult(
       result: {
         success: battle.result.winner === playerFaction,
         description: battle.result.winner === playerFaction
-          ? `${locName} 전투에서 승리했습니다!`
+          ? tf('{loc} 전투에서 승리했습니다!', { loc: locName })
           : battle.result.winner === null
-            ? `${locName} 전투가 무승부로 끝났습니다.`
-            : `${locName} 전투에서 패배했습니다.`,
+            ? tf('{loc} 전투가 무승부로 끝났습니다.', { loc: locName })
+            : tf('{loc} 전투에서 패배했습니다.', { loc: locName }),
         sideEffects: [],
         remainingActions: state.actionsRemaining,
         battleTriggered: battle,

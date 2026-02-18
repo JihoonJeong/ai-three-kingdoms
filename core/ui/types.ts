@@ -97,8 +97,15 @@ export interface CutsceneState {
 
 export const ASSET_BASE = 'assets';
 
+/** 시나리오 ID → 에셋 폴더명 매핑 (ID와 폴더명이 다른 경우) */
+const ASSET_ID_MAP: Record<string, string> = {
+  zhaoyun: 'zhaozilong',
+  jianshou: 'jianyong',
+};
+
 export function getCharacterAssetPath(generalId: string, expression: Expression): string {
-  return `${ASSET_BASE}/characters/${generalId}/${expression}.webp`;
+  const folder = ASSET_ID_MAP[generalId] ?? generalId;
+  return `${ASSET_BASE}/characters/${folder}/${expression}.webp`;
 }
 
 export function getEventAssetPath(eventKey: string): string {

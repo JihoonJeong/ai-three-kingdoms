@@ -20,6 +20,7 @@ import {
   type MilestoneDefinition, type AdaptiveRuleDefinition,
   type DeploymentSpec, type MilestoneResolution,
 } from './milestones.js';
+import { t, tf } from '../i18n/index.js';
 
 // ─── 타입 정의 ─────────────────────────────────────────
 
@@ -349,7 +350,7 @@ class CaoStrategy implements FactionStrategy {
           type: 'domestic', action: 'conscript',
           params: { city: 'nanjun', scale: 'large' },
         });
-        plan.messages.push('조조: 남군에서 대규모 징집이 이루어지고 있습니다');
+        plan.messages.push(t('조조: 남군에서 대규모 징집이 이루어지고 있습니다'));
       },
     },
     {
@@ -362,7 +363,7 @@ class CaoStrategy implements FactionStrategy {
             type: 'domestic', action: 'assign',
             params: { general: 'caoren', destination: 'nanjun' },
           });
-          plan.messages.push('정찰 보고: 조인 장군이 장릉에서 남군으로 이동했습니다');
+          plan.messages.push(t('정찰 보고: 조인 장군이 장릉에서 남군으로 이동했습니다'));
         }
       },
     },
@@ -374,14 +375,14 @@ class CaoStrategy implements FactionStrategy {
           type: 'domestic', action: 'conscript',
           params: { city: 'nanjun', scale: 'medium' },
         });
-        plan.messages.push('정찰 보고: 조조군이 강하 방면으로 병력을 이동시키고 있습니다');
+        plan.messages.push(t('정찰 보고: 조조군이 강하 방면으로 병력을 이동시키고 있습니다'));
       },
     },
     {
       turn: 8,
       flag: 'cao_m_march_south',
       apply: (_state, _ctx, plan) => {
-        plan.messages.push('정찰 보고: 조조의 대군이 수군을 이끌고 장강을 따라 남하하고 있습니다!');
+        plan.messages.push(t('정찰 보고: 조조의 대군이 수군을 이끌고 장강을 따라 남하하고 있습니다!'));
       },
     },
     {
@@ -396,7 +397,7 @@ class CaoStrategy implements FactionStrategy {
             plan.deployments.push({ generalId: id, destination: 'chibi' });
           }
         }
-        plan.messages.push('정찰 보고: 조조의 수군 도독 채모·장윤이 대함대를 이끌고 적벽에 진출했습니다!');
+        plan.messages.push(t('정찰 보고: 조조의 수군 도독 채모·장윤이 대함대를 이끌고 적벽에 진출했습니다!'));
       },
     },
     {
@@ -410,7 +411,7 @@ class CaoStrategy implements FactionStrategy {
         );
         if (reinforcement) {
           plan.deployments.push({ generalId: reinforcement.id, destination: 'chibi' });
-          plan.messages.push(`정찰 보고: ${reinforcement.name}이(가) 적벽으로 합류했습니다. 조조군이 증강되고 있습니다!`);
+          plan.messages.push(tf('정찰 보고: {name}이(가) 적벽으로 합류했습니다. 조조군이 증강되고 있습니다!', { name: reinforcement.name }));
         }
       },
     },
@@ -436,7 +437,7 @@ class CaoStrategy implements FactionStrategy {
           }
         }
         plan.flagsToSet['cao_chibi_deployed'] = true;
-        plan.messages.push('정찰 보고: 동맹 체결에 반응하여 조조가 적벽 배치를 가속하고 있습니다!');
+        plan.messages.push(t('정찰 보고: 동맹 체결에 반응하여 조조가 적벽 배치를 가속하고 있습니다!'));
       },
     },
     // 90: 적벽 대치 압박 메시지 (Turn 11-12)
@@ -445,7 +446,7 @@ class CaoStrategy implements FactionStrategy {
       condition: (state, ctx) =>
         !!state.flags['cao_chibi_deployed'] && ctx.turn >= 11 && ctx.turn <= 12,
       apply: (_state, _ctx, plan) => {
-        plan.messages.push('정찰 보고: 적벽의 조조 수군이 연환진을 펼치고 있습니다. 적벽으로의 진군을 서두르십시오!');
+        plan.messages.push(t('정찰 보고: 적벽의 조조 수군이 연환진을 펼치고 있습니다. 적벽으로의 진군을 서두르십시오!'));
       },
     },
     // 80: 강하 견제 공격 (Turn 14+, 4턴 쿨다운)
@@ -473,7 +474,7 @@ class CaoStrategy implements FactionStrategy {
           },
         });
         plan.flagsToSet['cao_last_attack_turn'] = ctx.turn;
-        plan.messages.push('조조군이 후방 견제를 위해 강하를 공격합니다! 적벽 결전을 서두르십시오!');
+        plan.messages.push(t('조조군이 후방 견제를 위해 강하를 공격합니다! 적벽 결전을 서두르십시오!'));
       },
     },
     // 70: 남군 병력 < 15000 시 보충 징집
@@ -524,7 +525,7 @@ class CaoStrategy implements FactionStrategy {
           },
         });
         plan.flagsToSet['cao_last_attack_turn'] = ctx.turn;
-        plan.messages.push('정찰 보고: 조조군이 하구의 빈 틈을 노리고 강하를 공격합니다!');
+        plan.messages.push(t('정찰 보고: 조조군이 하구의 빈 틈을 노리고 강하를 공격합니다!'));
       },
     },
     // 50: 남군 병력 < 12000 && food > 3000 시 소규모 징집
@@ -584,7 +585,7 @@ class CaoStrategy implements FactionStrategy {
     if (state.flags['cao_chibi_deployed'] && ctx.turn >= 13 && ctx.turn <= 14) {
       const hasEscalationMsg = plan.messages.some(m => m.includes('적벽'));
       if (!hasEscalationMsg) {
-        plan.messages.push('긴급 보고: 조조 대군이 적벽에서 하구를 향해 진격 태세를 갖추고 있습니다!');
+        plan.messages.push(t('긴급 보고: 조조 대군이 적벽에서 하구를 향해 진격 태세를 갖추고 있습니다!'));
       }
     }
 
@@ -618,19 +619,24 @@ class SunStrategy implements FactionStrategy {
       if (zhouyu) {
         plan.deployments.push({ generalId: 'zhouyu', destination: 'chibi' });
         plan.flagsToSet['sun_chibi_support'] = true;
-        plan.messages.push('손권: "주유 도독이 적벽 방면으로 출진합니다!"');
+        plan.messages.push(t('손권: "주유 도독이 적벽 방면으로 출진합니다!"'));
       }
     }
 
     // 적응 규칙: 동맹 시 식량 지원 (우선순위 80)
     if (ctx.isAlliedWithPlayer && ctx.turn >= 6) {
       const hagu = state.cities.find(c => c.id === 'hagu');
-      if (hagu && hagu.owner === '유비' && hagu.food < 6000) {
+      const sunFood = state.cities
+        .filter(c => c.owner === '손권')
+        .reduce((sum, c) => sum + c.food, 0);
+      const floor = typeof state.flags['sunQuanSupportFloor'] === 'number'
+        ? state.flags['sunQuanSupportFloor'] as number : 5000;
+      if (hagu && hagu.owner === '유비' && hagu.food < 6000 && sunFood >= floor) {
         plan.actions.push({
           type: 'diplomacy', action: 'gift',
           params: { target: '유비', amount: 1000 },
         });
-        plan.messages.push('손권: 동맹 지원으로 군량을 보냈습니다');
+        plan.messages.push(t('손권: 동맹 지원으로 군량을 보냈습니다'));
       }
     }
 

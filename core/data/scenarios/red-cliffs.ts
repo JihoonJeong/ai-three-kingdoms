@@ -23,7 +23,7 @@ const CITIES: City[] = [
     morale: 70,
     training: 60,
     adjacent: ['hagu', 'nanjun'],
-    description: '장강 남안의 거점. 유비군의 본거지.',
+    description: '장강 남안의 거점.',
     strategicNote: '수군 기지로 활용 가능. 하구와 함께 장강 방어선 형성.',
   },
   {
@@ -53,7 +53,7 @@ const CITIES: City[] = [
     morale: 75,
     training: 70,
     adjacent: ['hagu', 'chibi'],
-    description: '손권군의 전방 기지. 주유가 지휘.',
+    description: '장강 중류의 군사 거점.',
     strategicNote: '동맹군 주력 집결지. 손권과의 외교가 이곳의 협력을 결정.',
   },
   {
@@ -68,7 +68,7 @@ const CITIES: City[] = [
     morale: 80,
     training: 75,
     adjacent: ['gangha', 'jiangling'],
-    description: '형주의 핵심 도시. 현재 조조가 장악.',
+    description: '형주의 핵심 도시.',
     strategicNote: '적벽 승리 후 최우선 점령 대상. 형주 지배의 관건.',
   },
   {

@@ -12,6 +12,7 @@ import type {
 } from '../data/types.js';
 import type { ActionJSON, AdvisorResponse, FactionTurnJSON } from './types.js';
 import { matchSemanticActions } from './semantic-matcher.js';
+import { t, tf } from '../i18n/index.js';
 
 // ─── 타입 (기존 호환) ───────────────────────────────
 
@@ -379,7 +380,12 @@ export function actionJSONToGameAction(
       if (!from || !to) return null;
       let generals: string[] = [];
       if (p.generals) {
-        generals = p.generals.split(',').map((s: string) => s.trim()).filter(Boolean);
+        const raw = p.generals.split(',').map((s: string) => s.trim()).filter(Boolean);
+        // LLM이 잘못된 ID를 생성할 수 있으므로 resolveGeneral로 검증
+        for (const r of raw) {
+          const resolved = resolveGeneral(r, ctx);
+          if (resolved) generals.push(resolved);
+        }
       }
       if (generals.length === 0) {
         generals = ctx.playerGenerals
@@ -432,9 +438,64 @@ export function parseRecommendations(
     recommendations: result.actions.map(a => ({
       action: actionJSONToGameAction(a, context),
       confidence: a.confidence,
-      description: a.description,
+      description: localizeActionDesc(a.type, a.params, context) || a.description,
     })),
   };
+}
+
+// ─── 액션 설명 현지화 ─────────────────────────────────
+
+const FOCUS_NAMES: Record<string, string> = { agriculture: '농업', commerce: '상업', defense: '방어' };
+const SCALE_NAMES: Record<string, string> = { small: '소규모', medium: '중규모', large: '대규모' };
+
+function localizeActionDesc(
+  type: string,
+  params: Record<string, string>,
+  ctx: RecommendationContext,
+): string {
+  const cityName = (id: string): string => {
+    const city = ctx.playerCities.find(c => c.id === id);
+    return city ? t(city.name) : t(id);
+  };
+  const generalName = (id: string): string => {
+    const gen = ctx.playerGenerals.find(g => g.id === id);
+    return gen ? t(gen.name) : t(id);
+  };
+
+  switch (type) {
+    case 'conscript':
+      return tf('{city} {scale} 징병', { city: cityName(params.city), scale: t(SCALE_NAMES[params.scale] ?? '중규모') });
+    case 'develop':
+      return tf('{city} {focus} 개발', { city: cityName(params.city), focus: t(FOCUS_NAMES[params.focus] ?? '농업') });
+    case 'train':
+      return tf('{city} 병사 훈련', { city: cityName(params.city) });
+    case 'recruit':
+      return tf('{city}에서 {general} 등용', { city: cityName(params.city), general: generalName(params.general || params.targetGeneral) });
+    case 'assign':
+      return tf('{general}을(를) {dest}(으)로 배치', { general: generalName(params.general), dest: cityName(params.destination) });
+    case 'transfer': {
+      const typeLabel = params.transferType === 'food' ? t('식량') : t('병력');
+      return tf('{from}에서 {to}(으)로 {type} 보급', { from: cityName(params.from), to: cityName(params.to), type: typeLabel });
+    }
+    case 'send_envoy':
+      return tf('{target}에게 사신 파견', { target: t(params.target) });
+    case 'gift':
+      return tf('{target}에게 선물', { target: t(params.target) });
+    case 'threaten':
+      return tf('{target}에게 위협', { target: t(params.target) });
+    case 'scout':
+      return tf('{target} 정찰', { target: cityName(params.target) });
+    case 'fortify':
+      return tf('{city} 방어 강화', { city: cityName(params.city) });
+    case 'march':
+      return tf('{from}에서 {to}(으)로 진군', { from: cityName(params.from), to: t(params.to) });
+    case 'ambush':
+      return tf('{location}에 {general} 매복', { location: t(params.location), general: generalName(params.general) });
+    case 'pass':
+      return t('행동 안 함');
+    default:
+      return type;
+  }
 }
 
 // ─── ID 해석 ───────────────────────────────────────
@@ -461,13 +522,22 @@ export function resolveLocation(input: string | undefined, ctx: RecommendationCo
   return undefined;
 }
 
-/** 장수 ID 또는 이름 → 장수 ID */
+/** 장수 ID 또는 이름 → 장수 ID (퍼지 매칭 포함) */
 export function resolveGeneral(input: string | undefined, ctx: RecommendationContext): string | undefined {
   if (!input) return undefined;
-  const s = input.trim();
-  if (ctx.playerGenerals.some(g => g.id === s)) return s;
-  const byName = ctx.playerGenerals.find(g => g.name === s);
-  return byName?.id;
+  const s = input.trim().toLowerCase();
+  // 정확한 ID 매칭
+  const byId = ctx.playerGenerals.find(g => g.id === s);
+  if (byId) return byId.id;
+  // 정확한 이름 매칭
+  const byName = ctx.playerGenerals.find(g => g.name === input.trim());
+  if (byName) return byName.id;
+  // 퍼지 매칭: ID에 포함되거나, ID가 입력에 포함
+  const byPartial = ctx.playerGenerals.find(
+    g => g.id.includes(s) || s.includes(g.id),
+  );
+  if (byPartial) return byPartial.id;
+  return undefined;
 }
 
 /** 세력 이름 → FactionId */

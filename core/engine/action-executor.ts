@@ -14,6 +14,7 @@ import {
 } from '../data/types.js';
 import { GameStateManager } from './game-state.js';
 import { BattleEngine } from './battle-engine.js';
+import { t, tf } from '../i18n/index.js';
 
 export class ActionExecutor {
   constructor(
@@ -29,7 +30,7 @@ export class ActionExecutor {
     if (state.actionsRemaining <= 0) {
       return {
         success: false,
-        description: '이번 턴의 행동을 모두 소진했습니다.',
+        description: t('이번 턴의 행동을 모두 소진했습니다.'),
         sideEffects: [],
         remainingActions: 0,
       };
@@ -39,7 +40,7 @@ export class ActionExecutor {
     if (state.activeBattle) {
       return {
         success: false,
-        description: '전투가 진행 중입니다. 전투를 먼저 해결해주십시오.',
+        description: t('전투가 진행 중입니다. 전투를 먼저 해결해주십시오.'),
         sideEffects: [],
         remainingActions: state.actionsRemaining,
       };
@@ -65,7 +66,7 @@ export class ActionExecutor {
   /** AI/범용 세력 행동 실행 (행동 횟수 미소모, 로그 미기록) */
   executeFor(action: GameAction, factionId: FactionId): ActionResult {
     if (this.stateManager.getState().activeBattle) {
-      return this.fail('전투가 진행 중입니다.');
+      return this.fail(t('전투가 진행 중입니다.'));
     }
     return this.dispatchAction(action, factionId);
   }
@@ -114,7 +115,7 @@ export class ActionExecutor {
       default:
         return {
           success: false,
-          description: '알 수 없는 행동입니다.',
+          description: t('알 수 없는 행동입니다.'),
           sideEffects: [],
           remainingActions: this.stateManager.getState().actionsRemaining,
         };
@@ -125,9 +126,9 @@ export class ActionExecutor {
 
   private executeConscript(factionId: FactionId, cityId: string, scale: ConscriptScale): ActionResult {
     const city = this.stateManager.getCity(cityId);
-    if (!city) return this.fail(`도시를 찾을 수 없습니다: ${cityId}`);
+    if (!city) return this.fail(tf('{city}을(를) 찾을 수 없습니다.', { city: cityId }));
     if (city.owner !== factionId) {
-      return this.fail('아군 도시에서만 징병할 수 있습니다.');
+      return this.fail(t('아군 도시에서만 징병할 수 있습니다.'));
     }
 
     const table = CONSCRIPT_TABLE[scale];
@@ -135,7 +136,9 @@ export class ActionExecutor {
 
     // 식량 체크
     if (city.food < Math.abs(table.food)) {
-      return this.fail(`군량이 부족합니다. 필요: ${Math.abs(table.food)}, 보유: ${city.food}`);
+      return this.fail(tf('군량이 부족합니다. 필요: {required}, 보유: {current}', {
+        required: Math.abs(table.food), current: city.food,
+      }));
     }
 
     // 병력 증가 (보병으로 추가)
@@ -149,15 +152,17 @@ export class ActionExecutor {
     this.stateManager.updateCity(cityId, { morale: newMorale });
 
     if (newMorale < 30) {
-      sideEffects.push('민심이 매우 낮습니다. 반란 위험이 있습니다.');
+      sideEffects.push(t('민심이 매우 낮습니다. 반란 위험이 있습니다.'));
     } else if (newMorale < 50) {
-      sideEffects.push('민심이 소폭 하락했습니다.');
+      sideEffects.push(t('민심이 소폭 하락했습니다.'));
     }
 
-    const scaleNames = { small: '소규모', medium: '중규모', large: '대규모' };
+    const scaleNames: Record<ConscriptScale, string> = { small: '소규모', medium: '중규모', large: '대규모' };
     return {
       success: true,
-      description: `${city.name}에서 ${scaleNames[scale]} 징병을 실시했습니다. 보병 +${table.troops}.`,
+      description: tf('{city}에서 {scale} 징병을 실시했습니다. 보병 +{troops}.', {
+        city: t(city.name), scale: t(scaleNames[scale]), troops: table.troops,
+      }),
       sideEffects,
       remainingActions: 0, // execute()에서 갱신
     };
@@ -165,9 +170,9 @@ export class ActionExecutor {
 
   private executeDevelop(factionId: FactionId, cityId: string, focus: DevelopFocus): ActionResult {
     const city = this.stateManager.getCity(cityId);
-    if (!city) return this.fail(`도시를 찾을 수 없습니다: ${cityId}`);
+    if (!city) return this.fail(tf('{city}을(를) 찾을 수 없습니다.', { city: cityId }));
     if (city.owner !== factionId) {
-      return this.fail('아군 도시에서만 개발할 수 있습니다.');
+      return this.fail(t('아군 도시에서만 개발할 수 있습니다.'));
     }
 
     const focusNames: Record<DevelopFocus, string> = {
@@ -177,7 +182,9 @@ export class ActionExecutor {
     const currentGrade = city.development[focus];
     const nextGrade = gradeUp(currentGrade);
     if (currentGrade === nextGrade) {
-      return this.fail(`${city.name}의 ${focusNames[focus]}는 이미 최고 등급입니다.`);
+      return this.fail(tf('{city}의 {focus}는 이미 최고 등급입니다.', {
+        city: t(city.name), focus: t(focusNames[focus]),
+      }));
     }
 
     const rateKey = `${currentGrade}_${nextGrade}`;
@@ -190,14 +197,18 @@ export class ActionExecutor {
       });
       return {
         success: true,
-        description: `${city.name}의 ${focusNames[focus]}이(가) ${currentGrade}에서 ${nextGrade}로 발전했습니다.`,
+        description: tf('{city}의 {focus}이(가) {from}에서 {to}(으)로 발전했습니다.', {
+          city: t(city.name), focus: t(focusNames[focus]), from: currentGrade, to: nextGrade,
+        }),
         sideEffects: [],
         remainingActions: 0,
       };
     } else {
       return {
         success: true, // 행동은 소비되지만 등급 상승 실패
-        description: `${city.name}의 ${focusNames[focus]} 개발을 시도했으나 아직 성과가 나지 않았습니다. (${currentGrade} 유지)`,
+        description: tf('{city}의 {focus} 개발을 시도했으나 아직 성과가 나지 않았습니다. ({grade} 유지)', {
+          city: t(city.name), focus: t(focusNames[focus]), grade: currentGrade,
+        }),
         sideEffects: [],
         remainingActions: 0,
       };
@@ -206,13 +217,13 @@ export class ActionExecutor {
 
   private executeTrain(factionId: FactionId, cityId: string): ActionResult {
     const city = this.stateManager.getCity(cityId);
-    if (!city) return this.fail(`도시를 찾을 수 없습니다: ${cityId}`);
+    if (!city) return this.fail(tf('{city}을(를) 찾을 수 없습니다.', { city: cityId }));
     if (city.owner !== factionId) {
-      return this.fail('아군 도시에서만 훈련할 수 있습니다.');
+      return this.fail(t('아군 도시에서만 훈련할 수 있습니다.'));
     }
 
     if (getTotalTroopsOfCity(city) === 0) {
-      return this.fail(`${city.name}에 훈련시킬 병력이 없습니다.`);
+      return this.fail(tf('{city}에 훈련시킬 병력이 없습니다.', { city: t(city.name) }));
     }
 
     const oldTraining = city.training;
@@ -235,27 +246,33 @@ export class ActionExecutor {
 
     return {
       success: true,
-      description: `${city.name}의 부대를 훈련시켰습니다. 훈련도: ${oldTraining} → ${Math.min(100, newTraining + bonus)}.`,
-      sideEffects: bonus > 0 ? [`장수의 통솔 능력으로 추가 훈련 효과 (+${bonus})`] : [],
+      description: tf('{city}의 부대를 훈련시켰습니다. 훈련도: {from} → {to}.', {
+        city: t(city.name), from: oldTraining, to: Math.min(100, newTraining + bonus),
+      }),
+      sideEffects: bonus > 0
+        ? [tf('장수의 통솔 능력으로 추가 훈련 효과 (+{bonus})', { bonus })]
+        : [],
       remainingActions: 0,
     };
   }
 
   private executeRecruit(factionId: FactionId, cityId: string, targetGeneralId: string): ActionResult {
     const city = this.stateManager.getCity(cityId);
-    if (!city) return this.fail(`도시를 찾을 수 없습니다: ${cityId}`);
+    if (!city) return this.fail(tf('{city}을(를) 찾을 수 없습니다.', { city: cityId }));
 
     const target = this.stateManager.getGeneral(targetGeneralId);
-    if (!target) return this.fail(`장수를 찾을 수 없습니다: ${targetGeneralId}`);
+    if (!target) return this.fail(tf('{name}을(를) 찾을 수 없습니다.', { name: targetGeneralId }));
 
     if (target.faction === factionId) {
-      return this.fail(`${target.name}은(는) 이미 아군입니다.`);
+      return this.fail(tf('{name}은(는) 이미 아군입니다.', { name: t(target.name) }));
     }
 
     if (target.loyalty === '절대') {
       return {
         success: true,
-        description: `${target.name}에게 등용을 시도했으나, 충성심이 절대적이라 거절당했습니다.`,
+        description: tf('{name}에게 등용을 시도했으나, 충성심이 절대적이라 거절당했습니다.', {
+          name: t(target.name),
+        }),
         sideEffects: [],
         remainingActions: 0,
       };
@@ -276,15 +293,17 @@ export class ActionExecutor {
       });
       return {
         success: true,
-        description: `${target.name}이(가) ${faction?.name ?? factionId}군에 합류했습니다!`,
-        sideEffects: ['충성도가 "보통"이므로 관리에 주의하십시오.'],
+        description: tf('{name}이(가) {faction}에 합류했습니다!', {
+          name: t(target.name), faction: t(faction?.name ?? factionId),
+        }),
+        sideEffects: [t('충성도가 "보통"이므로 관리에 주의하십시오.')],
         remainingActions: 0,
       };
     }
 
     return {
       success: true,
-      description: `${target.name}에게 등용을 시도했으나 거절당했습니다.`,
+      description: tf('{name}에게 등용을 시도했으나 거절당했습니다.', { name: t(target.name) }),
       sideEffects: [],
       remainingActions: 0,
     };
@@ -292,32 +311,38 @@ export class ActionExecutor {
 
   private executeAssign(factionId: FactionId, generalId: string, destination: string): ActionResult {
     const general = this.stateManager.getGeneral(generalId);
-    if (!general) return this.fail(`장수를 찾을 수 없습니다: ${generalId}`);
+    if (!general) return this.fail(tf('{name}을(를) 찾을 수 없습니다.', { name: generalId }));
     if (general.faction !== factionId) {
-      return this.fail('아군 장수만 배치할 수 있습니다.');
+      return this.fail(t('아군 장수만 배치할 수 있습니다.'));
     }
     if (general.condition === '사망' || general.condition === '포로') {
-      return this.fail(`${general.name}은(는) ${general.condition} 상태입니다.`);
+      return this.fail(tf('{name}은(는) {condition} 상태입니다.', {
+        name: t(general.name), condition: t(general.condition),
+      }));
     }
 
     const destCity = this.stateManager.getCity(destination);
-    if (!destCity) return this.fail(`도시를 찾을 수 없습니다: ${destination}`);
+    if (!destCity) return this.fail(tf('{city}을(를) 찾을 수 없습니다.', { city: destination }));
     if (destCity.owner !== factionId) {
-      return this.fail('아군 도시로만 배치할 수 있습니다.');
+      return this.fail(t('아군 도시로만 배치할 수 있습니다.'));
     }
 
     // 인접 도시 체크
     const currentCity = this.stateManager.getCity(general.location);
     if (currentCity && !currentCity.adjacent.includes(destination) && general.location !== destination) {
-      return this.fail(`${general.name}은(는) ${currentCity.name}에 있습니다. ${destCity.name}은(는) 인접하지 않습니다.`);
+      return this.fail(tf('{general}은(는) {from}에 있습니다. {to}은(는) 인접하지 않습니다.', {
+        general: t(general.name), from: t(currentCity.name), to: t(destCity.name),
+      }));
     }
 
-    const from = currentCity?.name ?? general.location;
+    const from = currentCity ? t(currentCity.name) : general.location;
     this.stateManager.updateGeneral(generalId, { location: destination });
 
     return {
       success: true,
-      description: `${general.name}을(를) ${from}에서 ${destCity.name}(으)로 배치했습니다.`,
+      description: tf('{general}을(를) {from}에서 {to}(으)로 배치했습니다.', {
+        general: t(general.name), from, to: t(destCity.name),
+      }),
       sideEffects: [],
       remainingActions: 0,
     };
@@ -331,23 +356,25 @@ export class ActionExecutor {
     scale: TransferScale,
   ): ActionResult {
     const fromCity = this.stateManager.getCity(fromId);
-    if (!fromCity) return this.fail(`도시를 찾을 수 없습니다: ${fromId}`);
+    if (!fromCity) return this.fail(tf('{city}을(를) 찾을 수 없습니다.', { city: fromId }));
     if (fromCity.owner !== factionId) {
-      return this.fail('아군 도시에서만 보급할 수 있습니다.');
+      return this.fail(t('아군 도시에서만 보급할 수 있습니다.'));
     }
 
     const toCity = this.stateManager.getCity(toId);
-    if (!toCity) return this.fail(`도시를 찾을 수 없습니다: ${toId}`);
+    if (!toCity) return this.fail(tf('{city}을(를) 찾을 수 없습니다.', { city: toId }));
     if (toCity.owner !== factionId) {
-      return this.fail('아군 도시로만 보급할 수 있습니다.');
+      return this.fail(t('아군 도시로만 보급할 수 있습니다.'));
     }
 
     if (fromId === toId) {
-      return this.fail('같은 도시로는 보급할 수 없습니다.');
+      return this.fail(t('같은 도시로는 보급할 수 없습니다.'));
     }
 
     if (!fromCity.adjacent.includes(toId)) {
-      return this.fail(`${fromCity.name}에서 ${toCity.name}(으)로 직접 보급할 수 없습니다. 인접하지 않습니다.`);
+      return this.fail(tf('{from}에서 {to}(으)로 직접 보급할 수 없습니다. 인접하지 않습니다.', {
+        from: t(fromCity.name), to: t(toCity.name),
+      }));
     }
 
     const scaleNames: Record<TransferScale, string> = {
@@ -357,7 +384,7 @@ export class ActionExecutor {
     if (transferType === 'troops') {
       const totalTroops = getTotalTroopsOfCity(fromCity);
       if (totalTroops <= 0) {
-        return this.fail(`${fromCity.name}에 보급할 병력이 없습니다.`);
+        return this.fail(tf('{city}에 보급할 병력이 없습니다.', { city: t(fromCity.name) }));
       }
 
       const ratio = TRANSFER_RATIOS[scale];
@@ -367,7 +394,7 @@ export class ActionExecutor {
 
       const actualMoved = infantryMoved + cavalryMoved + navyMoved;
       if (actualMoved <= 0) {
-        return this.fail('보급할 병력이 없습니다. 출발 도시에 병력이 부족합니다.');
+        return this.fail(t('보급할 병력이 없습니다. 출발 도시에 병력이 부족합니다.'));
       }
 
       this.stateManager.addCityTroops(fromId, 'infantry', -infantryMoved);
@@ -380,14 +407,19 @@ export class ActionExecutor {
 
       return {
         success: true,
-        description: `${fromCity.name}에서 ${toCity.name}(으)로 병력 ${actualMoved.toLocaleString()}명을 보급했습니다. (${scaleNames[scale]})`,
+        description: tf('{from}에서 {to}(으)로 병력 {troops}명을 보급했습니다. ({scale})', {
+          from: t(fromCity.name), to: t(toCity.name),
+          troops: actualMoved.toLocaleString(), scale: t(scaleNames[scale]),
+        }),
         sideEffects: [],
         remainingActions: 0,
       };
     } else {
       const amount = FOOD_TRANSFER_AMOUNTS[scale];
       if (fromCity.food < amount) {
-        return this.fail(`${fromCity.name}의 군량이 부족합니다. 필요: ${amount}, 보유: ${fromCity.food}`);
+        return this.fail(tf('{city}의 군량이 부족합니다. 필요: {required}, 보유: {current}', {
+          city: t(fromCity.name), required: amount, current: fromCity.food,
+        }));
       }
 
       this.stateManager.updateCity(fromId, { food: fromCity.food - amount });
@@ -396,7 +428,10 @@ export class ActionExecutor {
 
       return {
         success: true,
-        description: `${fromCity.name}에서 ${toCity.name}(으)로 군량 ${amount.toLocaleString()}을(를) 보급했습니다. (${scaleNames[scale]})`,
+        description: tf('{from}에서 {to}(으)로 군량 {amount}을(를) 보급했습니다. ({scale})', {
+          from: t(fromCity.name), to: t(toCity.name),
+          amount: amount.toLocaleString(), scale: t(scaleNames[scale]),
+        }),
         sideEffects: [],
         remainingActions: 0,
       };
@@ -407,7 +442,7 @@ export class ActionExecutor {
 
   private executeSendEnvoy(factionId: FactionId, target: FactionId, purpose: string): ActionResult {
     const relation = this.stateManager.getRelation(factionId, target);
-    if (!relation) return this.fail(`${target}과(와)의 외교 관계가 없습니다.`);
+    if (!relation) return this.fail(tf('{target}과(와)의 외교 관계가 없습니다.', { target: t(target) }));
 
     // 성공률 계산
     const faction = this.stateManager.getFaction(factionId);
@@ -436,8 +471,8 @@ export class ActionExecutor {
         if (newValue >= 90) this.stateManager.setFlag('allianceStrong', true);
         return {
           success: true,
-          description: `${target}과(와) 동맹이 체결되었습니다!`,
-          sideEffects: ['동맹군의 협조를 기대할 수 있습니다.'],
+          description: tf('{target}과(와) 동맹이 체결되었습니다!', { target: t(target) }),
+          sideEffects: [t('동맹군의 협조를 기대할 수 있습니다.')],
           remainingActions: 0,
         };
       }
@@ -445,7 +480,9 @@ export class ActionExecutor {
       this.stateManager.setFlag('allianceStarted', true);
       return {
         success: true,
-        description: `${target}에 사절을 보냈습니다. 관계가 개선되었습니다. (${relation.relation} → ${getRelationLevel(newValue)})`,
+        description: tf('{target}에 사절을 보냈습니다. 관계가 개선되었습니다. ({from} → {to})', {
+          target: t(target), from: t(relation.relation), to: t(getRelationLevel(newValue)),
+        }),
         sideEffects: [],
         remainingActions: 0,
       };
@@ -453,7 +490,7 @@ export class ActionExecutor {
 
     return {
       success: true,
-      description: `${target}에 사절을 보냈으나 큰 성과가 없었습니다.`,
+      description: tf('{target}에 사절을 보냈으나 큰 성과가 없었습니다.', { target: t(target) }),
       sideEffects: [],
       remainingActions: 0,
     };
@@ -461,16 +498,18 @@ export class ActionExecutor {
 
   private executePersuade(factionId: FactionId, targetGeneralId: string, method: string): ActionResult {
     const target = this.stateManager.getGeneral(targetGeneralId);
-    if (!target) return this.fail(`장수를 찾을 수 없습니다: ${targetGeneralId}`);
+    if (!target) return this.fail(tf('{name}을(를) 찾을 수 없습니다.', { name: targetGeneralId }));
 
     if (target.faction === factionId) {
-      return this.fail(`${target.name}은(는) 이미 아군입니다.`);
+      return this.fail(tf('{name}은(는) 이미 아군입니다.', { name: t(target.name) }));
     }
 
     if (target.loyalty === '절대') {
       return {
         success: true,
-        description: `${target.name}에게 회유를 시도했으나, 충의가 굳건하여 통하지 않았습니다.`,
+        description: tf('{name}에게 회유를 시도했으나, 충의가 굳건하여 통하지 않았습니다.', {
+          name: t(target.name),
+        }),
         sideEffects: [],
         remainingActions: 0,
       };
@@ -487,15 +526,17 @@ export class ActionExecutor {
       });
       return {
         success: true,
-        description: `${target.name}의 마음이 흔들리고 있습니다. 충성심이 약화되었습니다.`,
-        sideEffects: ['다시 설득하면 투항할 수도 있습니다.'],
+        description: tf('{name}의 마음이 흔들리고 있습니다. 충성심이 약화되었습니다.', {
+          name: t(target.name),
+        }),
+        sideEffects: [t('다시 설득하면 투항할 수도 있습니다.')],
         remainingActions: 0,
       };
     }
 
     return {
       success: true,
-      description: `${target.name}에 대한 회유가 실패했습니다.`,
+      description: tf('{name}에 대한 회유가 실패했습니다.', { name: t(target.name) }),
       sideEffects: [],
       remainingActions: 0,
     };
@@ -503,7 +544,7 @@ export class ActionExecutor {
 
   private executeThreaten(factionId: FactionId, target: FactionId): ActionResult {
     const relation = this.stateManager.getRelation(factionId, target);
-    if (!relation) return this.fail(`${target}과(와)의 외교 관계가 없습니다.`);
+    if (!relation) return this.fail(tf('{target}과(와)의 외교 관계가 없습니다.', { target: t(target) }));
 
     // 위협: 관계 하락, 적 일시적 행동 억제
     this.stateManager.addRelationValue(factionId, target, -15);
@@ -511,21 +552,23 @@ export class ActionExecutor {
 
     return {
       success: true,
-      description: `${target}에게 위협적인 서신을 보냈습니다. 관계가 악화되었습니다.`,
-      sideEffects: ['상대의 일시적 행동 위축이 예상됩니다.'],
+      description: tf('{target}에게 위협적인 서신을 보냈습니다. 관계가 악화되었습니다.', {
+        target: t(target),
+      }),
+      sideEffects: [t('상대의 일시적 행동 위축이 예상됩니다.')],
       remainingActions: 0,
     };
   }
 
   private executeGift(factionId: FactionId, target: FactionId, amount: number): ActionResult {
     const relation = this.stateManager.getRelation(factionId, target);
-    if (!relation) return this.fail(`${target}과(와)의 외교 관계가 없습니다.`);
+    if (!relation) return this.fail(tf('{target}과(와)의 외교 관계가 없습니다.', { target: t(target) }));
 
     // 자원 체크: 해당 세력 도시 중 가장 식량이 많은 곳에서 차감
     const cities = this.stateManager.getCitiesByFaction(factionId);
     const richestCity = cities.reduce((best, c) => c.food > best.food ? c : best, cities[0]);
     if (!richestCity || richestCity.food < amount) {
-      return this.fail(`선물로 보낼 자원이 부족합니다.`);
+      return this.fail(t('선물로 보낼 자원이 부족합니다.'));
     }
 
     this.stateManager.updateCity(richestCity.id, {
@@ -534,13 +577,17 @@ export class ActionExecutor {
 
     // 받는 쪽 도시 중 식량이 가장 적은 곳에 추가
     const targetCities = this.stateManager.getCitiesByFaction(target);
-    const sideEffects: string[] = [`${richestCity.name}의 군량이 ${amount} 감소했습니다.`];
+    const sideEffects: string[] = [tf('{city}의 군량이 {amount} 감소했습니다.', {
+      city: t(richestCity.name), amount,
+    })];
     if (targetCities.length > 0) {
       const poorestCity = targetCities.reduce((worst, c) => c.food < worst.food ? c : worst, targetCities[0]);
       this.stateManager.updateCity(poorestCity.id, {
         food: poorestCity.food + amount,
       });
-      sideEffects.push(`${poorestCity.name}에 군량 ${amount}이(가) 도착했습니다.`);
+      sideEffects.push(tf('{city}에 군량 {amount}이(가) 도착했습니다.', {
+        city: t(poorestCity.name), amount,
+      }));
     }
 
     const relationBonus = Math.floor(amount / 200);
@@ -548,7 +595,9 @@ export class ActionExecutor {
 
     return {
       success: true,
-      description: `${target}에게 군량 ${amount}을(를) 선물했습니다. 관계가 개선되었습니다.`,
+      description: tf('{target}에게 군량 {amount}을(를) 선물했습니다. 관계가 개선되었습니다.', {
+        target: t(target), amount,
+      }),
       sideEffects,
       remainingActions: 0,
     };
@@ -561,27 +610,31 @@ export class ActionExecutor {
     from: string, to: string, generalIds: string[], troopsScale: TroopsScale,
   ): ActionResult {
     const fromCity = this.stateManager.getCity(from);
-    if (!fromCity) return this.fail(`출발 도시를 찾을 수 없습니다: ${from}`);
+    if (!fromCity) return this.fail(tf('{city}을(를) 찾을 수 없습니다.', { city: from }));
     if (fromCity.owner !== factionId) {
-      return this.fail('아군 도시에서만 진군할 수 있습니다.');
+      return this.fail(t('아군 도시에서만 진군할 수 있습니다.'));
     }
 
     // 인접 체크
     if (!fromCity.adjacent.includes(to)) {
       const toCity = this.stateManager.getCity(to);
       const toBf = this.stateManager.getBattlefield(to);
-      const toName = toCity?.name ?? toBf?.name ?? to;
-      return this.fail(`${fromCity.name}에서 ${toName}(으)로 직접 진군할 수 없습니다.`);
+      const toName = toCity ? t(toCity.name) : toBf ? t(toBf.name) : to;
+      return this.fail(tf('{from}에서 {to}(으)로 직접 진군할 수 없습니다.', {
+        from: t(fromCity.name), to: toName,
+      }));
     }
 
     // 장수 체크
     const generals = generalIds.map(id => this.stateManager.getGeneral(id)).filter(Boolean);
     if (generals.length === 0) {
-      return this.fail('진군할 장수가 없습니다.');
+      return this.fail(t('진군할 장수가 없습니다.'));
     }
     for (const g of generals) {
       if (g!.location !== from) {
-        return this.fail(`${g!.name}은(는) ${fromCity.name}에 있지 않습니다.`);
+        return this.fail(tf('{name}은(는) {city}에 있지 않습니다.', {
+          name: t(g!.name), city: t(fromCity.name),
+        }));
       }
     }
 
@@ -592,7 +645,9 @@ export class ActionExecutor {
 
     const MIN_MARCH_TROOPS = 100;
     if (marchTroops < MIN_MARCH_TROOPS) {
-      return this.fail(`진군 병력이 너무 적습니다 (${marchTroops}명). 최소 ${MIN_MARCH_TROOPS}명이 필요합니다.`);
+      return this.fail(tf('진군 병력이 너무 적습니다 ({troops}명). 최소 {min}명이 필요합니다.', {
+        troops: marchTroops, min: MIN_MARCH_TROOPS,
+      }));
     }
 
     // 병력 차감 (비례적으로)
@@ -620,7 +675,7 @@ export class ActionExecutor {
       for (const g of generals) {
         this.stateManager.updateGeneral(g!.id, { location: from });
       }
-      return this.fail('진군할 병력이 너무 적습니다.');
+      return this.fail(t('진군할 병력이 너무 적습니다.'));
     }
 
     // 동맹 체크 헬퍼
@@ -656,8 +711,10 @@ export class ActionExecutor {
 
       return {
         success: true,
-        description: `${fromCity.name}에서 ${toCity.name}(으)로 진군합니다. 적과 조우! 전투가 시작됩니다!`,
-        sideEffects: [`병력 ${actualMarchTroops}명 출진`],
+        description: tf('{from}에서 {to}(으)로 진군합니다. 적과 조우! 전투가 시작됩니다!', {
+          from: t(fromCity.name), to: t(toCity.name),
+        }),
+        sideEffects: [tf('병력 {troops}명 출진', { troops: actualMarchTroops })],
         remainingActions: 0,
         battleTriggered: battle,
       };
@@ -703,16 +760,20 @@ export class ActionExecutor {
 
         this.stateManager.setBattle(battle);
 
-        const allyNames = allies.map(g => g.name);
+        const allyNames = allies.map(g => t(g.name));
         const allyMsg = allyNames.length > 0
-          ? ` 동맹군(${allyNames.join(', ')})이 합류합니다!`
+          ? ` ${tf('동맹군({allies})이 합류합니다!', { allies: allyNames.join(', ') })}`
           : '';
 
         return {
           success: true,
-          description: `${fromCity.name}에서 ${battlefield.name}(으)로 진군합니다. 적과 조우! 전투가 시작됩니다!${allyMsg}`,
+          description: tf('{from}에서 {to}(으)로 진군합니다. 적과 조우! 전투가 시작됩니다!', {
+            from: t(fromCity.name), to: t(battlefield.name),
+          }) + allyMsg,
           sideEffects: [
-            `병력 ${actualMarchTroops}명 출진${alliedTroops > 0 ? `, 동맹 지원 ${alliedTroops}명` : ''}`,
+            alliedTroops > 0
+              ? tf('병력 {troops}명 출진, 동맹 지원 {allied}명', { troops: actualMarchTroops, allied: alliedTroops })
+              : tf('병력 {troops}명 출진', { troops: actualMarchTroops }),
           ],
           remainingActions: 0,
           battleTriggered: battle,
@@ -727,10 +788,12 @@ export class ActionExecutor {
       this.stateManager.addCityTroops(to, 'navy', navyMoved);
     }
 
-    const destName = toCity?.name ?? battlefield?.name ?? to;
+    const destName = toCity ? t(toCity.name) : battlefield ? t(battlefield.name) : to;
     return {
       success: true,
-      description: `${fromCity.name}에서 ${destName}(으)로 병력 ${actualMarchTroops}명이 이동했습니다.`,
+      description: tf('{from}에서 {to}(으)로 병력 {troops}명이 이동했습니다.', {
+        from: t(fromCity.name), to: destName, troops: actualMarchTroops,
+      }),
       sideEffects: [],
       remainingActions: 0,
     };
@@ -740,7 +803,7 @@ export class ActionExecutor {
     const targetCity = this.stateManager.getCity(target);
     const targetBattlefield = this.stateManager.getBattlefield(target);
     if (!targetCity && !targetBattlefield) {
-      return this.fail(`정찰 대상을 찾을 수 없습니다: ${target}`);
+      return this.fail(tf('{target}을(를) 찾을 수 없습니다.', { target }));
     }
 
     // 정찰 성공률: 기본 70%
@@ -757,17 +820,24 @@ export class ActionExecutor {
       const info: string[] = [];
       if (targetCity && targetCity.owner) {
         const troops = getTotalTroopsOfCity(targetCity);
-        const troopLevel = troops > 15000 ? '압도적' : troops > 8000 ? '우세' : troops > 3000 ? '비슷' : '열세';
-        info.push(`병력 규모: ${troopLevel}`);
+        const troopLevel = troops > 15000
+          ? t('압도적') : troops > 8000
+          ? t('우세') : troops > 3000
+          ? t('비슷') : t('열세');
+        info.push(tf('병력 규모: {level}', { level: troopLevel }));
         const generals = this.stateManager.getGeneralsByLocation(target);
         if (generals.length > 0) {
-          info.push(`확인된 장수: ${generals.map(g => g.name).join(', ')}`);
+          info.push(tf('확인된 장수: {generals}', {
+            generals: generals.map(g => t(g.name)).join(', '),
+          }));
         }
       }
 
+      const targetName = targetCity ? t(targetCity.name) : t(targetBattlefield!.name);
       return {
         success: true,
-        description: `${targetCity?.name ?? targetBattlefield?.name}에 대한 정찰에 성공했습니다. ${info.join('. ')}`,
+        description: tf('{target}에 대한 정찰에 성공했습니다.', { target: targetName })
+          + (info.length > 0 ? ` ${info.join('. ')}` : ''),
         sideEffects: [],
         remainingActions: 0,
       };
@@ -775,7 +845,7 @@ export class ActionExecutor {
 
     return {
       success: true,
-      description: `정찰을 시도했으나 유의미한 정보를 얻지 못했습니다.`,
+      description: t('정찰을 시도했으나 유의미한 정보를 얻지 못했습니다.'),
       sideEffects: [],
       remainingActions: 0,
     };
@@ -783,9 +853,9 @@ export class ActionExecutor {
 
   private executeFortify(factionId: FactionId, cityId: string): ActionResult {
     const city = this.stateManager.getCity(cityId);
-    if (!city) return this.fail(`도시를 찾을 수 없습니다: ${cityId}`);
+    if (!city) return this.fail(tf('{city}을(를) 찾을 수 없습니다.', { city: cityId }));
     if (city.owner !== factionId) {
-      return this.fail('아군 도시에서만 방비를 강화할 수 있습니다.');
+      return this.fail(t('아군 도시에서만 방비를 강화할 수 있습니다.'));
     }
 
     const currentDefense = city.development.defense;
@@ -798,7 +868,9 @@ export class ActionExecutor {
       });
       return {
         success: true,
-        description: `${city.name}의 방어를 강화했습니다. 방어 등급: ${currentDefense} → ${newDefense}`,
+        description: tf('{city}의 방어를 강화했습니다. 방어 등급: {from} → {to}', {
+          city: t(city.name), from: currentDefense, to: newDefense,
+        }),
         sideEffects: [],
         remainingActions: 0,
       };
@@ -806,7 +878,9 @@ export class ActionExecutor {
 
     return {
       success: true,
-      description: `${city.name}의 방비 강화를 시도했으나 아직 완료되지 않았습니다.`,
+      description: tf('{city}의 방비 강화를 시도했으나 아직 완료되지 않았습니다.', {
+        city: t(city.name),
+      }),
       sideEffects: [],
       remainingActions: 0,
     };
@@ -814,9 +888,9 @@ export class ActionExecutor {
 
   private executeAmbush(factionId: FactionId, location: string, generalId: string): ActionResult {
     const general = this.stateManager.getGeneral(generalId);
-    if (!general) return this.fail(`장수를 찾을 수 없습니다: ${generalId}`);
+    if (!general) return this.fail(tf('{name}을(를) 찾을 수 없습니다.', { name: generalId }));
     if (general.faction !== factionId) {
-      return this.fail('아군 장수만 매복시킬 수 있습니다.');
+      return this.fail(t('아군 장수만 매복시킬 수 있습니다.'));
     }
 
     // 매복 설정
@@ -825,12 +899,14 @@ export class ActionExecutor {
 
     const loc = this.stateManager.getCity(location);
     const bf = this.stateManager.getBattlefield(location);
-    const locName = loc?.name ?? bf?.name ?? location;
+    const locName = loc ? t(loc.name) : bf ? t(bf.name) : location;
 
     return {
       success: true,
-      description: `${general.name}이(가) ${locName}에 매복을 설치했습니다.`,
-      sideEffects: ['적이 이 경로로 진군하면 기습을 가할 수 있습니다.'],
+      description: tf('{general}이(가) {location}에 매복을 설치했습니다.', {
+        general: t(general.name), location: locName,
+      }),
+      sideEffects: [t('적이 이 경로로 진군하면 기습을 가할 수 있습니다.')],
       remainingActions: 0,
     };
   }

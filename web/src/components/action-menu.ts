@@ -1,4 +1,5 @@
 import { h } from '../renderer.js';
+import { t } from '../../../core/i18n/index.js';
 import { getTotalTroopsOfCity } from '../../../core/data/types.js';
 import type { GameState, GameAction, FactionId, TroopsScale, City, TransferType, TransferScale } from '../../../core/data/types.js';
 
@@ -37,38 +38,38 @@ export class ActionMenu {
     const disabled = state.actionsRemaining <= 0 || state.gameOver || state.activeBattle !== null;
 
     // Domestic dropdown
-    this.container.appendChild(this.createDropdown('내정', disabled, [
-      { label: '징병 (소규모)', action: () => this.showCityPicker('conscript', 'small') },
-      { label: '징병 (중규모)', action: () => this.showCityPicker('conscript', 'medium') },
-      { label: '징병 (대규모)', action: () => this.showCityPicker('conscript', 'large') },
-      { label: '농업 개발', action: () => this.showCityPicker('develop', 'agriculture') },
-      { label: '상업 개발', action: () => this.showCityPicker('develop', 'commerce') },
-      { label: '방어 강화', action: () => this.showCityPicker('develop', 'defense') },
-      { label: '훈련', action: () => this.showCityPicker('train', null) },
-      { label: '등용', action: () => this.showRecruitDialog() },
-      { label: '보급 (병력)', action: () => this.showTransferDialog('troops') },
-      { label: '보급 (식량)', action: () => this.showTransferDialog('food') },
+    this.container.appendChild(this.createDropdown(t('내정'), disabled, [
+      { label: t('징병 (소규모)'), action: () => this.showCityPicker('conscript', 'small') },
+      { label: t('징병 (중규모)'), action: () => this.showCityPicker('conscript', 'medium') },
+      { label: t('징병 (대규모)'), action: () => this.showCityPicker('conscript', 'large') },
+      { label: t('농업 개발'), action: () => this.showCityPicker('develop', 'agriculture') },
+      { label: t('상업 개발'), action: () => this.showCityPicker('develop', 'commerce') },
+      { label: t('방어 강화'), action: () => this.showCityPicker('develop', 'defense') },
+      { label: t('훈련'), action: () => this.showCityPicker('train', null) },
+      { label: t('등용'), action: () => this.showRecruitDialog() },
+      { label: t('보급 (병력)'), action: () => this.showTransferDialog('troops') },
+      { label: t('보급 (식량)'), action: () => this.showTransferDialog('food') },
     ]));
 
     // Diplomacy dropdown
-    this.container.appendChild(this.createDropdown('외교', disabled, [
-      { label: '손권에 사신 파견', action: () => this.execDiplomacy('send_envoy', '손권' as FactionId) },
-      { label: '손권에 선물', action: () => this.execDiplomacy('gift', '손권' as FactionId) },
-      { label: '조조에 위협', action: () => this.execDiplomacy('threaten', '조조' as FactionId) },
-      { label: '설득', action: () => this.showPersuadeDialog() },
+    this.container.appendChild(this.createDropdown(t('외교'), disabled, [
+      { label: t('손권에 사신 파견'), action: () => this.execDiplomacy('send_envoy', '손권' as FactionId) },
+      { label: t('손권에 선물'), action: () => this.execDiplomacy('gift', '손권' as FactionId) },
+      { label: t('조조에 위협'), action: () => this.execDiplomacy('threaten', '조조' as FactionId) },
+      { label: t('설득'), action: () => this.showPersuadeDialog() },
     ]));
 
     // Military dropdown
-    this.container.appendChild(this.createDropdown('군사', disabled, [
-      { label: '진군', action: () => this.showMarchDialog() },
-      { label: '장수 배치', action: () => this.showAssignDialog() },
-      { label: '정찰', action: () => this.showScoutDialog() },
-      { label: '방어 강화', action: () => this.showCityPicker('fortify', null) },
-      { label: '매복', action: () => this.showAmbushDialog() },
+    this.container.appendChild(this.createDropdown(t('군사'), disabled, [
+      { label: t('진군'), action: () => this.showMarchDialog() },
+      { label: t('장수 배치'), action: () => this.showAssignDialog() },
+      { label: t('정찰'), action: () => this.showScoutDialog() },
+      { label: t('방어 강화'), action: () => this.showCityPicker('fortify', null) },
+      { label: t('매복'), action: () => this.showAmbushDialog() },
     ]));
 
     // End turn
-    const endBtn = h('button', { className: 'btn btn-primary' }, '턴 종료');
+    const endBtn = h('button', { className: 'btn btn-primary' }, t('턴 종료'));
     endBtn.disabled = state.activeBattle !== null || state.gameOver || !this.enabled;
     endBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -125,8 +126,8 @@ export class ActionMenu {
     }
 
     // Show modal picker
-    this.showModal('도시 선택', playerCities.map(c => ({
-      label: c.name,
+    this.showModal(t('도시 선택'), playerCities.map(c => ({
+      label: t(c.name),
       value: c.id,
     })), (cityId) => {
       this.execDomestic(actionType, cityId, param);
@@ -213,12 +214,12 @@ export class ActionMenu {
       );
       const troops = getTotalTroopsOfCity(c);
       return {
-        label: `${c.name} (장수 ${generals.length}, 병력 ${troops.toLocaleString()})`,
+        label: `${t(c.name)} (${t('장수')} ${generals.length}, ${t('병력')} ${troops.toLocaleString()})`,
         value: c.id,
       };
     });
 
-    this.showModal('출발 도시 선택', options, (cityId) => {
+    this.showModal(t('출발 도시 선택'), options, (cityId) => {
       const city = this.state!.cities.find(c => c.id === cityId)!;
       this.showMarchStep2(city);
     });
@@ -238,18 +239,18 @@ export class ActionMenu {
 
       let label: string;
       if (info.isBattlefield) {
-        label = `${info.name} ⚔️`;
+        label = `${t(info.name)} ⚔️`;
       } else if (info.owner) {
-        label = `${info.name} — ${info.owner}`;
+        label = `${t(info.name)} — ${t(info.owner)}`;
       } else {
-        label = `${info.name} (중립)`;
+        label = `${t(info.name)} (${t('중립')})`;
       }
       destinations.push({ label, value: adjId });
     }
 
     if (destinations.length === 0) return;
 
-    this.showModal('목적지 선택', destinations, (toId) => {
+    this.showModal(t('목적지 선택'), destinations, (toId) => {
       this.showMarchConfirm(fromCity, toId);
     });
   }
@@ -272,14 +273,14 @@ export class ActionMenu {
     const modal = h('div', { className: 'modal' });
 
     modal.appendChild(h('div', { className: 'modal-title' },
-      `${fromCity.name} → ${destInfo.name} 출진`));
+      `${t(fromCity.name)} → ${t(destInfo.name)} ${t('출진')}`));
 
     const body = h('div', { className: 'modal-body' });
 
     // 장수 선택 (체크박스, 최대 3명, 기본 전체 선택)
     body.appendChild(h('div', {
       style: 'margin-bottom:var(--space-sm);font-weight:bold;',
-    }, '장수 선택 (최대 3)'));
+    }, t('장수 선택 (최대 3)')));
 
     const checkboxes: Array<{ id: string; checkbox: HTMLInputElement }> = [];
     for (const g of generals) {
@@ -296,7 +297,7 @@ export class ActionMenu {
           cb.checked = false;
         }
       });
-      label.append(cb, ` ${g.name}`);
+      label.append(cb, ` ${t(g.name)}`);
       body.appendChild(label);
       checkboxes.push({ id: g.id, checkbox: cb });
     }
@@ -304,14 +305,14 @@ export class ActionMenu {
     // 병력 규모 선택
     body.appendChild(h('div', {
       style: 'margin-top:var(--space-sm);margin-bottom:var(--space-xs);font-weight:bold;',
-    }, '병력 규모'));
+    }, t('병력 규모')));
 
     let selectedScale: TroopsScale = 'medium';
     const scaleContainer = h('div', { style: 'display:flex;gap:var(--space-xs);' });
     const scales: Array<{ label: string; value: TroopsScale }> = [
-      { label: '소규모 (30%)', value: 'small' },
-      { label: '중규모 (50%)', value: 'medium' },
-      { label: '주력 (70%)', value: 'main' },
+      { label: t('소규모 (30%)'), value: 'small' },
+      { label: t('중규모 (50%)'), value: 'medium' },
+      { label: t('주력 (70%)'), value: 'main' },
     ];
     const scaleButtons: HTMLElement[] = [];
     for (const s of scales) {
@@ -331,9 +332,9 @@ export class ActionMenu {
 
     // Footer
     const footer = h('div', { className: 'modal-footer' });
-    const cancelBtn = h('button', { className: 'btn' }, '취소');
+    const cancelBtn = h('button', { className: 'btn' }, t('취소'));
     cancelBtn.addEventListener('click', () => backdrop.remove());
-    const confirmBtn = h('button', { className: 'btn btn-primary' }, '출진');
+    const confirmBtn = h('button', { className: 'btn btn-primary' }, t('출진'));
     confirmBtn.addEventListener('click', () => {
       const selectedGenerals = checkboxes
         .filter(c => c.checkbox.checked)
@@ -371,7 +372,7 @@ export class ActionMenu {
     );
 
     if (availableGenerals.length === 0) {
-      this.showNotice('배치 가능한 장수가 없습니다.');
+      this.showNotice(t('배치 가능한 장수가 없습니다.'));
       return;
     }
 
@@ -379,12 +380,12 @@ export class ActionMenu {
       const locInfo = this.getLocationInfo(g.location);
       const locName = locInfo?.name ?? g.location;
       return {
-        label: `${g.name} — ${locName}`,
+        label: `${t(g.name)} — ${t(locName)}`,
         value: g.id,
       };
     });
 
-    this.showModal('배치할 장수 선택', options, (generalId) => {
+    this.showModal(t('배치할 장수 선택'), options, (generalId) => {
       this.showAssignStep2(generalId);
     });
   }
@@ -401,7 +402,7 @@ export class ActionMenu {
       // 전장에 있는 장수
       const locInfo = this.getLocationInfo(general.location);
       const locName = locInfo?.name ?? general.location;
-      this.showNotice(`${general.name}은(는) ${locName}에 있어 배치 이동할 수 없습니다. 전투 종료 후 자동 귀환합니다.`);
+      this.showNotice(`${t(general.name)}${t('은(는)')} ${t(locName)}${t('에 있어 배치 이동할 수 없습니다. 전투 종료 후 자동 귀환합니다.')}`);
       return;
     }
 
@@ -410,7 +411,7 @@ export class ActionMenu {
       .filter((c): c is City => c !== null && c !== undefined && c.owner === this.playerFaction);
 
     if (destinations.length === 0) {
-      this.showNotice(`${currentCity.name}에서 이동할 수 있는 인접 아군 도시가 없습니다.`);
+      this.showNotice(`${t(currentCity.name)}${t('에서 이동할 수 있는 인접 아군 도시가 없습니다.')}`);
       return;
     }
 
@@ -426,11 +427,11 @@ export class ActionMenu {
     }
 
     const options = destinations.map(c => ({
-      label: c.name,
+      label: t(c.name),
       value: c.id,
     }));
 
-    this.showModal('목적지 선택', options, (destId) => {
+    this.showModal(t('목적지 선택'), options, (destId) => {
       const action: GameAction = {
         type: 'domestic',
         action: 'assign',
@@ -450,18 +451,18 @@ export class ActionMenu {
     // 비아군 도시
     for (const c of this.state.cities) {
       if (c.owner === this.playerFaction) continue;
-      const ownerLabel = c.owner ? ` — ${c.owner}` : '';
-      options.push({ label: `${c.name}${ownerLabel}`, value: c.id });
+      const ownerLabel = c.owner ? ` — ${t(c.owner)}` : '';
+      options.push({ label: `${t(c.name)}${ownerLabel}`, value: c.id });
     }
 
     // 전투지역
     for (const bf of this.state.battlefields) {
-      options.push({ label: `${bf.name} (전투지역)`, value: bf.id });
+      options.push({ label: `${t(bf.name)} (${t('전투지역')})`, value: bf.id });
     }
 
     if (options.length === 0) return;
 
-    this.showModal('정찰 대상 선택', options, (targetId) => {
+    this.showModal(t('정찰 대상 선택'), options, (targetId) => {
       const action: GameAction = {
         type: 'military',
         action: 'scout',
@@ -484,7 +485,7 @@ export class ActionMenu {
     if (citiesWithTargets.length === 0) return;
 
     const cityOptions = citiesWithTargets.map(c => ({
-      label: c.name,
+      label: t(c.name),
       value: c.id,
     }));
 
@@ -495,11 +496,11 @@ export class ActionMenu {
       if (targets.length === 0) return;
 
       const generalOptions = targets.map(g => ({
-        label: `${g.name} (${g.faction})`,
+        label: `${t(g.name)} (${t(g.faction)})`,
         value: g.id,
       }));
 
-      this.showModal('등용 — 장수 선택', generalOptions, (generalId) => {
+      this.showModal(t('등용 — 장수 선택'), generalOptions, (generalId) => {
         const action: GameAction = {
           type: 'domestic', action: 'recruit',
           params: { city: cityId, targetGeneral: generalId },
@@ -513,7 +514,7 @@ export class ActionMenu {
       return;
     }
 
-    this.showModal('등용 — 도시 선택', cityOptions, pickCity);
+    this.showModal(t('등용 — 도시 선택'), cityOptions, pickCity);
   }
 
   // ─── 설득 — 2단계 모달 ──────────────────────────────
@@ -528,18 +529,18 @@ export class ActionMenu {
     if (targets.length === 0) return;
 
     const generalOptions = targets.map(g => ({
-      label: `${g.name} (${g.faction})`,
+      label: `${t(g.name)} (${t(g.faction)})`,
       value: g.id,
     }));
 
-    this.showModal('설득 — 대상 선택', generalOptions, (generalId) => {
+    this.showModal(t('설득 — 대상 선택'), generalOptions, (generalId) => {
       const methods = [
-        { label: '의리로 설득', value: '의리' },
-        { label: '이익으로 설득', value: '이익' },
-        { label: '위협으로 압박', value: '위협' },
+        { label: t('의리로 설득'), value: '의리' },
+        { label: t('이익으로 설득'), value: '이익' },
+        { label: t('위협으로 압박'), value: '위협' },
       ];
 
-      this.showModal('설득 — 방법 선택', methods, (method) => {
+      this.showModal(t('설득 — 방법 선택'), methods, (method) => {
         const action: GameAction = {
           type: 'diplomacy', action: 'persuade',
           params: { targetGeneral: generalId, method },
@@ -567,14 +568,14 @@ export class ActionMenu {
       if (!info) continue;
       if (!info.isBattlefield && info.owner === this.playerFaction) continue;
       const label = info.isBattlefield
-        ? `${info.name} ⚔️`
-        : `${info.name} — ${info.owner ?? '중립'}`;
+        ? `${t(info.name)} ⚔️`
+        : `${t(info.name)} — ${info.owner ? t(info.owner) : t('중립')}`;
       locationOptions.push({ label, value: locId });
     }
 
     if (locationOptions.length === 0) return;
 
-    this.showModal('매복 — 위치 선택', locationOptions, (location) => {
+    this.showModal(t('매복 — 위치 선택'), locationOptions, (location) => {
       const availableGenerals = this.state!.generals.filter(
         g => g.faction === this.playerFaction &&
              (g.condition === '양호' || g.condition === '피로'),
@@ -584,12 +585,12 @@ export class ActionMenu {
       const generalOptions = availableGenerals.map(g => {
         const locInfo = this.getLocationInfo(g.location);
         return {
-          label: `${g.name} — ${locInfo?.name ?? g.location}`,
+          label: `${t(g.name)} — ${t(locInfo?.name ?? g.location)}`,
           value: g.id,
         };
       });
 
-      this.showModal('매복 — 장수 선택', generalOptions, (generalId) => {
+      this.showModal(t('매복 — 장수 선택'), generalOptions, (generalId) => {
         const action: GameAction = {
           type: 'military', action: 'ambush',
           params: { location, general: generalId },
@@ -604,16 +605,16 @@ export class ActionMenu {
   private showTransferDialog(transferType: TransferType): void {
     if (!this.state) return;
 
-    const typeLabel = transferType === 'troops' ? '병력' : '식량';
+    const typeLabel = transferType === 'troops' ? t('병력') : t('식량');
     const playerCities = this.state.cities.filter(c => c.owner === this.playerFaction);
     if (playerCities.length === 0) return;
 
     const srcOptions = playerCities.map(c => {
       const troops = getTotalTroopsOfCity(c);
       const detail = transferType === 'troops'
-        ? `병력 ${troops.toLocaleString()}`
-        : `식량 ${c.food.toLocaleString()}`;
-      return { label: `${c.name} (${detail})`, value: c.id };
+        ? `${t('병력')} ${troops.toLocaleString()}`
+        : `${t('식량')} ${c.food.toLocaleString()}`;
+      return { label: `${t(c.name)} (${detail})`, value: c.id };
     });
 
     const pickFrom = (fromId: string) => {
@@ -633,8 +634,8 @@ export class ActionMenu {
         return;
       }
 
-      const destOptions = destinations.map(c => ({ label: c.name, value: c.id }));
-      this.showModal(`보급 (${typeLabel}) — 도착 도시`, destOptions, pickTo);
+      const destOptions = destinations.map(c => ({ label: t(c.name), value: c.id }));
+      this.showModal(`${t('보급')} (${typeLabel}) — ${t('도착 도시')}`, destOptions, pickTo);
     };
 
     if (playerCities.length === 1) {
@@ -642,13 +643,13 @@ export class ActionMenu {
       return;
     }
 
-    this.showModal(`보급 (${typeLabel}) — 출발 도시`, srcOptions, pickFrom);
+    this.showModal(`${t('보급')} (${typeLabel}) — ${t('출발 도시')}`, srcOptions, pickFrom);
   }
 
   private showTransferScale(
     fromId: string, toId: string, transferType: TransferType,
   ): void {
-    const typeLabel = transferType === 'troops' ? '병력' : '식량';
+    const typeLabel = transferType === 'troops' ? t('병력') : t('식량');
     const fromCity = this.state!.cities.find(c => c.id === fromId)!;
     const toCity = this.state!.cities.find(c => c.id === toId)!;
 
@@ -657,20 +658,20 @@ export class ActionMenu {
     if (transferType === 'troops') {
       const total = getTotalTroopsOfCity(fromCity);
       scaleOptions = [
-        { label: `소규모 (30%, 약 ${Math.floor(total * 0.3).toLocaleString()}명)`, value: 'small' },
-        { label: `중규모 (50%, 약 ${Math.floor(total * 0.5).toLocaleString()}명)`, value: 'medium' },
-        { label: `대규모 (70%, 약 ${Math.floor(total * 0.7).toLocaleString()}명)`, value: 'large' },
+        { label: `${t('소규모')} (30%, ${t('약')} ${Math.floor(total * 0.3).toLocaleString()}${t('명')})`, value: 'small' },
+        { label: `${t('중규모')} (50%, ${t('약')} ${Math.floor(total * 0.5).toLocaleString()}${t('명')})`, value: 'medium' },
+        { label: `${t('대규모')} (70%, ${t('약')} ${Math.floor(total * 0.7).toLocaleString()}${t('명')})`, value: 'large' },
       ];
     } else {
       scaleOptions = [
-        { label: `소규모 (1,000) — 보유: ${fromCity.food.toLocaleString()}`, value: 'small' },
-        { label: `중규모 (2,500) — 보유: ${fromCity.food.toLocaleString()}`, value: 'medium' },
-        { label: `대규모 (5,000) — 보유: ${fromCity.food.toLocaleString()}`, value: 'large' },
+        { label: `${t('소규모')} (1,000) — ${t('보유')}: ${fromCity.food.toLocaleString()}`, value: 'small' },
+        { label: `${t('중규모')} (2,500) — ${t('보유')}: ${fromCity.food.toLocaleString()}`, value: 'medium' },
+        { label: `${t('대규모')} (5,000) — ${t('보유')}: ${fromCity.food.toLocaleString()}`, value: 'large' },
       ];
     }
 
     this.showModal(
-      `보급 (${typeLabel}): ${fromCity.name} → ${toCity.name}`,
+      `${t('보급')} (${typeLabel}): ${t(fromCity.name)} → ${t(toCity.name)}`,
       scaleOptions,
       (scale) => {
         const action: GameAction = {
@@ -696,7 +697,7 @@ export class ActionMenu {
     modal.appendChild(h('div', { className: 'modal-body' }, message));
 
     const footer = h('div', { className: 'modal-footer' });
-    const okBtn = h('button', { className: 'btn btn-primary' }, '확인');
+    const okBtn = h('button', { className: 'btn btn-primary' }, t('확인'));
     okBtn.addEventListener('click', () => backdrop.remove());
     footer.appendChild(okBtn);
     modal.appendChild(footer);
@@ -730,7 +731,7 @@ export class ActionMenu {
     modal.appendChild(body);
 
     const footer = h('div', { className: 'modal-footer' });
-    const cancelBtn = h('button', { className: 'btn' }, '취소');
+    const cancelBtn = h('button', { className: 'btn' }, t('취소'));
     cancelBtn.addEventListener('click', () => backdrop.remove());
     footer.appendChild(cancelBtn);
     modal.appendChild(footer);

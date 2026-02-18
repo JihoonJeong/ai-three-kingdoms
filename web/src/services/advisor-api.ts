@@ -4,6 +4,7 @@
 
 import type { GameState, GameLanguage, FactionId } from '../../../core/data/types.js';
 import type { ChatMessage, AdvisorExpression, ChatStreamCallbacks, FactionTurnJSON } from '../../../core/advisor/types.js';
+import { t } from '../../../core/i18n/index.js';
 
 export async function checkHealth(): Promise<{ hasApiKey: boolean }> {
   const res = await fetch('/api/health');
@@ -51,19 +52,19 @@ export async function streamChat(
     });
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') return;
-    callbacks.onError('서버 연결 실패 — 서버가 실행 중인지 확인하세요');
+    callbacks.onError(t('서버 연결 실패 — 서버가 실행 중인지 확인하세요'));
     return;
   }
 
   if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: '알 수 없는 오류' }));
+    const err = await response.json().catch(() => ({ error: t('알 수 없는 오류') }));
     callbacks.onError(err.error || `HTTP ${response.status}`);
     return;
   }
 
   const reader = response.body?.getReader();
   if (!reader) {
-    callbacks.onError('스트림을 읽을 수 없습니다');
+    callbacks.onError(t('스트림을 읽을 수 없습니다'));
     return;
   }
 

@@ -22,6 +22,9 @@ export interface DifficultyParams {
 
   /** 플레이어 초기 식량 배수 (1.0 = 기본) */
   playerFoodMultiplier: number;
+
+  /** 손권 매 턴 식량 지원 중단 임계값 (기본 5000 = 자기 식량 5000 이하면 중단) */
+  sunQuanSupportFloor: number;
 }
 
 export const DIFFICULTY_PRESETS: Record<string, DifficultyParams> = {
@@ -31,6 +34,7 @@ export const DIFFICULTY_PRESETS: Record<string, DifficultyParams> = {
     sunQuanFoodSupport: 5000,
     nanjunTroopMultiplier: 0.7,
     playerFoodMultiplier: 1.5,
+    sunQuanSupportFloor: 5000,
   },
   medium: {
     nanjunCollapseRatio: 0.65,     // 잔존 ~6,440  (easy↔normal 사이)
@@ -38,6 +42,7 @@ export const DIFFICULTY_PRESETS: Record<string, DifficultyParams> = {
     sunQuanFoodSupport: 4000,
     nanjunTroopMultiplier: 0.8,    // 초기 병력 80% (23000 → 18400)
     playerFoodMultiplier: 1.35,
+    sunQuanSupportFloor: 5000,
   },
   normal: {
     nanjunCollapseRatio: 0.6,      // 잔존 ~7,820  (구 medium)
@@ -45,6 +50,7 @@ export const DIFFICULTY_PRESETS: Record<string, DifficultyParams> = {
     sunQuanFoodSupport: 3000,
     nanjunTroopMultiplier: 0.85,
     playerFoodMultiplier: 1.25,
+    sunQuanSupportFloor: 5000,
   },
   hard: {
     nanjunCollapseRatio: 0.5,      // 잔존 ~11,500 (구 normal)
@@ -52,13 +58,15 @@ export const DIFFICULTY_PRESETS: Record<string, DifficultyParams> = {
     sunQuanFoodSupport: 0,
     nanjunTroopMultiplier: 1.0,
     playerFoodMultiplier: 1.0,
+    sunQuanSupportFloor: 3000,     // 손권이 더 적극적으로 지원 (3000까지)
   },
   expert: {
     nanjunCollapseRatio: 0.3,      // (구 hard)
     nanjunMoralePenalty: -15,
     sunQuanFoodSupport: 0,
     nanjunTroopMultiplier: 1.2,
-    playerFoodMultiplier: 0.8,
+    playerFoodMultiplier: 1.0,     // 식량 감소 삭제 (기본값)
+    sunQuanSupportFloor: 5000,
   },
 };
 
@@ -93,4 +101,5 @@ export function applyDifficultyModifier(
   state.flags['nanjunCollapseRatio'] = params.nanjunCollapseRatio;
   state.flags['nanjunMoralePenalty'] = params.nanjunMoralePenalty;
   state.flags['sunQuanFoodSupport'] = params.sunQuanFoodSupport;
+  state.flags['sunQuanSupportFloor'] = params.sunQuanSupportFloor;
 }
