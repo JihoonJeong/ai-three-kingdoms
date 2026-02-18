@@ -1,0 +1,59 @@
+{
+  "config": {
+    "maxExperiences": 20,
+    "selectionStrategy": "balanced",
+    "promptBudget": 800
+  },
+  "experiences": [
+    {
+      "gameId": "seq-1",
+      "gameNumber": 1,
+      "grade": "D",
+      "chibiVictory": false,
+      "totalTurns": 21,
+      "citiesCaptured": [],
+      "allianceMaintained": true,
+      "generalsLost": [],
+      "strategyProfile": {
+        "actionCounts": {},
+        "phases": [],
+        "criticalActions": [],
+        "transferPattern": {
+          "totalTransfers": 0,
+          "totalTroopsMoved": 0
+        },
+        "firstMarchTurn": null,
+        "marchTargets": []
+      },
+      "lessons": [
+        "보급(transfer)을 한 번도 사용하지 않아 병력이 분산되었다. 인접 아군 도시 간 병력 집중(transfer)이 필수적이다.",
+        "한 번도 진군(march)하지 않아 적벽 전투에 참여하지 못했다. 턴 10~14 사이에 적벽으로 진군해야 한다.",
+        "한 가지 유형의 행동만 반복했다. 초반 내정 → 중반 집결/훈련 → 후반 진군의 3단계 전략이 효과적이다."
+      ],
+      "turningPoints": [
+        {
+          "turn": 3,
+          "type": "event",
+          "description": "노숙이 자발적으로 유비 진영을 방문합니다. 동맹 논의의 기회.",
+          "outcome": "positive"
+        },
+        {
+          "turn": 14,
+          "type": "battle",
+          "description": "gangha 승리",
+          "outcome": "positive"
+        }
+      ],
+      "bProximityScore": 5,
+      "bProximityBreakdown": {
+        "chibiVictory": 0,
+        "troopConcentration": 0,
+        "marchAttempt": 0,
+        "postChibiTransfer": 0,
+        "conscriptEffort": 0,
+        "foodManagement": 5,
+        "total": 5
+      }
+    }
+  ]
+}
